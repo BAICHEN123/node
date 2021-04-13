@@ -8,7 +8,7 @@
 //#include <DS3231.h>
 extern "C"
 {
-//#include "DHT11.h"
+#include "DHT11.h"
 #include "mystr.h"
 }
 #define TIMER1_timeout_ms 200
@@ -56,36 +56,42 @@ char tcp_send_data[MAX_TCP_DATA];//随用随清，不设置长度数组
 	一共有三个脚，可以控制电灯的状态，应确保 继电器 上电 前后 电灯的状态是相同的（除非从文件系统读取了最后的状态）。
 2	修改程序逻辑的高低电平 和 01 的对应关系，方便设备的安装。
 */
-#define MAX_NAME 5
-char* str_data_names[MAX_NAME] = { 
-"红外人体检测",
-"烟雾逻辑",
-"烟雾模拟",
+#define MAX_NAME 13
+char* str_data_names[MAX_NAME] = { "温度",
+"湿度",
+"亮度",
 "@开关1[0-1]",
+"@开关1模式[0-3]",
 "@开关2[0-1]",
-//"@保存当前为断电记忆[0-1]"
+"@开关2模式[0-3]",
+"@声控灯时长/S[1-300]",
+"声控灯剩余时长/S",
+"@高温警告/°C[0-40]",
+"@低温警告/°C[0-40]",
+"@补光区间[0-10]",
+"@保存当前为断电记忆[0-1]"
 };
-//struct DHT11_data dht11_data = { 666,666 };
+struct DHT11_data dht11_data = { 666,666 };
 //两个开关，当他为2时，是自动模式，其他时候读取12 和14号脚的电平
 uint8_t LED1 = 0;
-uint8_t switch_1 = 0;
+uint8_t switch_1 = 2;
 uint8_t LED2 = 0;
-uint8_t switch_2 = 0;
-//short switch_2_light_up_TIME_s = 30;//重新加载的值
-//short switch_2_light_up_time_x_s = 0;//计数器用
-//short TEMPERATURE_ERROR_HIGH = 40;
-//short TEMPERATURE_ERROR_LOW = 10;
-//uint8_t light_qu_yu = 5;//补光区间
-uint8_t power_save = 0;//断电记忆
+uint8_t switch_2 = 2;
+short switch_2_light_up_TIME_s = 30;//重新加载的值
+short switch_2_light_up_time_x_s = 0;//计数器用
+short TEMPERATURE_ERROR_HIGH = 40;
+short TEMPERATURE_ERROR_LOW = 10;
+uint8_t light_qu_yu = 5;//补光区间
+uint8_t power_save = 0;//补光区间
 
 
 //下面定义几个引脚的功能
 const uint8_t jd1 = 14;//1号继电器
 const uint8_t jd2 = 12;//2号继电器
-const uint8_t yan_wu = 13;//烟雾逻辑输入
-const uint8_t hongwai_renti = 5;//红外人体
+const uint8_t light = 13;//光敏逻辑输入
+const uint8_t shengyin = 4;//声音逻辑输入
 const uint8_t anjian1 = 0;//按键1输入
-//const uint8_t dht11 = 5;//按键1输入
+const uint8_t dht11 = 5;//按键1输入
 
 
 //错误计次变量区域
@@ -100,7 +106,7 @@ void(*resetFunc) (void) = 0;
 
 //其他函数声明
 void timer2_worker();
-//void realy_DHT11();
+void realy_DHT11();
 void set_timer1_s(timercallback userFunc, double time_s);
 void set_timer1_ms(timercallback userFunc, uint32_t time_ms);
 
@@ -254,6 +260,25 @@ short file_delete_wifidata()
 	return 1;
 }
 
+/*
+UDP发送函数封装起来，方便调用
+返回值为发送结果， 0或1
+调用示例 ：UDP_Send(MYHOST, UDP_PORT, "UDP send 汉字测试 !");
+*/
+/*
+short UDP_Send(const char* UDP_IP, uint16_t UDP_port, char* udp_send_data)
+{
+	if (WiFi.status() != WL_CONNECTED)
+	{
+		return -1;
+	}
+	WiFiUDP Udp;
+	// send a reply, to the IP address and TCP_PORT that sent us the packet we received
+	Udp.beginPacket(UDP_IP, UDP_port);
+	Udp.write(udp_send_data);
+	return  Udp.endPacket();
+}
+*/
 
 /*
 UDP发送函数封装起来，方便调用
@@ -281,6 +306,7 @@ short UDP_Send(const char* UDP_IP, uint16_t UDP_port, String udp_send_data)
 此函数根据光强返回是否需要开灯
 1	开灯
 0	关灯
+*/
 uint8_t light_high()
 {
 	static unsigned long last_time = millis();
@@ -300,11 +326,11 @@ uint8_t light_high()
 	}
 }
 
-*/
 /*
 此函数根据声音返回是否需要开灯
 1	开灯
 0	关灯
+*/
 uint8_t sheng_yin_high()
 {
 	if (switch_2_light_up_time_x_s > 0)
@@ -317,11 +343,11 @@ uint8_t sheng_yin_high()
 	}
 }
 
-*/
 /*
 此函数根据 声音 和光强  返回是否需要开灯
 1	开灯
 0	关灯
+*/
 uint8_t shengyin_and_light_high()
 {
 	return sheng_yin_high() && light_high();
@@ -343,7 +369,6 @@ void shengyin_timeout_out()
 	}
 }
 
-
 //根据 传感器状态 和 用户选择模式 控制继电器
 void set_jdq(const uint8_t pin_x,short switch_x,uint8_t *LEDx)
 {
@@ -362,18 +387,18 @@ void set_jdq(const uint8_t pin_x,short switch_x,uint8_t *LEDx)
 	digitalWrite(pin_x, *LEDx);
 }
 
-*/
 /*
 此函数在定时中断中调用，处理光强传感器
+*/
 void brightness_work()
 {
 	set_jdq(jd1, switch_1, &LED1);
 	set_jdq(jd2, switch_2, &LED2);
 }
-*/
 
 /*
 此函数在定时中断中调用，处理温湿度传感器的40bit读取
+*/
 void DHT11_read_and_send()
 {
 	//读取温湿度，并将异常情况返回
@@ -401,7 +426,6 @@ void DHT11_read_and_send()
 		}
 	}
 }
-*/
 
 /*
 定时1.5s读取一次DHT11的数据
@@ -414,13 +438,12 @@ void timer2_worker()
 	//delay(20);//时间中断函数里不可以用delay
 	static  short timer2_count = 7;//
 	static  short count_anjian = 0;//对按键按下的时间计数，超过5s就清除wifidata.txt文件，然后重新启动系统
-	//timer2_count++;
+	timer2_count++;
 	//读取光强传感器，并控制继电器
 
-	//brightness_work();//更新继电器状态
-	//shengyin_timeout_out();//更新声控灯倒计时
+	brightness_work();//更新继电器状态
+	shengyin_timeout_out();//更新声控灯倒计时
 
-	/*
 	//每隔大约1-2S读取DHT11
 	if (timer2_count == 8)
 	{
@@ -432,7 +455,7 @@ void timer2_worker()
 	{
 		set_timer1_ms(realy_DHT11, TIMER1_timeout_ms);
 	}
-	*/
+
 	//长按 25*TIMER1_timeout_ms ms
 	//删除之前记住的WiFi账号和密码，然后重新启动系统
 	if (digitalRead(anjian1) == LOW)
@@ -459,12 +482,12 @@ void timer2_worker()
 
 /*
 此函数在定时中断中调用，处理温湿度传感器通讯协议中18ms下拉
+*/
 void realy_DHT11()
 {
 	//让DHT11的信号引脚拉低，等待20ms，之后调用get_DHT11_DATA() 开始正式调用读取函数
 	set_timer1_ms(timer2_worker, (unsigned int)read_ready());
 }
-*/
 
 /*
 TCP阻塞，等待 timeout_ms_max ms
@@ -657,10 +680,10 @@ int set_databack()
 		switch (i)//把数据填充到数组里
 		{
 		case 0:
-			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", digitalRead(hongwai_renti));
+			count_char = count_char + sprintf(tcp_send_data + count_char, "%.1f°C", dht11_data.temperature);
 			break;
 		case 1:
-			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", digitalRead(yan_wu));
+			count_char = count_char + sprintf(tcp_send_data + count_char, "%.1f%%", dht11_data.humidity);
 			break;
 		case 2:
 			count_char = count_char + sprintf(tcp_send_data + count_char, "%d%%", system_adc_read() * 100 / 1024);
@@ -669,7 +692,31 @@ int set_databack()
 			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", LED1);
 			break;
 		case 4:
+			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", switch_1);
+			break;
+		case 5:
 			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", LED2);
+			break;
+		case 6:
+			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", switch_2);
+			break;
+		case 7:
+			count_char = count_char + sprintf(tcp_send_data + count_char, "%dS", switch_2_light_up_TIME_s);
+			break;
+		case 8:
+			count_char = count_char + sprintf(tcp_send_data + count_char, "%dS", switch_2_light_up_time_x_s);
+			break;
+		case 9:
+			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", TEMPERATURE_ERROR_HIGH);
+			break;
+		case 10:
+			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", TEMPERATURE_ERROR_LOW);
+			break;
+		case 11:
+			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", light_qu_yu);
+			break;
+		case 12:
+			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", power_save);
 			break;
 		}
 		tcp_send_data[count_char++] = '#';//在这里插入单个数据结束符
@@ -727,7 +774,6 @@ uint8_t light_qu_yu = 5;//补光区间
 	cou = cou + dataFile.write(switch_2);
 	cou = cou + dataFile.write(LED1);
 	cou = cou + dataFile.write(LED2);
-	/*
 	cou = cou + dataFile.write((uint8_t)(switch_2_light_up_TIME_s>>8));
 	cou = cou + dataFile.write((uint8_t)(switch_2_light_up_TIME_s & 255));
 	cou = cou + dataFile.write((uint8_t)(TEMPERATURE_ERROR_HIGH >> 8));
@@ -735,7 +781,6 @@ uint8_t light_qu_yu = 5;//补光区间
 	cou = cou + dataFile.write((uint8_t)(TEMPERATURE_ERROR_LOW >> 8));
 	cou = cou + dataFile.write((uint8_t)(TEMPERATURE_ERROR_LOW & 255));
 	cou = cou + dataFile.write(light_qu_yu);
-	*/
 	//dataFile.flush();
 	dataFile.close();// 完成文件写入后关闭文件
 	Serial.printf("write count = %d ", cou);
@@ -800,14 +845,11 @@ short file_read_stut()
 	switch_2 = (uint8_t)dataFile.read();
 	LED1 = (uint8_t)dataFile.read();
 	LED2 = (uint8_t)dataFile.read();
-	/*
 	switch_2_light_up_TIME_s = (short)((uint8_t)dataFile.read() << 8 | (uint8_t)dataFile.read());
 	TEMPERATURE_ERROR_HIGH = (short)((uint8_t)dataFile.read() << 8 | (uint8_t)dataFile.read());
 	TEMPERATURE_ERROR_LOW = (short)((uint8_t)dataFile.read() << 8 | (uint8_t)dataFile.read());
-	light_qu_yu = (uint8_t)dataFile.read();	
-	*/
+	light_qu_yu = (uint8_t)dataFile.read();
 	dataFile.close();// 完成文件写入后关闭文件
-
 	//Serial.printf("TEMPERATURE_ERROR_HIGH %d", TEMPERATURE_ERROR_HIGH);
 	//Serial.printf("TEMPERATURE_ERROR_LOW %d", TEMPERATURE_ERROR_LOW);
 	return 1;
@@ -946,18 +988,60 @@ void set_data_(short i,short value)
 		if (value > -1 && value < 2)
 		{
 			LED1 = value;
-			digitalWrite(jd1, LED1);
 		}
 		break;
 
 	case 4:
-		if (value > -1 && value < 2)
+		if (value > -1 && value < 4)
 		{
-			LED2 = value;
-			digitalWrite(jd2, LED2);
+			switch_1 = value;
 		}
 		break;
 
+	case 5:
+		if (value > -1 && value < 2)
+		{
+			LED2 = value;
+		}
+		break;
+
+	case 6:
+		if (value > -1 && value < 4)
+		{
+			switch_2 = value;
+		}
+		break;
+
+	case 7:
+		if (value > 0 && value < 301)
+		{
+			switch_2_light_up_TIME_s = value;
+		}
+		break;
+	case 9:
+		if (value >= 0 && value <= 40)
+		{
+			TEMPERATURE_ERROR_HIGH = value;
+		}
+		break;
+	case 10:
+		if (value >= 0 && value <= 40)
+		{
+			TEMPERATURE_ERROR_LOW = value;
+		}
+		break;
+	case 11:
+		if (value >= 0 && value <= 10)
+		{
+			light_qu_yu = value;
+		}
+		break;
+	case 12:
+		if (value == 0 || value == 1)
+		{
+			power_save = value;
+		}
+		break;
 	}
 
 }
@@ -966,21 +1050,20 @@ void setup()
 {
 	//SPIFFS.format();//第一次使用flash需要将flash格式化
 	Serial.begin(115200);
+	//CHIP_ID = ESP.getFlashChipId();
 	CHIP_ID = ESP.getChipId();
-	//Serial.printf("getFlashChipId %d \n", ESP.getFlashChipId());
-	//Serial.printf("getChipId %d  \n", ESP.getChipId());
+	Serial.printf("getFlashChipId %d \n", ESP.getFlashChipId());//这个id是假的，不知道为啥，两个esp的一样
+	Serial.printf("getChipId %d  \n", ESP.getChipId());
 	//定时器初始化
 	//ticker_DHT11.attach(2, timer2_worker);//.detach();//调用这个可以关闭
 	//读取FLASH芯片的唯一ID，
 	//Serial.printf("Flash real id（唯一标识符）:   %08X\n", ESP.getFlashChipId());
 
-	pinMode(yan_wu, INPUT);
+	pinMode(light, INPUT);//光
 	pinMode(anjian1, INPUT);//按键1
-	pinMode(hongwai_renti, INPUT);
+	pinMode(shengyin, INPUT);//d2 声音
 	pinMode(LED_BUILTIN, OUTPUT);
-	digitalWrite(LED_BUILTIN, HIGH);//不知道为啥，这个模块的初始状态是开灯
-	pinMode(16, OUTPUT);
-	digitalWrite(LED_BUILTIN, HIGH);//不知道为啥，这个模块的初始状态是LOW，然后我一插上跳线帽就开始无限重启
+
 	short stat = file_read_wifidata();
 	Serial.printf("star%d", stat);
 	if (stat == -1)
@@ -1011,7 +1094,7 @@ void setup()
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 	}
 	Serial.printf(" file_read_stut %d ", file_read_stut()); 
-	//DHT11_init(5);//这个是DHT11.h/DHT11.c里的函数
+	DHT11_init(5);//这个是DHT11.h/DHT11.c里的函数
 	//ESP.deepSleep(20000000, WAKE_RFCAL);
 	//开始循环之前先调用一次，初始化一下温湿度的值
 
@@ -1060,7 +1143,6 @@ void loop()
 
 		String str1 = "class_id=1,chip_id=" + String(CHIP_ID) + ",ip=" + WiFi.localIP().toString() + ",mac=" + WiFi.macAddress();
 		client.print(str1);
-		Serial.print(str1);
 		error_tcp_sum = 0;
 	}
 	else
@@ -1100,6 +1182,7 @@ void loop()
 	}
 	else if (stat == 0)
 	{
+
 		Serial.print("servier error ");
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 		return;
@@ -1110,7 +1193,7 @@ void loop()
 	short len_old;
 	pinMode(jd2, OUTPUT);//连个
 	pinMode(jd1, OUTPUT);
-	//set_timer1_s(realy_DHT11, 2);
+	set_timer1_s(realy_DHT11, 2);
 	while (1)//tcp断开之后无法重新链接，我只能重新声明试试，但是好像也没什么用处，只能计次，然后软件复位程序
 	{
 		//time_old_ms = millis();
@@ -1123,7 +1206,7 @@ void loop()
 		}
 
 		//Serial.print(system_adc_read());//读取A0ADC的值，最大1024 我猜的略略略
-		/*
+
 		if (millis() - beeeee_time_old_ms > 10)
 		{
 			//进行操作
@@ -1146,7 +1229,7 @@ void loop()
 			}
 
 		}
-		*/
+
 
 		//micros();
 		//int time_old = micros();//这个是我用来测试TCP响应时间的，读取当前时间，之后用新时间减去这个值
@@ -1154,7 +1237,7 @@ void loop()
 		stat = timeout_back_us(client, 100);//等待100us tcp是否有数据返回
 		//对声音采样
 		//直接加上就可以了，反正就是010101001010101
-		//beeeeee = beeeeee + digitalRead(shengyin);
+		beeeeee = beeeeee + digitalRead(shengyin);
 		//有收到TCP数据
 		if (stat == 1)
 		{
@@ -1195,7 +1278,7 @@ void loop()
 					//只识别 @ 类型的数据，get类型的数据一般不会组合发送，舍弃此部分
 				}
 				//所有的指令已经执行完毕
-				//brightness_work();//更新一下光控灯的状态
+				brightness_work();//更新一下光控灯的状态
 				//TCP 打包返还自己的状态
 				if (back_send_tcp(client) == -1)return;
 				if (power_save == 1)//实时更新断电记忆的东西
