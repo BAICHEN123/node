@@ -3,21 +3,21 @@
 static unsigned char pin = 0;
 
 //#define _NOP() do { __asm__ volatile ("nop"); } while (0)
-void DHT11_init(unsigned char pin1)
+void dht11_init(unsigned char pin1)
 {
 	pin = pin1;
 }
 
 
-
-char read_ready()
+//信号脚拉低 >18ms 这里只负责拉低，延时交给中断处理
+char dht11_read_ready()
 {
 	// Request sample
 	pinMode(pin, OUTPUT);
 	digitalWrite(pin, LOW); // Send start signal
-	return 22;
+	return LOW_PIN_ms;
 }
-char read_data(struct DHT11_data* value)
+char dht11_read_data(struct DHT11_data* value)
 {
 	pinMode(pin, INPUT);
 	digitalWrite(pin, HIGH); // Switch bus to receive data

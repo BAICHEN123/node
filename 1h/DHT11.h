@@ -8,11 +8,10 @@ struct DHT11_data
   float temperature;
   float humidity;
 };
+#define LOW_PIN_ms 22
 
-
-//void my_delay_us(unsigned long timeout_us);
-void DHT11_init(unsigned char pin1);
-char read_ready();
-char read_data(struct DHT11_data* value);
+void dht11_init(unsigned char pin1);
+char dht11_read_ready();
+char dht11_read_data(struct DHT11_data* value);
 
 #endif
