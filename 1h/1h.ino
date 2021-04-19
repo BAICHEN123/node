@@ -1,11 +1,12 @@
 #include <ESP8266WiFi.h>
-#include "FS.h"
+//#include "FS.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <WiFiClient.h>
 #include <WiFiUdp.h>
 #include <Wire.h>
-//#include <DS3231.h>
+#include <LittleFS.h>
+#include "test.h"
 extern "C"
 {
 #include "DHT11.h"
@@ -13,29 +14,28 @@ extern "C"
 }
 #define TIMER1_timeout_ms 200
 
-const char* wifi_ssid_pw_file = "/wifidata.txt";
-const char* stut_data_file = "/stutdata.txt";
-const char* MYHOST = "121.89.243.207";
+const char *wifi_ssid_pw_file = "/wifidata.txt";
+const char *stut_data_file = "/stutdata.txt";
+const char *MYHOST = "121.89.243.207";
 const uint16_t TCP_PORT = 9999;
 const uint16_t UDP_PORT = 9998;
 #define WIFI_ssid_len 32
 #define WIFI_password_len 32
-char WIFI_ssid[WIFI_ssid_len] = { '\0' };
-char WIFI_password[WIFI_password_len] = { '\0' };
+char WIFI_ssid[WIFI_ssid_len] = {'\0'};
+char WIFI_password[WIFI_password_len] = {'\0'};
 unsigned long UID = 0;
 unsigned long EID = 0;
 //u64 CHIP_ID=0;
 uint32_t CHIP_ID = 0;
 
-#define MAX_TCP_DATA 1024//TCP缓存的最大值
-#define MAX_UDP_SEND_DATA 1024//UDP缓存的最大值
-char tcp_data[MAX_TCP_DATA];//TCP缓存数组
-short tcp_data_len = 0;//TCP数据的临时缓存
+#define MAX_TCP_DATA 1024	   //TCP缓存的最大值
+#define MAX_UDP_SEND_DATA 1024 //UDP缓存的最大值
+char tcp_data[MAX_TCP_DATA];   //TCP缓存数组
+short tcp_data_len = 0;		   //TCP数据的临时缓存
 //char qstr_sprint[MAX_UDP_SEND_DATA];
-String UDP_head_data="";
+String UDP_head_data = "";
 String UDP_send_data = "";
-char tcp_send_data[MAX_TCP_DATA];//随用随清，不设置长度数组
-
+char tcp_send_data[MAX_TCP_DATA]; //随用随清，不设置长度数组
 
 /*
 目前问题/想法
@@ -57,52 +57,46 @@ char tcp_send_data[MAX_TCP_DATA];//随用随清，不设置长度数组
 2	修改程序逻辑的高低电平 和 01 的对应关系，方便设备的安装。
 */
 #define MAX_NAME 13
-char* str_data_names[MAX_NAME] = { "温度",
-"湿度",
-"亮度",
-"@开关1[0-1]",
-"@开关1模式[0-3]",
-"@开关2[0-1]",
-"@开关2模式[0-3]",
-"@声控灯时长/S[1-300]",
-"声控灯剩余时长/S",
-"@高温警告/°C[0-40]",
-"@低温警告/°C[0-40]",
-"@补光区间[0-10]",
-"@保存当前为断电记忆[0-1]"
-};
-struct DHT11_data dht11_data = { 666,666 };
+char *str_data_names[MAX_NAME] = {"温度",
+								  "湿度",
+								  "亮度",
+								  "@开关1[0-1]",
+								  "@开关1模式[0-3]",
+								  "@开关2[0-1]",
+								  "@开关2模式[0-3]",
+								  "@声控灯时长/S[1-300]",
+								  "声控灯剩余时长/S",
+								  "@高温警告/°C[0-40]",
+								  "@低温警告/°C[0-40]",
+								  "@补光区间[0-10]",
+								  "@保存当前为断电记忆[0-1]"};
+struct DHT11_data dht11_data = {666, 666};
 //两个开关，当他为2时，是自动模式，其他时候读取12 和14号脚的电平
 uint8_t LED1 = 0;
 uint8_t switch_1 = 2;
 uint8_t LED2 = 0;
 uint8_t switch_2 = 2;
-short switch_2_light_up_TIME_s = 30;//重新加载的值
-short switch_2_light_up_time_x_s = 0;//计数器用
+short switch_2_light_up_TIME_s = 30;  //重新加载的值
+short switch_2_light_up_time_x_s = 0; //计数器用
 short TEMPERATURE_ERROR_HIGH = 40;
 short TEMPERATURE_ERROR_LOW = 10;
-uint8_t light_qu_yu = 5;//补光区间
-uint8_t power_save = 0;//补光区间
-
+uint8_t light_qu_yu = 5; //补光区间
+uint8_t power_save = 0;	 //补光区间
 
 //下面定义几个引脚的功能
-const uint8_t jd1 = 14;//1号继电器
-const uint8_t jd2 = 12;//2号继电器
-const uint8_t light = 13;//光敏逻辑输入
-const uint8_t shengyin = 4;//声音逻辑输入
-const uint8_t anjian1 = 0;//按键1输入
-const uint8_t dht11 = 5;//按键1输入
-
+const uint8_t jd1 = 14;		//1号继电器
+const uint8_t jd2 = 12;		//2号继电器
+const uint8_t light = 13;	//光敏逻辑输入
+const uint8_t shengyin = 4; //声音逻辑输入
+const uint8_t anjian1 = 0;	//按键1输入
+const uint8_t dht11 = 5;	//按键1输入
 
 //错误计次变量区域
-int error_tcp_sum = 0;//tcp链接失败计次
+int error_tcp_sum = 0; //tcp链接失败计次
 int debug_udp_count = 0;
 
-
-
-
 //复位函数
-void(*resetFunc) (void) = 0;
+void (*resetFunc)(void) = 0;
 
 //其他函数声明
 void timer2_worker();
@@ -110,46 +104,46 @@ void realy_DHT11();
 void set_timer1_s(timercallback userFunc, double time_s);
 void set_timer1_ms(timercallback userFunc, uint32_t time_ms);
 
-
-
+/*
 void get_files_name()
 {
-	Dir dir = SPIFFS.openDir("/");  // 建立“目录”对象
+	Dir dir = LittleFS.openDir("/");  // 建立“目录”对象
 	while (dir.next())
 	{  // dir.next()用于检查目录中是否还有“下一个文件”
 		Serial.println(dir.fileName()); // 输出文件名
 	}
 	Serial.println("end"); // 输出文件名
 }
+*/
 
 short file_read_wifidata()
 {
 	//Serial.println("SPIFFS format start");
-	//SPIFFS.format();    // 格式化SPIFFS
+	//LittleFS.format();    // 格式化SPIFFS
 	//Serial.println("SPIFFS format finish");
-	if (SPIFFS.begin())
+	if (LittleFS.begin())
 	{ // 启动SPIFFS
 		Serial.println("SPIFFS Started.");
 	}
 	else
 	{
 		Serial.println("SPIFFS Failed to Start.");
-		return -2;//文件系统启动失败
+		return -2; //文件系统启动失败
 	}
 	//确认闪存中是否有file_name文件
-	if (SPIFFS.exists("/wifidata.txt"))
+	if (LittleFS.exists(wifi_ssid_pw_file))
 	{
-		Serial.print("/wifidata.txt");
+		Serial.print(wifi_ssid_pw_file);
 		Serial.println(" FOUND.");
 	}
 	else
 	{
-		Serial.print("/wifidata.txt");
+		Serial.print(wifi_ssid_pw_file);
 		Serial.print(" NOT FOUND.");
-		return -1;//未找到WiFi文件
+		return -1; //未找到WiFi文件
 	}
 	//建立File对象用于从SPIFFS中读取文件
-	File dataFile1 = SPIFFS.open("/wifidata.txt", "r");
+	File dataFile1 = LittleFS.open(wifi_ssid_pw_file, "r");
 
 	/*
 	规定  /wifidata.txt 此文件储存WiFi的账号和密码
@@ -162,8 +156,8 @@ short file_read_wifidata()
 	int i;
 	if (dataFile1.size() > WIFI_ssid_len + WIFI_password_len)
 	{
-		dataFile1.close();//推出之前关闭文件，防止未知错误
-		return -3;//文件长度错误
+		dataFile1.close(); //推出之前关闭文件，防止未知错误
+		return -3;		   //文件长度错误
 	}
 	for (i = 0; i < dataFile1.size() && i < WIFI_ssid_len; i++)
 	{
@@ -198,25 +192,25 @@ short file_read_wifidata()
 
 short file_save_wifidata()
 {
-	if (SPIFFS.begin())
+	if (LittleFS.begin())
 	{ // 启动SPIFFS
 		Serial.println("SPIFFS Started.");
 	}
 	else
 	{
 		Serial.println("SPIFFS Failed to Start.");
-		return -2;//文件系统启动失败
+		return -2; //文件系统启动失败
 	}
 
 	//确认闪存中file_name文件是否被清楚
-	if (SPIFFS.exists("/wifidata.txt") && SPIFFS.remove("/wifidata.txt"))
+	if (LittleFS.exists(wifi_ssid_pw_file) && LittleFS.remove(wifi_ssid_pw_file))
 	{
-		Serial.print("/wifidata.txt");
+		Serial.print(wifi_ssid_pw_file);
 		Serial.println(" found && delete");
 	}
 	else
 	{
-		Serial.print("/wifidata.txt");
+		Serial.print(wifi_ssid_pw_file);
 		Serial.print("NOT FOUND");
 	}
 	/*
@@ -225,36 +219,36 @@ short file_save_wifidata()
 	第二行储存密码	WIFI_password
 	两行都采用\n 作为结束符
 	*/
-	File dataFile = SPIFFS.open("/wifidata.txt", "w");// 建立File对象用于向SPIFFS中的file对象（即/notes.txt）写入信息
+	File dataFile = LittleFS.open(wifi_ssid_pw_file, "w"); // 建立File对象用于向SPIFFS中的file对象（即/notes.txt）写入信息
 	dataFile.print(WIFI_ssid);
 	dataFile.print('\n');
 	dataFile.print(WIFI_password);
 	dataFile.print('\n');
-	dataFile.close();// 完成文件写入后关闭文件
+	dataFile.close(); // 完成文件写入后关闭文件
 	return 1;
 }
 
 short file_delete_wifidata()
 {
-	if (SPIFFS.begin())
+	if (LittleFS.begin())
 	{ // 启动SPIFFS
 		Serial.println("SPIFFS Started.");
 	}
 	else
 	{
 		Serial.println("SPIFFS Failed to Start.");
-		return -2;//文件系统启动失败
+		return -2; //文件系统启动失败
 	}
 
 	//确认闪存中file_name文件是否被清楚
-	if (SPIFFS.exists("/wifidata.txt") && SPIFFS.remove("/wifidata.txt"))
+	if (LittleFS.exists(wifi_ssid_pw_file) && LittleFS.remove(wifi_ssid_pw_file))
 	{
-		Serial.print("/wifidata.txt");
+		Serial.print(wifi_ssid_pw_file);
 		Serial.println(" found && delete");
 	}
 	else
 	{
-		Serial.print("/wifidata.txt");
+		Serial.print(wifi_ssid_pw_file);
 		Serial.print("NOT FOUND");
 	}
 	return 1;
@@ -285,7 +279,7 @@ UDP发送函数封装起来，方便调用
 返回值为发送结果， 0或1
 调用示例 ：UDP_Send(MYHOST, UDP_PORT, "UDP send 汉字测试 !");
 */
-short UDP_Send(const char* UDP_IP, uint16_t UDP_port, String udp_send_data)
+short UDP_Send(const char *UDP_IP, uint16_t UDP_port, String udp_send_data)
 {
 
 	if (WiFi.status() != WL_CONNECTED)
@@ -300,8 +294,6 @@ short UDP_Send(const char* UDP_IP, uint16_t UDP_port, String udp_send_data)
 	return Udp.endPacket();
 }
 
-
-
 /*
 此函数根据光强返回是否需要开灯
 1	开灯
@@ -311,9 +303,9 @@ uint8_t light_high()
 {
 	static unsigned long last_time = millis();
 	static uint16 brightness = system_adc_read();
-	if (last_time - millis() > 10)//限制adc读取频率
+	if (last_time - millis() > 10) //限制adc读取频率
 	{
-		brightness = system_adc_read();//值越大约黑暗 最高1024
+		brightness = system_adc_read(); //值越大约黑暗 最高1024
 		last_time = millis();
 	}
 	if (brightness > light_qu_yu * 100)
@@ -370,7 +362,7 @@ void shengyin_timeout_out()
 }
 
 //根据 传感器状态 和 用户选择模式 控制继电器
-void set_jdq(const uint8_t pin_x,short switch_x,uint8_t *LEDx)
+void set_jdq(const uint8_t pin_x, short switch_x, uint8_t *LEDx)
 {
 	switch (switch_x)
 	{
@@ -436,13 +428,13 @@ void timer2_worker()
 {
 	//读取一下数据，然后将定时器定在1.5s之后，启动18ms的下拉
 	//delay(20);//时间中断函数里不可以用delay
-	static  short timer2_count = 7;//
-	static  short count_anjian = 0;//对按键按下的时间计数，超过5s就清除wifidata.txt文件，然后重新启动系统
+	static short timer2_count = 7; //
+	static short count_anjian = 0; //对按键按下的时间计数，超过5s就清除wifidata.txt文件，然后重新启动系统
 	timer2_count++;
 	//读取光强传感器，并控制继电器
 
-	brightness_work();//更新继电器状态
-	shengyin_timeout_out();//更新声控灯倒计时
+	brightness_work();		//更新继电器状态
+	shengyin_timeout_out(); //更新声控灯倒计时
 
 	//每隔大约1-2S读取DHT11
 	if (timer2_count == 8)
@@ -477,7 +469,6 @@ void timer2_worker()
 		digitalWrite(LED_BUILTIN, HIGH);
 		count_anjian = 0;
 	}
-
 }
 
 /*
@@ -550,7 +541,8 @@ short get_tcp_data(WiFiClient client)
 	short start_id = tcp_data_len;
 	while (client.available() && tcp_data_len < MAX_TCP_DATA)
 	{
-		if (tcp_data_len >= MAX_TCP_DATA)return -1;
+		if (tcp_data_len >= MAX_TCP_DATA)
+			return -1;
 		tcp_data[tcp_data_len++] = static_cast<char>(client.read());
 	}
 	tcp_data[tcp_data_len] = '\0';
@@ -578,7 +570,6 @@ void set_timer1_s(timercallback userFunc, double time_s)
 	timer1_write((uint32)(312500 * time_s));
 	timer1_enabled();
 	timer1_attachInterrupt(userFunc);
-
 }
 
 /*
@@ -602,7 +593,6 @@ void set_timer1_ms(timercallback userFunc, uint32_t time_ms)
 	timer1_write((uint32)(5000 * time_ms));
 	timer1_enabled();
 	timer1_attachInterrupt(userFunc);
-
 }
 
 short get_wifi()
@@ -614,7 +604,7 @@ short get_wifi()
 	WiFi.begin(WIFI_ssid, WIFI_password);
 	//WiFi.smartConfigDone();//智能配网？
 	short i = 20;
-	
+
 	while ((WiFi.status() != WL_CONNECTED) && i-- > 0)
 	{
 		delay(500);
@@ -627,8 +617,8 @@ short get_wifi()
 			//亮灯指示一下
 			//pinMode(LED_BUILTIN, OUTPUT);
 			digitalWrite(LED_BUILTIN, LOW);
-			short count_anjian = 0;//对按键按下的时间计数，超过5s就清除wifidata.txt文件，然后重新启动系统
-			while (digitalRead(anjian1) == LOW&& count_anjian<10)
+			short count_anjian = 0; //对按键按下的时间计数，超过5s就清除wifidata.txt文件，然后重新启动系统
+			while (digitalRead(anjian1) == LOW && count_anjian < 10)
 			{
 				Serial.printf("-%dS -", 10 - count_anjian);
 				count_anjian = count_anjian + 1;
@@ -642,7 +632,6 @@ short get_wifi()
 				resetFunc();
 			}
 			digitalWrite(LED_BUILTIN, HIGH);
-			
 		}
 	}
 	if (WiFi.status() == WL_CONNECTED)
@@ -664,20 +653,20 @@ short get_wifi()
 int set_databack()
 {
 	int i, k, count_char;
-	tcp_send_data[0] = '#';//在这里插入开始符号
+	tcp_send_data[0] = '#'; //在这里插入开始符号
 	count_char = 1;
 	for (i = 0; i < MAX_NAME; i++)
 	{
 		k = 0;
-		while (str_data_names[i][k] != 0)//把数据的名字填充到数组里
+		while (str_data_names[i][k] != 0) //把数据的名字填充到数组里
 		{
 			tcp_send_data[count_char] = str_data_names[i][k];
 			k++;
 			count_char++;
 		}
-		tcp_send_data[count_char++] = ':';//在这里插入分隔符
+		tcp_send_data[count_char++] = ':'; //在这里插入分隔符
 		//char** str_data_names = { "温度" ,"湿度","灯0" ,"灯1" };
-		switch (i)//把数据填充到数组里
+		switch (i) //把数据填充到数组里
 		{
 		case 0:
 			count_char = count_char + sprintf(tcp_send_data + count_char, "%.1f°C", dht11_data.temperature);
@@ -719,12 +708,11 @@ int set_databack()
 			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", power_save);
 			break;
 		}
-		tcp_send_data[count_char++] = '#';//在这里插入单个数据结束符
+		tcp_send_data[count_char++] = '#'; //在这里插入单个数据结束符
 	}
 	//Serial.printf("  count_char :%d  ", count_char);
 	return count_char;
 }
-
 
 /*
 保存各项配置的状态，开机可以重新恢复状态
@@ -733,20 +721,20 @@ int set_databack()
 */
 short file_save_stut()
 {
-	if (SPIFFS.begin())
+	if (LittleFS.begin())
 	{ // 启动SPIFFS
 		Serial.println("SPIFFS Started.");
 	}
 	else
 	{
 		Serial.println("SPIFFS Failed to Start.");
-		return -2;//文件系统启动失败
+		return -2; //文件系统启动失败
 	}
 
 	//因为保存的状态需要经常更新？
 	//将保存配置设为可选选项？
 
-/*
+	/*
 uint8_t switch_1 = 1;
 uint8_t switch_2 = 1;
 uint8_t LED1 = 0;
@@ -769,12 +757,12 @@ uint8_t light_qu_yu = 5;//补光区间
 		按照上一个注释的顺序按字节写入内容
 	*/
 	int cou = 0;
-	File dataFile = SPIFFS.open(stut_data_file, "w");// 建立File对象用于向SPIFFS中的file对象（即/notes.txt）写入信息
+	File dataFile = LittleFS.open(stut_data_file, "w"); // 建立File对象用于向SPIFFS中的file对象（即/notes.txt）写入信息
 	cou = cou + dataFile.write(switch_1);
 	cou = cou + dataFile.write(switch_2);
 	cou = cou + dataFile.write(LED1);
 	cou = cou + dataFile.write(LED2);
-	cou = cou + dataFile.write((uint8_t)(switch_2_light_up_TIME_s>>8));
+	cou = cou + dataFile.write((uint8_t)(switch_2_light_up_TIME_s >> 8));
 	cou = cou + dataFile.write((uint8_t)(switch_2_light_up_TIME_s & 255));
 	cou = cou + dataFile.write((uint8_t)(TEMPERATURE_ERROR_HIGH >> 8));
 	cou = cou + dataFile.write((uint8_t)(TEMPERATURE_ERROR_HIGH & 255));
@@ -782,7 +770,7 @@ uint8_t light_qu_yu = 5;//补光区间
 	cou = cou + dataFile.write((uint8_t)(TEMPERATURE_ERROR_LOW & 255));
 	cou = cou + dataFile.write(light_qu_yu);
 	//dataFile.flush();
-	dataFile.close();// 完成文件写入后关闭文件
+	dataFile.close(); // 完成文件写入后关闭文件
 	Serial.printf("write count = %d ", cou);
 	return 1;
 }
@@ -794,17 +782,17 @@ uint8_t light_qu_yu = 5;//补光区间
 */
 short file_read_stut()
 {
-	if (SPIFFS.begin())
+	if (LittleFS.begin())
 	{ // 启动SPIFFS
 		Serial.println("SPIFFS Started.");
 	}
 	else
 	{
 		Serial.println("SPIFFS Failed to Start.");
-		return -2;//文件系统启动失败
+		return -2; //文件系统启动失败
 	}
 
-	if (SPIFFS.exists(stut_data_file))
+	if (LittleFS.exists(stut_data_file))
 	{
 		Serial.print(stut_data_file);
 		Serial.println(" FOUND.");
@@ -814,24 +802,24 @@ short file_read_stut()
 		Serial.print(stut_data_file);
 		Serial.print(" NOT FOUND.");
 		get_files_name();
-		return -1;//未找到WiFi文件
+		return -1; //未找到WiFi文件
 	}
-	File dataFile = SPIFFS.open(stut_data_file, "r");// 建立File对象用于向SPIFFS中的file对象（即/notes.txt）写入信息
-	//1 1 
-	//2 1 
-	//3 1 
-	//4 1 
-	//5 2 
-	//6 2 
-	//7 2 
+	File dataFile = LittleFS.open(stut_data_file, "r"); // 建立File对象用于向SPIFFS中的file对象（即/notes.txt）写入信息
+	//1 1
+	//2 1
+	//3 1
+	//4 1
+	//5 2
+	//6 2
+	//7 2
 	//8 1
-	Serial.printf("dataFile.size() %d",dataFile.size());
-	if (dataFile.size() <11)//我存了11字节的数据，多了一字节是结束符号吧
+	Serial.printf("dataFile.size() %d", dataFile.size());
+	if (dataFile.size() < 11) //我存了11字节的数据，多了一字节是结束符号吧
 	{
 		Serial.print(stut_data_file);
 		Serial.print(" DATA ERROR.");
-		SPIFFS.remove(stut_data_file);
-		return -3;//数据内容错误
+		LittleFS.remove(stut_data_file);
+		return -3; //数据内容错误
 	}
 	//Serial.printf(" switch_1 %d ", (uint8_t)dataFile.read());
 	//Serial.printf(" switch_2 %d ", (uint8_t)dataFile.read());
@@ -849,20 +837,18 @@ short file_read_stut()
 	TEMPERATURE_ERROR_HIGH = (short)((uint8_t)dataFile.read() << 8 | (uint8_t)dataFile.read());
 	TEMPERATURE_ERROR_LOW = (short)((uint8_t)dataFile.read() << 8 | (uint8_t)dataFile.read());
 	light_qu_yu = (uint8_t)dataFile.read();
-	dataFile.close();// 完成文件写入后关闭文件
+	dataFile.close(); // 完成文件写入后关闭文件
 	//Serial.printf("TEMPERATURE_ERROR_HIGH %d", TEMPERATURE_ERROR_HIGH);
 	//Serial.printf("TEMPERATURE_ERROR_LOW %d", TEMPERATURE_ERROR_LOW);
 	return 1;
 }
-
-
 
 /*
 将打包好的数据，用TCP发送出去
 */
 char back_send_tcp(WiFiClient client)
 {
-	if (client.connected())//函数第一次执行loop循环的时候这里可能会出错，因为 client 第一次赋值为局部变量，在setuo 中修改他的初始化就可以了
+	if (client.connected()) //函数第一次执行loop循环的时候这里可能会出错，因为 client 第一次赋值为局部变量，在setuo 中修改他的初始化就可以了
 	{
 		//在这里合成需要发送出去的传感器数据？
 		client.write(tcp_send_data, set_databack());
@@ -883,14 +869,16 @@ char tcp_server_get_wifi_data()
 	char data[1024];
 	int ind = 0;
 	WiFi.mode(WIFI_RESUME);
-	IPAddress softLocal(192, 168, 128, 1);   // 1 设置内网WIFI IP地址
+	IPAddress softLocal(192, 168, 128, 1); // 1 设置内网WIFI IP地址
 	IPAddress softGateway(192, 168, 128, 1);
 	IPAddress softSubnet(255, 255, 255, 0);
 	WiFi.mode(WIFI_AP);
 	WiFi.softAPConfig(softLocal, softGateway, softSubnet);
 	WiFi.softAP("HCC_APP", "12345678");
-	Serial.print("Connected to "); Serial.println("esp8266");
-	Serial.print("IP Address: "); Serial.println(WiFi.localIP()); //串口监视器显示IP地址
+	Serial.print("Connected to ");
+	Serial.println("esp8266");
+	Serial.print("IP Address: ");
+	Serial.println(WiFi.localIP()); //串口监视器显示IP地址
 	// Start a TCP Server on port 5045
 	WiFiServer server(9997); //端口5045，自定义（避免公用端口）
 	WiFiClient client;
@@ -922,7 +910,7 @@ char tcp_server_get_wifi_data()
 					for (int i = 6, k = 0; i < ind && i < WIFI_ssid_len; i++, k++)
 					{
 						WIFI_ssid[k] = data[i];
-						data[i] = 0;//转移了的数据清零
+						data[i] = 0; //转移了的数据清零
 						if (WIFI_ssid[k] == '\n' || WIFI_ssid[k] == '\0')
 						{
 							WIFI_ssid[k] = '\0';
@@ -936,7 +924,7 @@ char tcp_server_get_wifi_data()
 					for (int i = 4, k = 0; i < ind && i < WIFI_password_len; i++, k++)
 					{
 						WIFI_password[k] = data[i];
-						data[i] = 0;//转移了的数据清零
+						data[i] = 0; //转移了的数据清零
 						if (WIFI_password[k] == '\n' || WIFI_password[k] == '\0')
 						{
 							WIFI_password[k] = '\0';
@@ -949,7 +937,7 @@ char tcp_server_get_wifi_data()
 				{
 					//len("+UID:")=4
 					UID = str_to_u64(data + 4, ind - 4);
-					data[0] = 0;//转移了的数据清零
+					data[0] = 0;				  //转移了的数据清零
 					client.printf("UID:%d", UID); //在client端回复
 				}
 				else
@@ -968,9 +956,9 @@ char tcp_server_get_wifi_data()
 				Serial.print("\n");
 				if (WIFI_ssid[0] != 0 && WIFI_password[0] != 0)
 				{
-					delay(5);//延时五毫秒，不然最后一个数据可能发不出去
+					delay(5);										   //延时五毫秒，不然最后一个数据可能发不出去
 					client.printf(",uid=%d,chip_id=%d", UID, CHIP_ID); //在client端回复
-					delay(5);//延时五毫秒，不然最后一个数据可能发不出去
+					delay(5);										   //延时五毫秒，不然最后一个数据可能发不出去
 					file_save_wifidata();
 					return 1;
 				}
@@ -980,10 +968,10 @@ char tcp_server_get_wifi_data()
 	}
 }
 
-void set_data_(short i,short value)
+void set_data_(short i, short value)
 {
 	switch (i)
-	{//在这里修改控件的状态
+	{ //在这里修改控件的状态
 	case 3:
 		if (value > -1 && value < 2)
 		{
@@ -1043,25 +1031,24 @@ void set_data_(short i,short value)
 		}
 		break;
 	}
-
 }
 
 void setup()
 {
-	//SPIFFS.format();//第一次使用flash需要将flash格式化
+	//LittleFS.format();//第一次使用flash需要将flash格式化
 	Serial.begin(115200);
 	//CHIP_ID = ESP.getFlashChipId();
 	CHIP_ID = ESP.getChipId();
-	Serial.printf("getFlashChipId %d \n", ESP.getFlashChipId());//这个id是假的，不知道为啥，两个esp的一样
+	Serial.printf("getFlashChipId %d \n", ESP.getFlashChipId()); //这个id是假的，不知道为啥，两个esp的一样
 	Serial.printf("getChipId %d  \n", ESP.getChipId());
 	//定时器初始化
 	//ticker_DHT11.attach(2, timer2_worker);//.detach();//调用这个可以关闭
 	//读取FLASH芯片的唯一ID，
 	//Serial.printf("Flash real id（唯一标识符）:   %08X\n", ESP.getFlashChipId());
 
-	pinMode(light, INPUT);//光
-	pinMode(anjian1, INPUT);//按键1
-	pinMode(shengyin, INPUT);//d2 声音
+	pinMode(light, INPUT);	  //光
+	pinMode(anjian1, INPUT);  //按键1
+	pinMode(shengyin, INPUT); //d2 声音
 	pinMode(LED_BUILTIN, OUTPUT);
 
 	short stat = file_read_wifidata();
@@ -1076,7 +1063,7 @@ void setup()
 	else if (stat == -2)
 	{
 		Serial.print("flash error ,file open error -2");
-		ESP.deepSleep(300 * 1000);//us
+		ESP.deepSleep(300 * 1000); //us
 		resetFunc();
 	}
 	//连接wifi
@@ -1093,11 +1080,10 @@ void setup()
 	{
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 	}
-	Serial.printf(" file_read_stut %d ", file_read_stut()); 
-	DHT11_init(5);//这个是DHT11.h/DHT11.c里的函数
-	//ESP.deepSleep(20000000, WAKE_RFCAL);
-	//开始循环之前先调用一次，初始化一下温湿度的值
-
+	Serial.printf(" file_read_stut %d ", file_read_stut());
+	DHT11_init(5); //这个是DHT11.h/DHT11.c里的函数
+				   //ESP.deepSleep(20000000, WAKE_RFCAL);
+				   //开始循环之前先调用一次，初始化一下温湿度的值
 }
 
 void loop()
@@ -1114,7 +1100,7 @@ void loop()
 		{
 			if (error_wifi_count > 1 && error_wifi_count < 2)
 			{
-				WiFi.mode(WIFI_RESUME);//重新连接wifi
+				WiFi.mode(WIFI_RESUME); //重新连接wifi
 			}
 			else if (error_wifi_count == 3)
 			{
@@ -1123,7 +1109,6 @@ void loop()
 				ESP.deepSleep(20000000, WAKE_RFCAL);
 				//Serial.print("\r\nresetFunc\r\n");
 				//resetFunc();
-
 			}
 			//system_deep_sleep();
 			error_wifi_count++;
@@ -1151,7 +1136,7 @@ void loop()
 		delay(3000);
 		if (error_tcp_sum > 3 && error_tcp_sum < 6)
 		{
-			WiFi.mode(WIFI_RESUME);//重新连接wifi
+			WiFi.mode(WIFI_RESUME); //重新连接wifi
 		}
 		else if (error_tcp_sum == 6)
 		{
@@ -1191,17 +1176,18 @@ void loop()
 	unsigned long time_old_ms = millis();
 	unsigned long beeeee_time_old_ms = millis();
 	short len_old;
-	pinMode(jd2, OUTPUT);//连个
+	pinMode(jd2, OUTPUT); //连个
 	pinMode(jd1, OUTPUT);
 	set_timer1_s(realy_DHT11, 2);
-	while (1)//tcp断开之后无法重新链接，我只能重新声明试试，但是好像也没什么用处，只能计次，然后软件复位程序
+	while (1) //tcp断开之后无法重新链接，我只能重新声明试试，但是好像也没什么用处，只能计次，然后软件复位程序
 	{
 		//time_old_ms = millis();
 		//隔一段时间就发送一次本机数据，怕tcp失效
 		if (millis() - time_old_ms > 5000)
 		{
 			//TCP发送一些数据
-			if (back_send_tcp(client) == -1)return;
+			if (back_send_tcp(client) == -1)
+				return;
 			time_old_ms = millis();
 		}
 
@@ -1210,7 +1196,7 @@ void loop()
 		if (millis() - beeeee_time_old_ms > 10)
 		{
 			//进行操作
-			if (beeeeee > 10 )//要大于五是因为偶尔会采样出错，一般是连续的三个，正常人发出的声音远大于此
+			if (beeeeee > 10) //要大于五是因为偶尔会采样出错，一般是连续的三个，正常人发出的声音远大于此
 			{
 				//修改开灯寄存器
 				switch_2_light_up_time_x_s = switch_2_light_up_TIME_s;
@@ -1219,22 +1205,20 @@ void loop()
 
 			//Serial.printf(" %d", beeeeee);
 
-			beeeee_time_old_ms = millis();//更新时间
-			beeeeee = 0;//更新计数器
+			beeeee_time_old_ms = millis(); //更新时间
+			beeeeee = 0;				   //更新计数器
 
 			if (!UDP_send_data.equals(""))
 			{
 				UDP_Send(MYHOST, UDP_PORT, UDP_send_data);
 				UDP_send_data = "";
 			}
-
 		}
-
 
 		//micros();
 		//int time_old = micros();//这个是我用来测试TCP响应时间的，读取当前时间，之后用新时间减去这个值
 		//如果回复重要，就多等一下，把 timeout_ms_max 改大一点
-		stat = timeout_back_us(client, 100);//等待100us tcp是否有数据返回
+		stat = timeout_back_us(client, 100); //等待100us tcp是否有数据返回
 		//对声音采样
 		//直接加上就可以了，反正就是010101001010101
 		beeeeee = beeeeee + digitalRead(shengyin);
@@ -1249,23 +1233,23 @@ void loop()
 			Serial.print(tcp_data + len_old);
 			//Serial.printf("udp send id=%d\n", debug_udp_count);
 
-
 			switch (*(tcp_data + len_old))
 			{
 			case '+':
 			case 'G':
 			case 'g':
-				if (back_send_tcp(client) == -1)return;
+				if (back_send_tcp(client) == -1)
+					return;
 				time_old_ms = millis();
-				break;// 跳出 switch
-			case '@'://set
+				break; // 跳出 switch
+			case '@':  //set
 				while (len_old >= 0 && len_old < tcp_data_len)
 				{
 					for (short i = 0; i < MAX_NAME; i++)
 					{
-						if (0 <= str1_find_str2_1(tcp_data ,len_old, str1_find_char_1(tcp_data, len_old, tcp_data_len, ':'), str_data_names[i]))
+						if (0 <= str1_find_str2_1(tcp_data, len_old, str1_find_char_1(tcp_data, len_old, tcp_data_len, ':'), str_data_names[i]))
 						{
-							short value = str_to_u16(tcp_data + str1_find_char_1(tcp_data,len_old,tcp_data_len, ':'));//将赋值的分隔符之后的数据转换成u16
+							short value = str_to_u16(tcp_data + str1_find_char_1(tcp_data, len_old, tcp_data_len, ':')); //将赋值的分隔符之后的数据转换成u16
 							//这里作为调试用，串口发送很占时间
 							Serial.printf("	set id = %d	value= %d \r\n", i, value);
 							set_data_(i, value);
@@ -1273,24 +1257,24 @@ void loop()
 						}
 					}
 
-					tcp_data[len_old] = 0;//清楚标志位的数据
-					len_old = str1_find_char_1(tcp_data, len_old+1, tcp_data_len, '@');
+					tcp_data[len_old] = 0; //清楚标志位的数据
+					len_old = str1_find_char_1(tcp_data, len_old + 1, tcp_data_len, '@');
 					//只识别 @ 类型的数据，get类型的数据一般不会组合发送，舍弃此部分
 				}
 				//所有的指令已经执行完毕
-				brightness_work();//更新一下光控灯的状态
+				brightness_work(); //更新一下光控灯的状态
 				//TCP 打包返还自己的状态
-				if (back_send_tcp(client) == -1)return;
-				if (power_save == 1)//实时更新断电记忆的东西
+				if (back_send_tcp(client) == -1)
+					return;
+				if (power_save == 1) //实时更新断电记忆的东西
 				{
 					file_save_stut();
 					power_save = 0;
 				}
-				break;//跳出 switch
+				break; //跳出 switch
 			}
 			tcp_data[0] = 0;
-			tcp_data_len = 0;//因为我没有在其他位置调用数据接收函数，所以我处理完之后全部清除了
-
+			tcp_data_len = 0; //因为我没有在其他位置调用数据接收函数，所以我处理完之后全部清除了
 		}
 		//TCP链接失效
 		else if (stat == 0)
