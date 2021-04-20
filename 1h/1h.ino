@@ -25,7 +25,6 @@ char WIFI_ssid[WIFI_ssid_len] = {'\0'};
 char WIFI_password[WIFI_password_len] = {'\0'};
 unsigned long UID = 0;
 unsigned long EID = 0;
-//u64 CHIP_ID=0;
 uint32_t CHIP_ID = 0;
 
 #define MAX_TCP_DATA 1024	   //TCP缓存的最大值
@@ -76,7 +75,7 @@ uint8_t LED1 = 0;
 uint8_t switch_1 = 2;
 uint8_t LED2 = 0;
 uint8_t switch_2 = 2;
-short switch_light_up_TIME_s = 30;  //重新加载的值//声控灯开启时长
+short switch_light_up_TIME_s = 30;	//重新加载的值//声控灯开启时长
 short switch_light_up_time_x_s = 0; //计数器用
 short TEMPERATURE_ERROR_HIGH = 40;
 short TEMPERATURE_ERROR_LOW = 10;
@@ -103,18 +102,6 @@ void timer1_worker();
 void read_dht11();
 void set_timer1_s(timercallback userFunc, double time_s);
 void set_timer1_ms(timercallback userFunc, uint32_t time_ms);
-
-/*
-void get_files_name()
-{
-	Dir dir = LittleFS.openDir("/");  // 建立“目录”对象
-	while (dir.next())
-	{  // dir.next()用于检查目录中是否还有“下一个文件”
-		Serial.println(dir.fileName()); // 输出文件名
-	}
-	Serial.println("end"); // 输出文件名
-}
-*/
 
 short file_read_wifidata()
 {
@@ -407,11 +394,13 @@ void DHT11_read_and_send()
 	{
 		if (dht11_data.temperature > TEMPERATURE_ERROR_HIGH)
 		{
-			UDP_Send(MYHOST, UDP_PORT, UDP_head_data + "temperature high");
+			UDP_send_data = UDP_send_data + UDP_head_data + "temperature high";
+			//UDP_Send(MYHOST, UDP_PORT, UDP_head_data + "temperature high");
 		}
 		else if (dht11_data.temperature < TEMPERATURE_ERROR_LOW)
 		{
-			UDP_Send(MYHOST, UDP_PORT, UDP_head_data + "temperature low");
+			UDP_send_data = UDP_send_data + UDP_head_data + "temperature low";
+			//UDP_Send(MYHOST, UDP_PORT, UDP_head_data + "temperature low");
 		}
 	}
 }
@@ -427,7 +416,9 @@ void dht11_get()
 		//先拉低，LOW_PIN_ms 之后调用读取函数
 		set_timer1_ms(read_dht11, (unsigned int)dht11_read_ready());
 		timer2_count = 0;
+		return ;
 	}
+	//timer1_attachInterrupt(timer1_worker)//强制重新填充函数
 	// else if (timer2_count == 7)
 	// {
 	// 	set_timer1_ms(read_dht11, TIMER1_timeout_ms);
@@ -480,8 +471,8 @@ void timer1_worker()
 void read_dht11()
 {
 	//让DHT11的信号引脚拉低，等待20ms，之后调用get_DHT11_DATA() 开始正式调用读取函数
-	DHT11_read_and_send();
 	set_timer1_ms(timer1_worker, TIMER1_timeout_ms - LOW_PIN_ms); //正常时间之后恢复 timer1_worker 的工作
+	DHT11_read_and_send();
 }
 
 /*
@@ -951,28 +942,28 @@ void set_data_(short i, short value)
 	case 3:
 		if (value > -1 && value < 2)
 		{
-			LED1 = value;//1号继电器
+			LED1 = value; //1号继电器
 		}
 		break;
 
 	case 4:
 		if (value > -1 && value < 4)
 		{
-			switch_1 = value;//1号继电器 工作模式
+			switch_1 = value; //1号继电器 工作模式
 		}
 		break;
 
 	case 5:
 		if (value > -1 && value < 2)
 		{
-			LED2 = value;//2号继电器
+			LED2 = value; //2号继电器
 		}
 		break;
 
 	case 6:
 		if (value > -1 && value < 4)
 		{
-			switch_2 = value;//2号继电器 工作模式
+			switch_2 = value; //2号继电器 工作模式
 		}
 		break;
 
@@ -1057,9 +1048,8 @@ void setup()
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 	}
 	Serial.printf(" file_read_stut %d ", file_read_stut());
-	dht11_init(dht11); //这个是DHT11.h/DHT11.c里的函数
-				   //ESP.deepSleep(20000000, WAKE_RFCAL);
-				   //开始循环之前先调用一次，初始化一下温湿度的值
+	dht11_init(dht11); //这个是DHT11.h/DHT11.c里的函数，初始化引脚
+					   //ESP.deepSleep(20000000, WAKE_RFCAL);
 }
 
 void loop()
@@ -1152,11 +1142,13 @@ void loop()
 	unsigned long time_old_ms = millis();
 	unsigned long beeeee_time_old_ms = millis();
 	short len_old;
-	brightness_work();
+	brightness_work(); //初始化引脚之前，先调整高低电平，减少不必要的继电器响声
 	pinMode(jd2, OUTPUT);
 	pinMode(jd1, OUTPUT);
-	dht11_get();//读取dht11的数据，顺便启动定时器
-	while (1) //tcp断开之后无法重新链接，我只能重新声明试试，但是好像也没什么用处???，只能计次，然后软件复位程序
+	set_timer1_ms(timer1_worker,TIMER1_timeout_ms);//强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
+	//（仅在程序复位的时候可以成功，原因：timer2_count 没有复位就不会被初始化，自然调用不到定时器的初始化函数），
+	dht11_get(); //读取dht11的数据，顺便启动定时器//这里有问题，当断网重连之后，定时器函数有可能不会被重新填充
+	while (1)	 //tcp断开之后无法重新链接，我只能重新声明试试，但是好像也没什么用处???，只能计次，然后软件复位程序
 	{
 		//time_old_ms = millis();
 		//隔一段时间就发送一次本机数据，怕tcp失效
@@ -1175,7 +1167,7 @@ void loop()
 			//进行操作
 			if (beeeeee > 10) //要大于五是因为偶尔会采样出错，一般是连续的三个，正常人发出的声音远大于此
 			{
-				//修改开灯寄存器
+				//更新声控灯剩余时长
 				switch_light_up_time_x_s = switch_light_up_TIME_s;
 				//Serial.printf("switch_light_up_time_x_s  :%d \r\n", switch_light_up_time_x_s);
 			}

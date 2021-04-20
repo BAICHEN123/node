@@ -12,6 +12,6 @@ struct DHT11_data
 
 void dht11_init(unsigned char pin1);
 char dht11_read_ready();
-char dht11_read_data(struct DHT11_data* value);
+short dht11_read_data(struct DHT11_data* value);
 
 #endif

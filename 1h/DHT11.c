@@ -17,7 +17,9 @@ char dht11_read_ready()
 	digitalWrite(pin, LOW); // Send start signal
 	return LOW_PIN_ms;
 }
-char dht11_read_data(struct DHT11_data* value)
+
+
+short dht11_read_data(struct DHT11_data* value)
 {
 	pinMode(pin, INPUT);
 	digitalWrite(pin, HIGH); // Switch bus to receive data
