@@ -22,7 +22,6 @@ char WIFI_ssid[WIFI_ssid_len] = {'\0'};
 char WIFI_password[WIFI_password_len] = {'\0'};
 unsigned long UID = 0;
 unsigned long EID = 0;
-//u64 CHIP_ID=0;
 uint32_t CHIP_ID = 0;
 
 #define MAX_TCP_DATA 1024	   //TCP缓存的最大值
@@ -948,6 +947,9 @@ void set_data_(short i, short value)
 
 void setup()
 {
+	pinMode(16, OUTPUT);
+	digitalWrite(16, HIGH); //不知道为啥，这个模块的初始状态是LOW，然后我一插上跳线帽就开始无限重启//是电压低的问题，默认未初始化的电压低于判定电压，在 nodemcu 上没有出现错误可能是因为产品型号/批次的不同，经过电压表测量，nodemcu的电压在0.8V左右，单个小模块的电压不到0.3
+	
 	//SPIFFS.format();//第一次使用flash需要将flash格式化
 	Serial.begin(115200);
 	CHIP_ID = ESP.getChipId();
@@ -995,7 +997,7 @@ void setup()
 		Serial.print("\r\ndeepSleep\r\n");
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 	}
-	Serial.printf(" file_read_stut %d ", file_read_stut());
+	Serial.printf(" file_read_stut %d sizeof(u64) %d sizeof(unsigned long) %d \n", file_read_stut(),sizeof(u64),sizeof(unsigned long));
 	//DHT11_init(5);//这个是DHT11.h/DHT11.c里的函数
 	//ESP.deepSleep(20000000, WAKE_RFCAL);
 	//开始循环之前先调用一次，初始化一下温湿度的值
@@ -1091,6 +1093,7 @@ void loop()
 	unsigned long time_old_ms = millis();
 	unsigned long beeeee_time_old_ms = millis();
 	short len_old;
+
 	pinMode(jd2, OUTPUT); //连个
 	pinMode(jd1, OUTPUT);
 	//set_timer1_s(realy_DHT11, 2);
