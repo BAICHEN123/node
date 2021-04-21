@@ -594,7 +594,10 @@ short get_wifi()
 			{
 				Serial.printf("-%dS -", 10 - count_anjian);
 				count_anjian = count_anjian + 1;
-				delay(500);
+				digitalWrite(LED_BUILTIN, LOW); //不知道为啥，这个模块的初始状态是开灯
+				delay(100);
+				digitalWrite(LED_BUILTIN, HIGH); //不知道为啥，这个模块的初始状态是开灯
+				delay(400);
 			}
 			if (count_anjian >= 10)
 			{
@@ -989,6 +992,7 @@ void setup()
 	Serial.printf("CHIP_ID %x 111111  \n", CHIP_ID);
 	if (get_wifi() == 0)
 	{
+		Serial.print("\r\ndeepSleep\r\n");
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 	}
 	Serial.printf(" file_read_stut %d ", file_read_stut());
