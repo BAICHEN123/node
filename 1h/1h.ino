@@ -416,7 +416,7 @@ void dht11_get()
 		//先拉低，LOW_PIN_ms 之后调用读取函数
 		set_timer1_ms(read_dht11, (unsigned int)dht11_read_ready());
 		timer2_count = 0;
-		return ;
+		return;
 	}
 	//timer1_attachInterrupt(timer1_worker)//强制重新填充函数
 	// else if (timer2_count == 7)
@@ -537,7 +537,9 @@ short get_tcp_data(WiFiClient client)
 	while (client.available() && tcp_data_len < MAX_TCP_DATA)
 	{
 		if (tcp_data_len >= MAX_TCP_DATA)
+		{
 			return -1;
+		}
 		tcp_data[tcp_data_len++] = static_cast<char>(client.read());
 	}
 	tcp_data[tcp_data_len] = '\0';
@@ -1002,6 +1004,9 @@ void set_data_(short i, short value)
 
 void setup()
 {
+	pinMode(16, OUTPUT);
+	digitalWrite(16, HIGH); //不知道为啥，这个模块的初始状态是LOW，然后我一插上跳线帽就开始无限重启//是电压低的问题，默认未初始化的电压低于判定电压，在 nodemcu 上没有出现错误可能是因为产品型号/批次的不同，经过电压表测量，nodemcu的电压在0.8V左右，单个小模块的电压不到0.3
+
 	//LittleFS.format();//第一次使用flash需要将flash格式化
 	Serial.begin(115200);
 	//CHIP_ID = ESP.getFlashChipId();
@@ -1145,7 +1150,7 @@ void loop()
 	brightness_work(); //初始化引脚之前，先调整高低电平，减少不必要的继电器响声
 	pinMode(jd2, OUTPUT);
 	pinMode(jd1, OUTPUT);
-	set_timer1_ms(timer1_worker,TIMER1_timeout_ms);//强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
+	set_timer1_ms(timer1_worker, TIMER1_timeout_ms); //强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
 	//（仅在程序复位的时候可以成功，原因：timer2_count 没有复位就不会被初始化，自然调用不到定时器的初始化函数），
 	dht11_get(); //读取dht11的数据，顺便启动定时器//这里有问题，当断网重连之后，定时器函数有可能不会被重新填充
 	while (1)	 //tcp断开之后无法重新链接，我只能重新声明试试，但是好像也没什么用处???，只能计次，然后软件复位程序
@@ -1177,7 +1182,11 @@ void loop()
 			beeeee_time_old_ms = millis(); //更新时间
 			beeeeee = 0;				   //更新计数器
 
-			if (!UDP_send_data.equals(""))
+			if (UDP_send_data == NULL)
+			{
+				UDP_send_data = "";
+			}
+			else if (!UDP_send_data.equals(""))
 			{
 				UDP_Send(MYHOST, UDP_PORT, UDP_send_data);
 				UDP_send_data = "";
@@ -1195,7 +1204,15 @@ void loop()
 		if (stat == 1)
 		{
 			//Serial.printf("回复响应时间：%d \n", micros() - time_old);
-			len_old = get_tcp_data(client);
+			len_old = tcp_data_len;
+			stat = get_tcp_data(client);
+			//这里还有问题， get_tcp_data 可能返回-1 这是溢出的标志
+			/*
+				if(stat==-1)
+				{
+					//这里填写处理溢出的方案
+				}
+			*/
 			//如果需要对TCP链接返回的数据进行处理，请在这后面写，-----------------------------------------------------------------------
 			//示例
 			//将TCP返回的数据当作字符串输出
@@ -1222,6 +1239,7 @@ void loop()
 							//这里作为调试用，串口发送很占时间
 							Serial.printf("\r\n	set id = %d	value= %d \r\n", i, value);
 							set_data_(i, value);
+							time_old_ms = millis();
 							break;
 						}
 					}
@@ -1238,7 +1256,7 @@ void loop()
 				if (power_save == 1) //实时更新断电记忆的东西
 				{
 					file_save_stut();
-					power_save = 0; //如果不清零，则每次更改设置都会被flash记忆，flash擦写能力有限，我调试程序的就每次擦写了
+					power_save = 0; //如果不清零，则每次更改设置都会被flash记忆，flash擦写能力有限，我调试程序的就不每次擦写了
 				}
 				break; //跳出 switch
 			}

@@ -20,7 +20,9 @@ const uint16_t UDP_PORT = 9998;
 #define WIFI_password_len 32
 char WIFI_ssid[WIFI_ssid_len] = {'\0'};
 char WIFI_password[WIFI_password_len] = {'\0'};
+#warning 数据库里的用的64位的储存uid，可能以后的以后可能会崩溃
 unsigned long UID = 0;
+#warning 数据库里的用的64位的储存eid，可能以后的以后可能会崩溃
 unsigned long EID = 0;
 uint32_t CHIP_ID = 0;
 

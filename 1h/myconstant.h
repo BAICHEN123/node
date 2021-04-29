@@ -14,5 +14,5 @@
 #define CLEAR_WIFI_DATA_COUNT CLEAR_WIFI_DATA_S * 1000 / TIMER1_timeout_ms
 
 //心跳包时间间隔
-#define HEART_BEAT_ms 10 * 1000
+#define HEART_BEAT_ms 60 * 1000
 #endif
