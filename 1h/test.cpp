@@ -12,6 +12,5 @@ void get_files_name()
 	Serial.println("end"); // 输出文件名
 }
 
-}
 
-//测试一下 git add -u
+}

@@ -7,18 +7,14 @@
 #include <Wire.h>
 #include <LittleFS.h>
 #include "test.h"
+#include "myconstant.h"
+#include "savevalues.h"
 extern "C"
 {
 #include "DHT11.h"
 #include "mystr.h"
-#include "myconstant.h"
 }
 
-const char *wifi_ssid_pw_file = "/wifidata.txt";
-const char *stut_data_file = "/stutdata.txt";
-const char *MYHOST = "121.89.243.207";
-const uint16_t TCP_PORT = 9999;
-const uint16_t UDP_PORT = 9998;
 #define WIFI_ssid_len 32
 #define WIFI_password_len 32
 char WIFI_ssid[WIFI_ssid_len] = {'\0'};
@@ -70,17 +66,6 @@ char *str_data_names[MAX_NAME] = {"温度",
 								  "@补光区间[0-10]",
 								  "@保存当前为断电记忆[0-1]"};
 struct DHT11_data dht11_data = {666, 666};
-//两个开关，当他为2时，是自动模式，其他时候读取12 和14号脚的电平
-uint8_t LED1 = 0;
-uint8_t switch_1 = 2;
-uint8_t LED2 = 0;
-uint8_t switch_2 = 2;
-short switch_light_up_TIME_s = 30;	//重新加载的值//声控灯开启时长
-short switch_light_up_time_x_s = 0; //计数器用
-short TEMPERATURE_ERROR_HIGH = 40;
-short TEMPERATURE_ERROR_LOW = 10;
-uint8_t light_qu_yu = 5; //补光区间
-uint8_t power_save = 0;	 //补光区间
 
 //下面定义几个引脚的功能
 const uint8_t jd1 = 14;		//1号继电器
@@ -1002,10 +987,25 @@ void set_data_(short i, short value)
 	}
 }
 
+
+void add_values()
+{
+	add_value(&switch_1,sizeof(switch_1));
+	add_value(&switch_2,sizeof(switch_2));
+	add_value(&LED1,sizeof(LED1));
+	add_value(&LED2,sizeof(LED2));
+	add_value(&switch_light_up_TIME_s,sizeof(switch_light_up_TIME_s));
+	add_value(&TEMPERATURE_ERROR_HIGH,sizeof(TEMPERATURE_ERROR_HIGH));
+	add_value(&TEMPERATURE_ERROR_LOW,sizeof(TEMPERATURE_ERROR_LOW));
+	add_value(&light_qu_yu,sizeof(light_qu_yu));
+}
+
 void setup()
 {
 	pinMode(16, OUTPUT);
 	digitalWrite(16, HIGH); //不知道为啥，这个模块的初始状态是LOW，然后我一插上跳线帽就开始无限重启//是电压低的问题，默认未初始化的电压低于判定电压，在 nodemcu 上没有出现错误可能是因为产品型号/批次的不同，经过电压表测量，nodemcu的电压在0.8V左右，单个小模块的电压不到0.3
+	add_values();//挂载读取信息。//这里可以优化，仅在读取写入的时候使用数组，建立//但是也没多大
+
 
 	//LittleFS.format();//第一次使用flash需要将flash格式化
 	Serial.begin(115200);
@@ -1045,14 +1045,16 @@ void setup()
 		file_delete_wifidata();
 		//resetFunc();
 	}
-	Serial.printf("#WIFI_ssid:%s\nWIFI_password:%s\nUID:%ld", WIFI_ssid, WIFI_password, UID);
+	Serial.printf("#WIFI_ssid:%s  WIFI_password:%s  UID:%ld ", WIFI_ssid, WIFI_password, UID);
 
 	Serial.printf("CHIP_ID %x \n", CHIP_ID);
 	if (get_wifi() == 0)
 	{
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 	}
-	Serial.printf(" file_read_stut %d ", file_read_stut());
+
+	//Serial.printf(" file_read_stut %d ", file_read_stut());
+	Serial.printf(" read_values %d \n", read_values(stut_data_file));
 	dht11_init(dht11); //这个是DHT11.h/DHT11.c里的函数，初始化引脚
 					   //ESP.deepSleep(20000000, WAKE_RFCAL);
 }
@@ -1255,7 +1257,8 @@ void loop()
 					return;
 				if (power_save == 1) //实时更新断电记忆的东西
 				{
-					file_save_stut();
+					//file_save_stut();
+					Serial.printf(" save_values %d \n", save_values(stut_data_file));
 					power_save = 0; //如果不清零，则每次更改设置都会被flash记忆，flash擦写能力有限，我调试程序的就不每次擦写了
 				}
 				break; //跳出 switch
