@@ -15,22 +15,20 @@ extern "C"
 #include "mystr.h"
 }
 
-#define WIFI_ssid_len 32
-#define WIFI_password_len 32
 char WIFI_ssid[WIFI_ssid_len] = {'\0'};
 char WIFI_password[WIFI_password_len] = {'\0'};
 unsigned long UID = 0;
 unsigned long EID = 0;
 uint32_t CHIP_ID = 0;
 
-#define MAX_TCP_DATA 1024	   //TCP缓存的最大值
-#define MAX_UDP_SEND_DATA 1024 //UDP缓存的最大值
 char tcp_data[MAX_TCP_DATA];   //TCP缓存数组
 short tcp_data_len = 0;		   //TCP数据的临时缓存
 //char qstr_sprint[MAX_UDP_SEND_DATA];
 String UDP_head_data = "";
 String UDP_send_data = "";
 char tcp_send_data[MAX_TCP_DATA]; //随用随清，不设置长度数组
+
+
 
 /*
 目前问题/想法
@@ -66,6 +64,26 @@ char *str_data_names[MAX_NAME] = {"温度",
 								  "@补光区间[0-10]",
 								  "@保存当前为断电记忆[0-1]"};
 struct DHT11_data dht11_data = {666, 666};
+
+const char *wifi_ssid_pw_file = "/wifidata.txt";//储存 WiFi 账号和密码的文件
+const char *stut_data_file = "/stutdata.txt";//储存设备各功能配置状态的文件
+const char *MYHOST = "121.89.243.207";//服务器 ip 地址
+const uint16_t TCP_PORT = 9999;
+const uint16_t UDP_PORT = 9998;
+
+//两个开关，当他为2时，是自动模式，其他时候读取12 和14号脚的电平
+uint8_t LED1 = 0;
+uint8_t switch_1 = 2;
+uint8_t LED2 = 0;
+uint8_t switch_2 = 2;
+short switch_light_up_TIME_s = 30;	//重新加载的值//声控灯开启时长
+short switch_light_up_time_x_s = 0; //计数器用
+short TEMPERATURE_ERROR_HIGH = 40;
+short TEMPERATURE_ERROR_LOW = 10;
+uint8_t light_qu_yu = 5; //补光区间
+uint8_t power_save = 0;	 //补光区间
+
+
 
 //下面定义几个引脚的功能
 const uint8_t jd1 = 14;		//1号继电器
@@ -173,18 +191,18 @@ short file_save_wifidata()
 		Serial.println("SPIFFS Failed to Start.");
 		return -2; //文件系统启动失败
 	}
-
-	//确认闪存中file_name文件是否被清楚
-	if (LittleFS.exists(wifi_ssid_pw_file) && LittleFS.remove(wifi_ssid_pw_file))
-	{
-		Serial.print(wifi_ssid_pw_file);
-		Serial.println(" found && delete");
-	}
-	else
-	{
-		Serial.print(wifi_ssid_pw_file);
-		Serial.print("NOT FOUND");
-	}
+	//直接 ‘w’ 的话会被直接清除掉的，似乎不用我删除
+	// //确认闪存中file_name文件是否被清楚
+	// if (LittleFS.exists(wifi_ssid_pw_file) && LittleFS.remove(wifi_ssid_pw_file))
+	// {
+	// 	Serial.print(wifi_ssid_pw_file);
+	// 	Serial.println(" found && delete");
+	// }
+	// else
+	// {
+	// 	Serial.print(wifi_ssid_pw_file);
+	// 	Serial.print("NOT FOUND");
+	// }
 	/*
 	规定  /wifidata.txt 此文件储存WiFi的账号和密码
 	第一行储存账号	WIFI_ssid
@@ -225,26 +243,6 @@ short file_delete_wifidata()
 	}
 	return 1;
 }
-
-/*
-UDP发送函数封装起来，方便调用
-返回值为发送结果， 0或1
-调用示例 ：UDP_Send(MYHOST, UDP_PORT, "UDP send 汉字测试 !");
-*/
-/*
-short UDP_Send(const char* UDP_IP, uint16_t UDP_port, char* udp_send_data)
-{
-	if (WiFi.status() != WL_CONNECTED)
-	{
-		return -1;
-	}
-	WiFiUDP Udp;
-	// send a reply, to the IP address and TCP_PORT that sent us the packet we received
-	Udp.beginPacket(UDP_IP, UDP_port);
-	Udp.write(udp_send_data);
-	return  Udp.endPacket();
-}
-*/
 
 /*
 UDP发送函数封装起来，方便调用
@@ -695,109 +693,6 @@ int set_databack()
 	return count_char;
 }
 
-/*保存各项配置的状态，开机可以重新恢复状态 断电记忆不储存断电记忆的状态*/
-short file_save_stut()
-{
-	if (LittleFS.begin())
-	{ // 启动SPIFFS
-		Serial.println("SPIFFS Started.");
-	}
-	else
-	{
-		Serial.println("SPIFFS Failed to Start.");
-		return -2; //文件系统启动失败
-	}
-
-	//因为保存的状态需要经常更新？
-	//将保存配置设为可选选项？
-
-	/*uint8_t switch_1 = 1;//1 B
-	uint8_t switch_2 = 1;
-	uint8_t LED1 = 0;
-	uint8_t LED2 = 0;
-	short switch_light_up_TIME_s = 3;//2 B
-	short TEMPERATURE_ERROR_HIGH = 40;
-	short TEMPERATURE_ERROR_LOW = 10;
-	uint8_t light_qu_yu = 5;//补光区间*/
-	/*	规定：
-		按照上一个注释的顺序按字节写入内容
-	*/
-	int cou = 0;
-	File dataFile = LittleFS.open(stut_data_file, "w"); // 建立File对象用于向SPIFFS中的file对象（即/notes.txt）写入信息
-	cou = cou + dataFile.write(switch_1);
-	cou = cou + dataFile.write(switch_2);
-	cou = cou + dataFile.write(LED1);
-	cou = cou + dataFile.write(LED2);
-	cou = cou + dataFile.write((uint8_t)(switch_light_up_TIME_s >> 8));
-	cou = cou + dataFile.write((uint8_t)(switch_light_up_TIME_s & 255));
-	cou = cou + dataFile.write((uint8_t)(TEMPERATURE_ERROR_HIGH >> 8));
-	cou = cou + dataFile.write((uint8_t)(TEMPERATURE_ERROR_HIGH & 255));
-	cou = cou + dataFile.write((uint8_t)(TEMPERATURE_ERROR_LOW >> 8));
-	cou = cou + dataFile.write((uint8_t)(TEMPERATURE_ERROR_LOW & 255));
-	cou = cou + dataFile.write(light_qu_yu);
-	//dataFile.flush();
-	dataFile.close(); // 完成文件写入后关闭文件
-	Serial.printf("write count = %d ", cou);
-	return 1;
-}
-
-/*读取各项配置的状态，开机可以重新恢复状态  断电记忆不储存“断电记忆”的状态*/
-short file_read_stut()
-{
-	if (LittleFS.begin())
-	{ // 启动SPIFFS
-		Serial.println("SPIFFS Started.");
-	}
-	else
-	{
-		Serial.println("SPIFFS Failed to Start.");
-		return -2; //文件系统启动失败
-	}
-
-	if (LittleFS.exists(stut_data_file))
-	{
-		Serial.print(stut_data_file);
-		Serial.println(" FOUND.");
-	}
-	else
-	{
-		Serial.print(stut_data_file);
-		Serial.print(" NOT FOUND.");
-		get_files_name();
-		return -1; //未找到WiFi文件
-	}
-	File dataFile = LittleFS.open(stut_data_file, "r"); // 建立File对象用于向SPIFFS中的file对象（即/notes.txt）写入信息
-	//读取一下长度，校验下是不是
-	Serial.printf("dataFile.size() %d", dataFile.size());
-	if (dataFile.size() < 11) //我存了11字节的数据，多了一字节是结束符号吧？
-	{
-		Serial.print(stut_data_file);
-		Serial.print(" DATA ERROR.");
-		LittleFS.remove(stut_data_file);
-		return -3; //数据内容错误
-	}
-	//Serial.printf(" switch_1 %d ", (uint8_t)dataFile.read());
-	//Serial.printf(" switch_2 %d ", (uint8_t)dataFile.read());
-	//Serial.printf(" LED1 %d ", (uint8_t)dataFile.read());
-	//Serial.printf(" LED2 %d", (uint8_t)dataFile.read());
-	//Serial.printf(" switch_light_up_TIME_s %d ", (short)((uint8_t)dataFile.read() << 8 | (uint8_t)dataFile.read()));
-	//Serial.printf(" TEMPERATURE_ERROR_HIGH %d ", (short)((uint8_t)dataFile.read() << 8 | (uint8_t)dataFile.read()));
-	//Serial.printf(" TEMPERATURE_ERROR_LOW %d ", (short)((uint8_t)dataFile.read() << 8 | (uint8_t)dataFile.read()));
-	//Serial.printf(" light_qu_yu %d ", (uint8_t)dataFile.read());
-	switch_1 = (uint8_t)dataFile.read();
-	switch_2 = (uint8_t)dataFile.read();
-	LED1 = (uint8_t)dataFile.read();
-	LED2 = (uint8_t)dataFile.read();
-	switch_light_up_TIME_s = (short)((uint8_t)dataFile.read() << 8 | (uint8_t)dataFile.read());
-	TEMPERATURE_ERROR_HIGH = (short)((uint8_t)dataFile.read() << 8 | (uint8_t)dataFile.read());
-	TEMPERATURE_ERROR_LOW = (short)((uint8_t)dataFile.read() << 8 | (uint8_t)dataFile.read());
-	light_qu_yu = (uint8_t)dataFile.read();
-	dataFile.close(); // 完成文件写入后关闭文件
-	//Serial.printf("TEMPERATURE_ERROR_HIGH %d", TEMPERATURE_ERROR_HIGH);
-	//Serial.printf("TEMPERATURE_ERROR_LOW %d", TEMPERATURE_ERROR_LOW);
-	return 1;
-}
-
 /*将打包好的数据，用TCP发送出去*/
 char back_send_tcp(WiFiClient client)
 {
@@ -987,25 +882,23 @@ void set_data_(short i, short value)
 	}
 }
 
-
 void add_values()
 {
-	add_value(&switch_1,sizeof(switch_1));
-	add_value(&switch_2,sizeof(switch_2));
-	add_value(&LED1,sizeof(LED1));
-	add_value(&LED2,sizeof(LED2));
-	add_value(&switch_light_up_TIME_s,sizeof(switch_light_up_TIME_s));
-	add_value(&TEMPERATURE_ERROR_HIGH,sizeof(TEMPERATURE_ERROR_HIGH));
-	add_value(&TEMPERATURE_ERROR_LOW,sizeof(TEMPERATURE_ERROR_LOW));
-	add_value(&light_qu_yu,sizeof(light_qu_yu));
+	add_value(&switch_1, sizeof(switch_1));
+	add_value(&switch_2, sizeof(switch_2));
+	add_value(&LED1, sizeof(LED1));
+	add_value(&LED2, sizeof(LED2));
+	add_value(&switch_light_up_TIME_s, sizeof(switch_light_up_TIME_s));
+	add_value(&TEMPERATURE_ERROR_HIGH, sizeof(TEMPERATURE_ERROR_HIGH));
+	add_value(&TEMPERATURE_ERROR_LOW, sizeof(TEMPERATURE_ERROR_LOW));
+	add_value(&light_qu_yu, sizeof(light_qu_yu));
 }
 
 void setup()
 {
 	pinMode(16, OUTPUT);
 	digitalWrite(16, HIGH); //不知道为啥，这个模块的初始状态是LOW，然后我一插上跳线帽就开始无限重启//是电压低的问题，默认未初始化的电压低于判定电压，在 nodemcu 上没有出现错误可能是因为产品型号/批次的不同，经过电压表测量，nodemcu的电压在0.8V左右，单个小模块的电压不到0.3
-	add_values();//挂载读取信息。//这里可以优化，仅在读取写入的时候使用数组，建立//但是也没多大
-
+	add_values();			//挂载读取信息。//这里可以优化，仅在读取写入的时候使用数组，建立//但是也没多大用，一个不超过50字节的数组
 
 	//LittleFS.format();//第一次使用flash需要将flash格式化
 	Serial.begin(115200);
@@ -1013,10 +906,6 @@ void setup()
 	CHIP_ID = ESP.getChipId();
 	Serial.printf("getFlashChipId %d \n", ESP.getFlashChipId()); //这个id是假的，不知道为啥，两个esp的一样
 	Serial.printf("getChipId %d  \n", ESP.getChipId());
-	//定时器初始化
-	//ticker_DHT11.attach(2, timer1_worker);//.detach();//调用这个可以关闭
-	//读取FLASH芯片的唯一ID，
-	//Serial.printf("Flash real id（唯一标识符）:   %08X\n", ESP.getFlashChipId());
 
 	pinMode(light, INPUT);	  //光
 	pinMode(anjian1, INPUT);  //按键1

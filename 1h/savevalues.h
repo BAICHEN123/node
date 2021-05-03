@@ -5,8 +5,7 @@
 #include <LittleFS.h>
 extern "C"
 {
-#define list_values_len_max 10 //需要存储多少个变量的值
-
+#include "myconstant.h"
     int get_list_values_len();
     /*如果要保存一个数组，len请输入数组的字节长度*/
     int add_value(void *data, int len);

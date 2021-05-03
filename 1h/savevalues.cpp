@@ -30,17 +30,17 @@ extern "C"
     /*配置写入文件*/
     int save_values(const char *file_name)
     {
-        unsigned char *p_data;//按字节调用数据的指针
-        int write_statu;//写入的状态
-        int cou = 0;//写入字节计数
+        unsigned char *p_data; //按字节调用数据的指针
+        int write_statu;       //写入的状态
+        int cou = 0;           //写入字节计数
         File dataFile = LittleFS.open(file_name, "w");
-        for (int i = 0; i < list_values_len; i++)
+        for (int i = 0; i < list_values_len_max && i < list_values_len; i++)
         {
             p_data = (unsigned char *)list_values[i].data;
-            for (int j = 0; j < list_values_len_max&&j < list_values[i].len; j++)
+            for (int j = 0; j < list_values[i].len; j++)
             {
-                write_statu=dataFile.write(p_data[j]);
-                if(write_statu<1)
+                write_statu = dataFile.write(p_data[j]);
+                if (write_statu < 1)
                 {
                     dataFile.close();
                     Serial.printf("write write_statu = %d \n", write_statu);
@@ -63,10 +63,10 @@ extern "C"
         //打开文件
         File dataFile = LittleFS.open(file_name, "r");
 
-        for (int i = 0; i < list_values_len; i++)
+        for (int i = 0; i < list_values_len_max && i < list_values_len; i++)
         {
             p_data = (unsigned char *)list_values[i].data;
-            for (int j = 0; j < list_values_len_max&&j < list_values[i].len; j++)
+            for (int j = 0; j < list_values[i].len; j++)
             {
                 read_data = dataFile.read();
                 if (read_data == -1)
