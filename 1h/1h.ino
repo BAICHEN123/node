@@ -1,5 +1,4 @@
 #include <ESP8266WiFi.h>
-//#include "FS.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <WiFiClient.h>
@@ -7,28 +6,27 @@
 #include <Wire.h>
 #include <LittleFS.h>
 #include "test.h"
-#include "myconstant.h"
 #include "savevalues.h"
+#include "mywifi.h"
 extern "C"
 {
+#include "myconstant.h"
 #include "DHT11.h"
 #include "mystr.h"
 }
 
-char WIFI_ssid[WIFI_ssid_len] = {'\0'};
-char WIFI_password[WIFI_password_len] = {'\0'};
+char WIFI_ssid[WIFI_SSID_LEN] = {'\0'};
+char WIFI_password[WIFI_PASSWORD_LEN] = {'\0'};
 unsigned long UID = 0;
 unsigned long EID = 0;
 uint32_t CHIP_ID = 0;
 
-char tcp_data[MAX_TCP_DATA];   //TCP缓存数组
-short tcp_data_len = 0;		   //TCP数据的临时缓存
+char tcp_data[MAX_TCP_DATA]; //TCP缓存数组
+short tcp_data_len = 0;		 //TCP数据的临时缓存
 //char qstr_sprint[MAX_UDP_SEND_DATA];
 String UDP_head_data = "";
 String UDP_send_data = "";
 char tcp_send_data[MAX_TCP_DATA]; //随用随清，不设置长度数组
-
-
 
 /*
 目前问题/想法
@@ -65,9 +63,9 @@ char *str_data_names[MAX_NAME] = {"温度",
 								  "@保存当前为断电记忆[0-1]"};
 struct DHT11_data dht11_data = {666, 666};
 
-const char *wifi_ssid_pw_file = "/wifidata.txt";//储存 WiFi 账号和密码的文件
-const char *stut_data_file = "/stutdata.txt";//储存设备各功能配置状态的文件
-const char *MYHOST = "121.89.243.207";//服务器 ip 地址
+const char *wifi_ssid_pw_file = "/wifidata.txt"; //储存 WiFi 账号和密码的文件
+const char *stut_data_file = "/stutdata.txt";	 //储存设备各功能配置状态的文件
+const char *MYHOST = "121.89.243.207";			 //服务器 ip 地址
 const uint16_t TCP_PORT = 9999;
 const uint16_t UDP_PORT = 9998;
 
@@ -83,8 +81,6 @@ short TEMPERATURE_ERROR_LOW = 10;
 uint8_t light_qu_yu = 5; //补光区间
 uint8_t power_save = 0;	 //补光区间
 
-
-
 //下面定义几个引脚的功能
 const uint8_t jd1 = 14;		//1号继电器
 const uint8_t jd2 = 12;		//2号继电器
@@ -97,152 +93,14 @@ const uint8_t dht11 = 5;	//按键1输入
 int error_tcp_sum = 0; //tcp链接失败计次
 int debug_udp_count = 0;
 
-//复位函数
-void (*resetFunc)(void) = 0;
+// //复位函数
+// void (*resetFunc)(void) = 0;
 
 //其他函数声明
 void timer1_worker();
 void read_dht11();
 void set_timer1_s(timercallback userFunc, double time_s);
 void set_timer1_ms(timercallback userFunc, uint32_t time_ms);
-
-short file_read_wifidata()
-{
-	//Serial.println("SPIFFS format start");
-	//LittleFS.format();    // 格式化SPIFFS
-	//Serial.println("SPIFFS format finish");
-	if (LittleFS.begin())
-	{ // 启动SPIFFS
-		Serial.println("SPIFFS Started.");
-	}
-	else
-	{
-		Serial.println("SPIFFS Failed to Start.");
-		return -2; //文件系统启动失败
-	}
-	//确认闪存中是否有file_name文件
-	if (LittleFS.exists(wifi_ssid_pw_file))
-	{
-		Serial.print(wifi_ssid_pw_file);
-		Serial.println(" FOUND.");
-	}
-	else
-	{
-		Serial.print(wifi_ssid_pw_file);
-		Serial.print(" NOT FOUND.");
-		return -1; //未找到WiFi文件
-	}
-	//建立File对象用于从SPIFFS中读取文件
-	File dataFile1 = LittleFS.open(wifi_ssid_pw_file, "r");
-
-	/*
-	规定  /wifidata.txt 此文件储存WiFi的账号和密码
-	第一行储存账号	WIFI_ssid
-	第二行储存密码	WIFI_password
-	两行都采用\n 作为结束符
-	*/
-
-	//读取文件内容并将文件内容WiFi账号和密码写入数组
-	int i;
-	if (dataFile1.size() > WIFI_ssid_len + WIFI_password_len)
-	{
-		dataFile1.close(); //推出之前关闭文件，防止未知错误
-		return -3;		   //文件长度错误
-	}
-	for (i = 0; i < dataFile1.size() && i < WIFI_ssid_len; i++)
-	{
-		WIFI_ssid[i] = (char)dataFile1.read();
-		if (WIFI_ssid[i] == '\n' || WIFI_ssid[i] == '\0')
-		{
-			WIFI_ssid[i] = '\0';
-			break;
-		}
-	}
-	for (; i < WIFI_ssid_len; i++)
-	{
-		WIFI_ssid[i] = '\0';
-	}
-	for (i = 0; i < dataFile1.size() && i < WIFI_password_len; i++)
-	{
-		WIFI_password[i] = (char)dataFile1.read();
-		if (WIFI_password[i] == '\n' || WIFI_password[i] == '\0')
-		{
-			WIFI_password[i] = '\0';
-			break;
-		}
-	}
-	for (; i < WIFI_password_len; i++)
-	{
-		WIFI_password[i] = '\0';
-	}
-	//完成文件读取后关闭文件
-	dataFile1.close();
-	return 1;
-}
-
-short file_save_wifidata()
-{
-	if (LittleFS.begin())
-	{ // 启动SPIFFS
-		Serial.println("SPIFFS Started.");
-	}
-	else
-	{
-		Serial.println("SPIFFS Failed to Start.");
-		return -2; //文件系统启动失败
-	}
-	//直接 ‘w’ 的话会被直接清除掉的，似乎不用我删除
-	// //确认闪存中file_name文件是否被清楚
-	// if (LittleFS.exists(wifi_ssid_pw_file) && LittleFS.remove(wifi_ssid_pw_file))
-	// {
-	// 	Serial.print(wifi_ssid_pw_file);
-	// 	Serial.println(" found && delete");
-	// }
-	// else
-	// {
-	// 	Serial.print(wifi_ssid_pw_file);
-	// 	Serial.print("NOT FOUND");
-	// }
-	/*
-	规定  /wifidata.txt 此文件储存WiFi的账号和密码
-	第一行储存账号	WIFI_ssid
-	第二行储存密码	WIFI_password
-	两行都采用\n 作为结束符
-	*/
-	File dataFile = LittleFS.open(wifi_ssid_pw_file, "w"); // 建立File对象用于向SPIFFS中的file对象（即/notes.txt）写入信息
-	dataFile.print(WIFI_ssid);
-	dataFile.print('\n');
-	dataFile.print(WIFI_password);
-	dataFile.print('\n');
-	dataFile.close(); // 完成文件写入后关闭文件
-	return 1;
-}
-
-short file_delete_wifidata()
-{
-	if (LittleFS.begin())
-	{ // 启动SPIFFS
-		Serial.println("SPIFFS Started.");
-	}
-	else
-	{
-		Serial.println("SPIFFS Failed to Start.");
-		return -2; //文件系统启动失败
-	}
-
-	//确认闪存中file_name文件是否被清楚
-	if (LittleFS.exists(wifi_ssid_pw_file) && LittleFS.remove(wifi_ssid_pw_file))
-	{
-		Serial.print(wifi_ssid_pw_file);
-		Serial.println(" found && delete");
-	}
-	else
-	{
-		Serial.print(wifi_ssid_pw_file);
-		Serial.print("NOT FOUND");
-	}
-	return 1;
-}
 
 /*
 UDP发送函数封装起来，方便调用
@@ -388,24 +246,18 @@ void DHT11_read_and_send()
 	}
 }
 
-/*每隔1-2s读取DHT11*/
+/*每隔 DHT11_SPACE_OF_TIME_ms 读取DHT11*/
 void dht11_get()
 {
 	static short timer2_count = TIMER2_COUNT; //
 	timer2_count++;
 	if (timer2_count >= TIMER2_COUNT)
 	{
-		//DHT11_read_and_send();
 		//先拉低，LOW_PIN_ms 之后调用读取函数
 		set_timer1_ms(read_dht11, (unsigned int)dht11_read_ready());
 		timer2_count = 0;
 		return;
 	}
-	//timer1_attachInterrupt(timer1_worker)//强制重新填充函数
-	// else if (timer2_count == 7)
-	// {
-	// 	set_timer1_ms(read_dht11, TIMER1_timeout_ms);
-	// }
 }
 
 /*检测按键按下，超过 CLEAR_WIFI_DATA_S 后删除之前记住的WiFi账号和密码，然后重新启动系统*/
@@ -424,7 +276,7 @@ void clear_wifi_data()
 		{
 			//删除之前记住的WiFi账号和密码，然后重新启动系统
 			Serial.println("delete & restart");
-			file_delete_wifidata();
+			file_delete(wifi_ssid_pw_file);
 			resetFunc();
 		}
 	}
@@ -574,60 +426,6 @@ void set_timer1_ms(timercallback userFunc, uint32_t time_ms)
 	timer1_attachInterrupt(userFunc); //填充
 }
 
-/*连接wifi 这个函数会占用大量的时间，用于连接wifi，调用中断函数可能导致连接失败*/
-short get_wifi()
-{
-	Serial.print("Connecting to ");
-	Serial.println(WIFI_ssid);
-	//WiFi.mode(WIFI_RESUME);
-	WiFi.mode(WIFI_STA);
-	WiFi.begin(WIFI_ssid, WIFI_password);
-	//WiFi.smartConfigDone();//智能配网？
-	//
-	short i = 20;
-
-	while ((WiFi.status() != WL_CONNECTED) && i-- > 0)
-	{
-		delay(500);
-		Serial.print(".");
-
-		//长按 10*500 ms
-		//删除之前记住的WiFi账号和密码，然后重新启动系统
-		if (digitalRead(anjian1) == LOW)
-		{
-			//亮灯指示一下
-			//pinMode(LED_BUILTIN, OUTPUT);
-			digitalWrite(LED_BUILTIN, LOW);
-			short count_anjian = 0; //对按键按下的时间计数，超过5s就清除wifidata.txt文件，然后重新启动系统
-			while (digitalRead(anjian1) == LOW && count_anjian < 10)
-			{
-				Serial.printf("-%dS -", 10 - count_anjian);
-				count_anjian = count_anjian + 1;
-				delay(500);
-			}
-			if (count_anjian >= 10)
-			{
-				//删除之前记住的WiFi账号和密码，然后重新启动系统
-				Serial.println("delete & restart");
-				file_delete_wifidata();
-				resetFunc();
-			}
-			digitalWrite(LED_BUILTIN, HIGH);
-		}
-	}
-	if (WiFi.status() == WL_CONNECTED)
-	{
-		Serial.println("WiFi connected");
-		Serial.println("IP address: ");
-		Serial.println(WiFi.localIP());
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
-}
-
 /*将数据放在一个数组里发送。 返回数据的长度*/
 int set_databack()
 {
@@ -696,7 +494,7 @@ int set_databack()
 /*将打包好的数据，用TCP发送出去*/
 char back_send_tcp(WiFiClient client)
 {
-	if (client.connected()) //函数第一次执行loop循环的时候这里可能会出错，因为 client 第一次赋值为局部变量，在setuo 中修改他的初始化就可以了
+	if (client.connected()) //函数第一次执行loop循环的时候这里可能会出错，因为 client 第一次赋值为局部变量，在setup 中修改他的初始化就可以了
 	{
 		//在这里合成需要发送出去的传感器数据？
 		client.write(tcp_send_data, set_databack());
@@ -708,111 +506,6 @@ char back_send_tcp(WiFiClient client)
 		//结束此次 loop ，到开始位置，重新连接TCP
 		client.stop();
 		return -1;
-	}
-}
-
-char tcp_server_get_wifi_data()
-{
-	//WiFi.mode()
-	char data[1024];
-	int ind = 0;
-	WiFi.mode(WIFI_RESUME);
-	IPAddress softLocal(192, 168, 128, 1); // 1 设置内网WIFI IP地址
-	IPAddress softGateway(192, 168, 128, 1);
-	IPAddress softSubnet(255, 255, 255, 0);
-	WiFi.mode(WIFI_AP);
-	WiFi.softAPConfig(softLocal, softGateway, softSubnet);
-	WiFi.softAP("HCC_APP", "12345678");
-	Serial.print("Connected to ");
-	Serial.println("esp8266");
-	Serial.print("IP Address: ");
-	Serial.println(WiFi.localIP()); //串口监视器显示IP地址
-	// Start a TCP Server on port 5045
-	WiFiServer server(9997); //端口5045，自定义（避免公用端口）
-	WiFiClient client;
-	// Start the TCP server
-	server.begin();
-	while (1)
-	{
-		if (!client.connected())
-		{
-			//try to connect to a new client
-			client = server.available();
-		}
-		else
-		{
-			if (client.available() > 0)
-			{
-				//Serial.println("Connected to client");
-
-				while (client.available())
-				{
-					data[ind] = client.read(); //读取client端发送的字符
-					ind++;
-				}
-				client.flush();
-				//处理其他设备发送过来的数据
-				//找到"wifi:"字符
-				if (str1_find_str2_(data, ind, "+SSID:") >= 0)
-				{
-					for (int i = 6, k = 0; i < ind && i < WIFI_ssid_len; i++, k++)
-					{
-						WIFI_ssid[k] = data[i];
-						data[i] = 0; //转移了的数据清零
-						if (WIFI_ssid[k] == '\n' || WIFI_ssid[k] == '\0')
-						{
-							WIFI_ssid[k] = '\0';
-							break;
-						}
-					}
-					client.print(WIFI_ssid); //在client端回复
-				}
-				else if (str1_find_str2_(data, ind, "+PW:") >= 0)
-				{
-					for (int i = 4, k = 0; i < ind && i < WIFI_password_len; i++, k++)
-					{
-						WIFI_password[k] = data[i];
-						data[i] = 0; //转移了的数据清零
-						if (WIFI_password[k] == '\n' || WIFI_password[k] == '\0')
-						{
-							WIFI_password[k] = '\0';
-							break;
-						}
-					}
-					client.print(WIFI_password); //在client端回复
-				}
-				else if (str1_find_str2_(data, ind, "+UID:") >= 0)
-				{
-					//len("+UID:")=4
-					UID = str_to_u64(data + 4, ind - 4);
-					data[0] = 0;				  //转移了的数据清零
-					client.printf("UID:%d", UID); //在client端回复
-				}
-				else
-				{
-					continue;
-				}
-				for (int j = 0; j < ind; j++)
-				{
-					Serial.print(data[j]);
-				}
-				Serial.print("#WIFI_ssid:");
-				Serial.print(WIFI_ssid);
-				Serial.print("#WIFI_password:");
-				Serial.print(WIFI_password);
-				Serial.print('#');
-				Serial.print("\n");
-				if (WIFI_ssid[0] != 0 && WIFI_password[0] != 0)
-				{
-					delay(5);										   //延时五毫秒，不然最后一个数据可能发不出去
-					client.printf(",uid=%d,chip_id=%d", UID, CHIP_ID); //在client端回复
-					delay(5);										   //延时五毫秒，不然最后一个数据可能发不出去
-					file_save_wifidata();
-					return 1;
-				}
-				ind = 0;
-			}
-		}
 	}
 }
 
@@ -882,6 +575,7 @@ void set_data_(short i, short value)
 	}
 }
 
+/*添加需要保存的变量，上限为 list_values_len_max */
 void add_values()
 {
 	add_value(&switch_1, sizeof(switch_1));
@@ -899,8 +593,10 @@ void setup()
 	pinMode(16, OUTPUT);
 	digitalWrite(16, HIGH); //不知道为啥，这个模块的初始状态是LOW，然后我一插上跳线帽就开始无限重启//是电压低的问题，默认未初始化的电压低于判定电压，在 nodemcu 上没有出现错误可能是因为产品型号/批次的不同，经过电压表测量，nodemcu的电压在0.8V左右，单个小模块的电压不到0.3
 	add_values();			//挂载读取信息。//这里可以优化，仅在读取写入的时候使用数组，建立//但是也没多大用，一个不超过50字节的数组
+   	set_anjian1(anjian1);	//配置wifi的清除数据按键
 
 	//LittleFS.format();//第一次使用flash需要将flash格式化
+
 	Serial.begin(115200);
 	//CHIP_ID = ESP.getFlashChipId();
 	CHIP_ID = ESP.getChipId();
@@ -912,13 +608,13 @@ void setup()
 	pinMode(shengyin, INPUT); //d2 声音
 	pinMode(LED_BUILTIN, OUTPUT);
 
-	short stat = file_read_wifidata();
+	short stat = file_read_wifidata(WIFI_ssid, WIFI_password, wifi_ssid_pw_file);
 	Serial.printf("star%d", stat);
 	if (stat == -1)
 	{
 
 		digitalWrite(LED_BUILTIN, LOW);
-		tcp_server_get_wifi_data();
+		tcp_server_get_wifi_data(WIFI_ssid, WIFI_password,UID,CHIP_ID,wifi_ssid_pw_file);
 		digitalWrite(LED_BUILTIN, HIGH);
 	}
 	else if (stat == -2)
@@ -931,13 +627,12 @@ void setup()
 	if (WIFI_password[0] == '\0' || WIFI_ssid == '\0')
 	{
 		Serial.println("delete & restart");
-		file_delete_wifidata();
-		//resetFunc();
+		file_delete(wifi_ssid_pw_file);
 	}
 	Serial.printf("#WIFI_ssid:%s  WIFI_password:%s  UID:%ld ", WIFI_ssid, WIFI_password, UID);
 
 	Serial.printf("CHIP_ID %x \n", CHIP_ID);
-	if (get_wifi() == 0)
+	if (get_wifi(WIFI_ssid, WIFI_password, wifi_ssid_pw_file) == 0)
 	{
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 	}
@@ -958,7 +653,7 @@ void loop()
 	{
 		//计次，超过三次就复位
 
-		if (get_wifi() == 0)
+		if (get_wifi(WIFI_ssid, WIFI_password, wifi_ssid_pw_file) == 0)
 		{
 			if (error_wifi_count > 1 && error_wifi_count < 2)
 			{

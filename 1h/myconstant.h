@@ -2,6 +2,9 @@
 #ifndef _MYCONSTANT_h
 #define _MYCONSTANT_h
 
+//复位函数
+
+void resetFunc();
 //定时器1 的单次中断时长
 #define TIMER1_timeout_ms 200
 
@@ -20,10 +23,14 @@
 
 #define MAX_TCP_DATA 1024	   //TCP缓存的最大值
 #define MAX_UDP_SEND_DATA 1024 //UDP缓存的最大值
-//wifi 的名称密码长度限制
-#define WIFI_ssid_len 32
-#define WIFI_password_len 32
 
+//wifi 的名称密码长度限制
+#define WIFI_SSID_LEN 32
+#define WIFI_PASSWORD_LEN 32
+
+//wifi 相关
+//做服务器时监听的端口
+#define SERVER_CLIENT_PROT 9997
 
 #endif
 
