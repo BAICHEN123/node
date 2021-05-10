@@ -3,8 +3,8 @@
 #define _MYCONSTANT_h
 
 //复位函数
-
 void resetFunc();
+
 //定时器1 的单次中断时长
 #define TIMER1_timeout_ms 200
 
@@ -21,7 +21,7 @@ void resetFunc();
 
 #define list_values_len_max 10 //需要存储多少个变量的值
 
-#define MAX_TCP_DATA 1024	   //TCP缓存的最大值
+#define MAX_TCP_DATA 1024      //TCP缓存的最大值
 #define MAX_UDP_SEND_DATA 1024 //UDP缓存的最大值
 
 //wifi 的名称密码长度限制
@@ -33,6 +33,3 @@ void resetFunc();
 #define SERVER_CLIENT_PROT 9997
 
 #endif
-
-
-
