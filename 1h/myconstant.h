@@ -2,6 +2,8 @@
 #ifndef _MYCONSTANT_h
 #define _MYCONSTANT_h
 
+//#include <Arduino.h>
+//#include <ESP8266WiFi.h>
 //复位函数
 void resetFunc();
 

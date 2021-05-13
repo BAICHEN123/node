@@ -1,6 +1,6 @@
 #include <ESP8266WiFi.h>
-#include <stdio.h>
-#include <stdlib.h>
+//#include <stdio.h>
+//#include <stdlib.h>
 #include <WiFiClient.h>
 #include <WiFiUdp.h>
 #include <Wire.h>
@@ -8,6 +8,7 @@
 #include "test.h"
 #include "savevalues.h"
 #include "mywifi.h"
+#include "mytcp.h"
 extern "C"
 {
 #include "myconstant.h"
@@ -21,8 +22,11 @@ unsigned long UID = 0;
 unsigned long EID = 0;
 uint32_t CHIP_ID = 0;
 
-char tcp_data[MAX_TCP_DATA]; //TCP缓存数组
-short tcp_data_len = 0;		 //TCP数据的临时缓存
+//char tcp_data[MAX_TCP_DATA]; //TCP缓存数组
+//short tcp_data_len = 0;		 //TCP数据的临时缓存
+
+struct Tcp_cache my_tcp_cache;
+
 //char qstr_sprint[MAX_UDP_SEND_DATA];
 String UDP_head_data = "";
 String UDP_send_data = "";
@@ -91,7 +95,6 @@ const uint8_t dht11 = 5;	//按键1输入
 
 //错误计次变量区域
 int error_tcp_sum = 0; //tcp链接失败计次
-int debug_udp_count = 0;
 
 // //复位函数
 // void (*resetFunc)(void) = 0;
@@ -104,19 +107,19 @@ void set_timer1_ms(timercallback userFunc, uint32_t time_ms);
 
 /*
 UDP发送函数封装起来，方便调用
-返回值为发送结果， 0或1
 调用示例 ：UDP_Send(MYHOST, UDP_PORT, "UDP send 汉字测试 !");
+return :
+			-1	无法链接
+			0	发送失败
+			1	发送成功
 */
 short UDP_Send(const char *UDP_IP, uint16_t UDP_port, String udp_send_data)
 {
-
 	if (WiFi.status() != WL_CONNECTED)
 	{
 		return -1;
 	}
 	WiFiUDP Udp;
-	// send a reply, to the IP address and TCP_PORT that sent us the packet we received
-	//Serial.printf("udp send id=%d\n",debug_udp_count++);
 	Udp.beginPacket(UDP_IP, UDP_port);
 	Udp.write(udp_send_data.c_str());
 	return Udp.endPacket();
@@ -260,32 +263,6 @@ void dht11_get()
 	}
 }
 
-/*检测按键按下，超过 CLEAR_WIFI_DATA_S 后删除之前记住的WiFi账号和密码，然后重新启动系统*/
-void clear_wifi_data()
-{
-	static short count_anjian = 0; //对按键按下的时间计数，超过5s就清除wifidata.txt文件，然后重新启动系统
-	//长按 25*TIMER1_timeout_ms ms
-	//删除之前记住的WiFi账号和密码，然后重新启动系统
-	if (digitalRead(anjian1) == LOW)
-	{
-
-		digitalWrite(LED_BUILTIN, LOW);
-		count_anjian++;
-		Serial.printf("-%dS -", (CLEAR_WIFI_DATA_COUNT - count_anjian) * TIMER1_timeout_ms / 1000);
-		if (count_anjian > CLEAR_WIFI_DATA_COUNT)
-		{
-			//删除之前记住的WiFi账号和密码，然后重新启动系统
-			Serial.println("delete & restart");
-			file_delete(wifi_ssid_pw_file);
-			resetFunc();
-		}
-	}
-	else
-	{
-		digitalWrite(LED_BUILTIN, HIGH);
-		count_anjian = 0;
-	}
-}
 
 /*
 定时器工作内容
@@ -293,11 +270,10 @@ void clear_wifi_data()
 void timer1_worker()
 {
 	//delay(20);//时间中断函数里不可以用delay
-
+	clear_wifi_data(wifi_ssid_pw_file);		//长按按键1清除wifi账号密码记录
 	brightness_work();		//更新继电器状态
 	shengyin_timeout_out(); //更新声控灯倒计时
 	dht11_get();			//调用DHT11的读取函数
-	clear_wifi_data();		//
 }
 
 /*
@@ -308,77 +284,6 @@ void read_dht11()
 	//让DHT11的信号引脚拉低，等待20ms，之后调用get_DHT11_DATA() 开始正式调用读取函数
 	set_timer1_ms(timer1_worker, TIMER1_timeout_ms - LOW_PIN_ms); //正常时间之后恢复 timer1_worker 的工作
 	DHT11_read_and_send();
-}
-
-/*
-TCP阻塞，等待 timeout_ms_max ms
-看看有没有TCP包返回回来，不会自动断开链接
-返回值
-0，TCP失效了
-1，等到了TCP包
-2，没有等到，超时
-*/
-short timeout_back(WiFiClient client, unsigned short timeout_ms_max)
-{
-	unsigned long timeout = millis();
-	while (client.available() == 0)
-	{
-		if (millis() - timeout > timeout_ms_max)
-		{
-			Serial.println(">>> Client Timeout !");
-			return 2;
-		}
-		if (client.connected() == 0)
-		{
-			return 0;
-		}
-	}
-	return 1;
-}
-
-/*
-TCP阻塞，等待 timeout_us_max ms
-看看有没有TCP包返回回来，不会自动断开链接
-返回值
-0，TCP失效了
-1，等到了TCP包
-2，没有等到，超时
-*/
-short timeout_back_us(WiFiClient client, unsigned short timeout_us_max)
-{
-	unsigned long timeout = micros();
-	while (client.available() == 0)
-	{
-		if (micros() - timeout > timeout_us_max)
-		{
-			//Serial.println(">>> Client Timeout !");
-			return 2;
-		}
-		if (client.connected() == 0)
-		{
-			return 0;
-		}
-	}
-	return 1;
-}
-
-/*
-从TCP连接读取TCP数据，储存在 tcp_data 里，长度为tcp_data_len，每个数据会用“\0”分割
-返回本次TCP读取的开始位置，
-*/
-short get_tcp_data(WiFiClient client)
-{
-	short start_id = tcp_data_len;
-	while (client.available() && tcp_data_len < MAX_TCP_DATA)
-	{
-		if (tcp_data_len >= MAX_TCP_DATA)
-		{
-			return -1;
-		}
-		tcp_data[tcp_data_len++] = static_cast<char>(client.read());
-	}
-	tcp_data[tcp_data_len] = '\0';
-	return start_id;
 }
 
 /*
@@ -425,6 +330,7 @@ void set_timer1_ms(timercallback userFunc, uint32_t time_ms)
 	timer1_enabled();				  //使能中断
 	timer1_attachInterrupt(userFunc); //填充
 }
+
 
 /*将数据放在一个数组里发送。 返回数据的长度*/
 int set_databack()
@@ -599,6 +505,9 @@ void setup()
 
 	Serial.begin(115200);
 	//CHIP_ID = ESP.getFlashChipId();
+	
+	Serial.printf("unsigned long %d \n", sizeof(unsigned long)); //这个id是假的，不知道为啥，两个esp的一样
+	Serial.printf("long long %d  \n", sizeof(long long));
 	CHIP_ID = ESP.getChipId();
 	Serial.printf("getFlashChipId %d \n", ESP.getFlashChipId()); //这个id是假的，不知道为啥，两个esp的一样
 	Serial.printf("getChipId %d  \n", ESP.getChipId());
@@ -705,27 +614,26 @@ void loop()
 	}
 	Serial.print("tcp ok");
 
-	stat = timeout_back(client, 3000);
+	stat = timeout_back_ms(client, 3000);
 	if (stat == 1)
 	{
-		//get_tcp_data();
-		//这里还要改改，这里只是把信息接受之后直接输出了，并没有处理
 		//这里收到的信息可能是服务器返回的第一条信息
-		Serial.println(tcp_data + get_tcp_data(client));
+		Serial.println(my_tcp_cache.data + get_tcp_data(client,&my_tcp_cache));
 		//beeeeee 临时储存一下+EID的开始位置
-		beeeeee = str1_find_str2_(tcp_data, tcp_data_len, "+EID");
+		beeeeee = str1_find_str2_(my_tcp_cache.data, my_tcp_cache.len, "+EID");
 		if (beeeeee >= 0)
 		{
-			EID = str_to_u64(tcp_data + beeeeee, tcp_data_len);
+			EID = str_to_u64(my_tcp_cache.data + beeeeee, my_tcp_cache.len);
 			UDP_head_data = "+EID=" + String(EID) + ",chip_id=" + String(CHIP_ID) + ",";
 			Serial.print(UDP_head_data);
 		}
-		tcp_data_len = 0;
+		my_tcp_cache.len = 0;
 	}
 	else if (stat == 0)
 	{
 
 		Serial.print("servier error ");
+		Serial.print("\r\ndeepSleep\r\n");
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 		return;
 	}
@@ -790,8 +698,8 @@ void loop()
 		if (stat == 1)
 		{
 			//Serial.printf("回复响应时间：%d \n", micros() - time_old);
-			len_old = tcp_data_len;
-			stat = get_tcp_data(client);
+			len_old = my_tcp_cache.len;
+			stat = get_tcp_data(client,&my_tcp_cache);
 			//这里还有问题， get_tcp_data 可能返回-1 这是溢出的标志
 			/*
 				if(stat==-1)
@@ -802,10 +710,10 @@ void loop()
 			//如果需要对TCP链接返回的数据进行处理，请在这后面写，-----------------------------------------------------------------------
 			//示例
 			//将TCP返回的数据当作字符串输出
-			Serial.print(tcp_data + len_old);
+			Serial.print(my_tcp_cache.data + len_old);
 			//Serial.printf("udp send id=%d\n", debug_udp_count);
 
-			switch (*(tcp_data + len_old))
+			switch (*(my_tcp_cache.data + len_old))
 			{
 			case '+':
 			case 'G':
@@ -815,13 +723,13 @@ void loop()
 				time_old_ms = millis();
 				break; // 跳出 switch
 			case '@':  //set
-				while (len_old >= 0 && len_old < tcp_data_len)
+				while (len_old >= 0 && len_old < my_tcp_cache.len)
 				{
 					for (short i = 0; i < MAX_NAME; i++)
 					{
-						if (0 <= str1_find_str2_1(tcp_data, len_old, str1_find_char_1(tcp_data, len_old, tcp_data_len, ':'), str_data_names[i]))
+						if (0 <= str1_find_str2_1(my_tcp_cache.data, len_old, str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, ':'), str_data_names[i]))
 						{
-							short value = str_to_u16(tcp_data + str1_find_char_1(tcp_data, len_old, tcp_data_len, ':')); //将赋值的分隔符之后的数据转换成u16
+							short value = str_to_u16(my_tcp_cache.data + str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, ':')); //将赋值的分隔符之后的数据转换成u16
 							//这里作为调试用，串口发送很占时间
 							Serial.printf("\r\n	set id = %d	value= %d \r\n", i, value);
 							set_data_(i, value);
@@ -830,8 +738,8 @@ void loop()
 						}
 					}
 
-					tcp_data[len_old] = 0; //清楚标志位的数据
-					len_old = str1_find_char_1(tcp_data, len_old + 1, tcp_data_len, '@');
+					my_tcp_cache.data[len_old] = 0; //清楚标志位的数据
+					len_old = str1_find_char_1(my_tcp_cache.data, len_old + 1, my_tcp_cache.len, '@');
 					//只识别 @ 类型的数据，get类型的数据一般不会组合发送，舍弃此部分
 				}
 				//所有的指令已经执行完毕
@@ -847,8 +755,8 @@ void loop()
 				}
 				break; //跳出 switch
 			}
-			tcp_data[0] = 0;
-			tcp_data_len = 0; //因为我没有在其他位置调用数据接收函数，所以我处理完之后全部清除了
+			my_tcp_cache.data[0] = 0;
+			my_tcp_cache.len = 0; //因为我没有在其他位置调用数据接收函数，所以我处理完之后全部清除了
 		}
 		//TCP链接失效
 		else if (stat == 0)

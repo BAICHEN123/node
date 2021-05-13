@@ -31,5 +31,6 @@ extern "C"
     short file_delete(const char *file_name);
     short get_wifi(char *WIFI_ssid, char *WIFI_password, const char *wifi_ssid_pw_file);
     short tcp_server_get_wifi_data(char *WIFI_ssid, char *WIFI_password, unsigned long &UID, uint32_t CHIP_ID, const char *wifi_ssid_pw_file);
+    void clear_wifi_data(const char *file_name);
 }
 #endif

@@ -4,9 +4,6 @@ extern "C"
 {
     uint8_t anjian1 = 0; //按键1输入
 
-    // //复位函数
-    // void (*resetFunc)(void) = 0;
-
     void set_anjian1(const uint8_t pin)
     {
         anjian1 = pin;
@@ -306,6 +303,33 @@ extern "C"
                     ind = 0;
                 }
             }
+        }
+    }
+
+    /*检测按键按下，超过 CLEAR_WIFI_DATA_S 后删除之前记住的WiFi账号和密码，然后重新启动系统*/
+    void clear_wifi_data(const char *wifi_ssid_pw_file)
+    {
+        static short count_anjian = 0; //对按键按下的时间计数，超过5s就清除wifidata.txt文件，然后重新启动系统
+        //长按 25*TIMER1_timeout_ms ms
+        //删除之前记住的WiFi账号和密码，然后重新启动系统
+        if (digitalRead(anjian1) == LOW)
+        {
+
+            digitalWrite(LED_BUILTIN, LOW);
+            count_anjian++;
+            Serial.printf("-%dS -", (CLEAR_WIFI_DATA_COUNT - count_anjian) * TIMER1_timeout_ms / 1000);
+            if (count_anjian > CLEAR_WIFI_DATA_COUNT)
+            {
+                //删除之前记住的WiFi账号和密码，然后重新启动系统
+                Serial.println("delete & restart");
+                file_delete(wifi_ssid_pw_file);
+                resetFunc();
+            }
+        }
+        else
+        {
+            digitalWrite(LED_BUILTIN, HIGH);
+            count_anjian = 0;
         }
     }
 }
