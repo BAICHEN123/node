@@ -1,5 +1,7 @@
 #include "mystr.h"
 
+//风险1，如果没有查找到 需要的内容 或者 '\0' 会一直沿着地址查找，调用的时候注意一下，尽量不要使用没有止境的查找
+//风险2，如果字符串内有一长段的数字，那么会导致溢出，目前仅有 str_to_u64 对溢出有判断
 
 /*
 字符串转u16
@@ -27,37 +29,106 @@ int str_to_u16(char* str1)
 	return i;
 }
 /*
+字符串转unsigned long long
+IPD, 10:12345678->10
+把传入的第一个自然数数转换成unsigned long long
+str1:字符串指针的开始位置
+len:需要查找的数组长度
+
+status:	-1	在长度范围内没有找到任何一个数字
+			return:	0
+		-2	转换过程溢出
+			return:	溢出前最后的有效值
+		//0	极限反杀	//调试的时候用过，这个留念用的
+		1	成功转换
+			return:	有效值
+*/
+u64 str_to_u64(char *str1, unsigned int len, short *status)
+{
+    u64 i;
+    char *old_q = str1;
+    while (*(str1) < '1' || *(str1) > '9')//从 '0' 开始转换数字没有意义  &&  //从 1开始转换，不然后面统计位数会出错
+    {
+        str1++;
+        if (str1 - old_q > len)
+        {
+            *status = -1;
+            return 0;
+            //break;
+        }
+    }
+    old_q = str1;//统计被真正转换的位数
+    i = (*str1) & 15; //&207（1100 1111）  char 转 int
+
+    str1++;
+    while ((*str1 > 47) && (*str1 < 58))
+    {
+        //printf("%llu  \n", i);
+        if (str1 - old_q == 19)
+        {
+            printf("19=%c  18=%c\n", *(str1 - 19), *(str1 - 18));
+            if (i <= 1844674407370955161 && *str1 <= '5')
+            {
+                i = i * 10 + (*str1 & 15);
+                str1++; //看一下下一位是不是数字
+                if ((*str1 > 47) && (*str1 < 58))
+                {
+                    //下一位还是数字，真的溢出了
+                    *status = -2;
+                    return i;
+                }
+                //刚好填满，后面没有数字
+                *status = 1;
+                return i;
+            }
+            else
+            {
+                *status = -2;
+                return i;
+            }
+        }
+        i = i * 10 + (*str1 & 15);
+        str1++;
+    }
+    *status = 1;
+    return i;
+}
+
+/*
 字符串转long long
 IPD, 10:12345678->10
 把传入的第一个自然数数转换成long long
 str1:字符串指针的开始位置
 len:需要查找的数组长度
 */
-u64 str_to_u64(char* str1,unsigned int len)
-{
-	long long i;
-	u64 old_q = str1;
-	while (*(str1) < '0' || *(str1) > '9')
-	{
-		str1++;
-		if (str1 - old_q > len)
-		{
-			break;
-		}
-	}
-	i = (*str1) & 15;//&207（1100 1111）  char 转 int
-	if (*(str1 - 1) == '-')
-	{
-		i = -1 * i;
-	}
-	str1++;
-	while ((*str1 > 47) && (*str1 < 58))
-	{
-		i = i * 10 + (*str1 & 15);
-		str1++;
-	}
-	return i;
-}
+// long long str_to_64(char* str1,unsigned int len,short *status)
+// {
+// 	long long i;
+// 	u64 old_q = str1;
+// 	while (*(str1) < '0' || *(str1) > '9')
+// 	{
+// 		str1++;
+// 		if (str1 - old_q > len)
+// 		{
+// 			*status=-1;
+// 			return 0;
+// 			//break;
+// 		}
+// 	}
+// 	i = (*str1) & 15;//&207（1100 1111）  char 转 int
+// 	if (*(str1 - 1) == '-')
+// 	{
+// 		i = -1 * i;
+// 	}
+// 	str1++;
+// 	while ((*str1 > 47) && (*str1 < 58))
+// 	{
+// 		i = i * 10 + (*str1 & 15);
+// 		str1++;
+// 	}
+// 	return i;
+// }
+
 
 /*
 字符数组查找字符串

@@ -199,7 +199,7 @@ extern "C"
     函数的返回值仅返回状态，目前不收到足够的数据，绝不返回。while(1);
 
     */
-    short tcp_server_get_wifi_data(char *WIFI_ssid, char *WIFI_password, unsigned long &UID, uint32_t CHIP_ID, const char *wifi_ssid_pw_file)
+    short tcp_server_get_wifi_data(char *WIFI_ssid, char *WIFI_password, unsigned long long &UID, uint32_t CHIP_ID, const char *wifi_ssid_pw_file)
     {
         //WiFi.mode()
         char data[1024];
@@ -274,9 +274,17 @@ extern "C"
                     else if (str1_find_str2_(data, ind, "+UID:") >= 0)
                     {
                         //len("+UID:")=4
-                        UID = str_to_u64(data + 4, ind - 4);
+                        short status=0;
+                        UID = str_to_u64(data + 4, ind - 4,&status);
+                        if(status!=1)
+                        {
+                            client.printf("error UID not found!", UID); //在client端回复
+                            Serial.print(data);
+                            Serial.print("error UID not found!\r\n");
+                            client.stop();
+                        }
                         data[0] = 0;                  //转移了的数据清零
-                        client.printf("UID:%d", UID); //在client端回复
+                        client.printf("UID:%llu", UID); //在client端回复
                     }
                     else
                     {
@@ -295,7 +303,7 @@ extern "C"
                     if (WIFI_ssid[0] != 0 && WIFI_password[0] != 0)
                     {
                         delay(5);                                          //延时五毫秒，不然最后一个数据可能发不出去
-                        client.printf(",uid=%d,chip_id=%d", UID, CHIP_ID); //在client端回复
+                        client.printf(",uid=%llu,chip_id=%d", UID, CHIP_ID); //在client端回复
                         delay(5);                                          //延时五毫秒，不然最后一个数据可能发不出去
                         file_save_wifidata(WIFI_ssid, WIFI_password, wifi_ssid_pw_file);
                         return 1;

@@ -18,18 +18,16 @@ extern "C"
 
 char WIFI_ssid[WIFI_SSID_LEN] = {'\0'};
 char WIFI_password[WIFI_PASSWORD_LEN] = {'\0'};
-unsigned long UID = 0;
-unsigned long EID = 0;
+unsigned long long UID = 0;
+unsigned long long EID = 0;
+char str_EID[22] = {0};
 uint32_t CHIP_ID = 0;
 
-//char tcp_data[MAX_TCP_DATA]; //TCP缓存数组
-//short tcp_data_len = 0;		 //TCP数据的临时缓存
+struct Tcp_cache my_tcp_cache; //TCP缓存数组
 
-struct Tcp_cache my_tcp_cache;
-
-//char qstr_sprint[MAX_UDP_SEND_DATA];
 String UDP_head_data = "";
 String UDP_send_data = "";
+
 char tcp_send_data[MAX_TCP_DATA]; //随用随清，不设置长度数组
 
 /*
@@ -263,17 +261,16 @@ void dht11_get()
 	}
 }
 
-
 /*
 定时器工作内容
 */
 void timer1_worker()
 {
 	//delay(20);//时间中断函数里不可以用delay
-	clear_wifi_data(wifi_ssid_pw_file);		//长按按键1清除wifi账号密码记录
-	brightness_work();		//更新继电器状态
-	shengyin_timeout_out(); //更新声控灯倒计时
-	dht11_get();			//调用DHT11的读取函数
+	clear_wifi_data(wifi_ssid_pw_file); //长按按键1清除wifi账号密码记录
+	brightness_work();					//更新继电器状态
+	shengyin_timeout_out();				//更新声控灯倒计时
+	dht11_get();						//调用DHT11的读取函数
 }
 
 /*
@@ -330,7 +327,6 @@ void set_timer1_ms(timercallback userFunc, uint32_t time_ms)
 	timer1_enabled();				  //使能中断
 	timer1_attachInterrupt(userFunc); //填充
 }
-
 
 /*将数据放在一个数组里发送。 返回数据的长度*/
 int set_databack()
@@ -505,7 +501,7 @@ void setup()
 
 	Serial.begin(115200);
 	//CHIP_ID = ESP.getFlashChipId();
-	
+
 	Serial.printf("unsigned long %d \n", sizeof(unsigned long)); //这个id是假的，不知道为啥，两个esp的一样
 	Serial.printf("long long %d  \n", sizeof(long long));
 	CHIP_ID = ESP.getChipId();
@@ -589,7 +585,7 @@ void loop()
 		//client.printf("hello from ESP8266 %d", ESP.getFlashChipId());
 		if (UID != 0)
 		{
-			client.printf("+UID:%d", UID);
+			client.printf("+UID:%llu", UID);
 		}
 
 		String str1 = "class_id=1,chip_id=" + String(CHIP_ID) + ",ip=" + WiFi.localIP().toString() + ",mac=" + WiFi.macAddress();
@@ -618,24 +614,30 @@ void loop()
 	if (stat == 1)
 	{
 		//这里收到的信息可能是服务器返回的第一条信息
-		Serial.println(my_tcp_cache.data + get_tcp_data(client,&my_tcp_cache));
+		Serial.println(my_tcp_cache.data + get_tcp_data(client, &my_tcp_cache));
 		//beeeeee 临时储存一下+EID的开始位置
 		beeeeee = str1_find_str2_(my_tcp_cache.data, my_tcp_cache.len, "+EID");
 		if (beeeeee >= 0)
 		{
-			EID = str_to_u64(my_tcp_cache.data + beeeeee, my_tcp_cache.len);
-			UDP_head_data = "+EID=" + String(EID) + ",chip_id=" + String(CHIP_ID) + ",";
+			EID = str_to_u64(my_tcp_cache.data + beeeeee, my_tcp_cache.len, &stat);
+			if (stat != 1)
+			{
+				//值转换出错，溢出或未找到有效值
+
+				Serial.print("\r\nnot found eid,deepSleep\r\n");
+				ESP.deepSleep(20000000, WAKE_RFCAL);
+			}
+			sprintf(str_EID, "%llu", EID); //垃圾string(),居然不能装换long long类型的数据，还要我自己动手
+			UDP_head_data = "+EID=" + String(str_EID) + ",chip_id=" + String(CHIP_ID) + ",";
 			Serial.print(UDP_head_data);
 		}
 		my_tcp_cache.len = 0;
 	}
 	else if (stat == 0)
 	{
-
-		Serial.print("servier error ");
-		Serial.print("\r\ndeepSleep\r\n");
+		Serial.print("\r\nservier error deepSleep\r\n");
 		ESP.deepSleep(20000000, WAKE_RFCAL);
-		return;
+		//return;
 	}
 
 	unsigned long time_old_ms = millis();
@@ -699,7 +701,7 @@ void loop()
 		{
 			//Serial.printf("回复响应时间：%d \n", micros() - time_old);
 			len_old = my_tcp_cache.len;
-			stat = get_tcp_data(client,&my_tcp_cache);
+			stat = get_tcp_data(client, &my_tcp_cache);
 			//这里还有问题， get_tcp_data 可能返回-1 这是溢出的标志
 			/*
 				if(stat==-1)
