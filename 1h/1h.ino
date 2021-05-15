@@ -18,8 +18,8 @@ extern "C"
 
 char WIFI_ssid[WIFI_SSID_LEN] = {'\0'};
 char WIFI_password[WIFI_PASSWORD_LEN] = {'\0'};
-unsigned long long UID = 0;
-unsigned long long EID = 0;
+u64 UID = 0;
+u64 EID = 0;
 char str_EID[22] = {0};
 uint32_t CHIP_ID = 0;
 
@@ -90,12 +90,6 @@ const uint8_t light = 13;	//光敏逻辑输入
 const uint8_t shengyin = 4; //声音逻辑输入
 const uint8_t anjian1 = 0;	//按键1输入
 const uint8_t dht11 = 5;	//按键1输入
-
-//错误计次变量区域
-int error_tcp_sum = 0; //tcp链接失败计次
-
-// //复位函数
-// void (*resetFunc)(void) = 0;
 
 //其他函数声明
 void timer1_worker();
@@ -501,9 +495,8 @@ void setup()
 
 	Serial.begin(115200);
 	//CHIP_ID = ESP.getFlashChipId();
-
-	Serial.printf("unsigned long %d \n", sizeof(unsigned long)); //这个id是假的，不知道为啥，两个esp的一样
-	Serial.printf("long long %d  \n", sizeof(long long));
+	//Serial.printf("unsigned long %d \n", sizeof(unsigned long)); //这个id是假的，不知道为啥，两个esp的一样
+	//Serial.printf("long long %d  \n", sizeof(long long));
 	CHIP_ID = ESP.getChipId();
 	Serial.printf("getFlashChipId %d \n", ESP.getFlashChipId()); //这个id是假的，不知道为啥，两个esp的一样
 	Serial.printf("getChipId %d  \n", ESP.getChipId());
@@ -524,9 +517,8 @@ void setup()
 	}
 	else if (stat == -2)
 	{
-		Serial.print("flash error ,file open error -2");
+		Serial.print("flash error ,file open error -2,deepSleep");
 		ESP.deepSleep(300 * 1000); //us
-		resetFunc();
 	}
 	//连接wifi
 	if (WIFI_password[0] == '\0' || WIFI_ssid == '\0')
@@ -539,40 +531,39 @@ void setup()
 	Serial.printf("CHIP_ID %x \n", CHIP_ID);
 	if (get_wifi(WIFI_ssid, WIFI_password, wifi_ssid_pw_file) == 0)
 	{
+		Serial.print("flash error ,file open error -2,deepSleep");
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 	}
 
 	//Serial.printf(" file_read_stut %d ", file_read_stut());
 	Serial.printf(" read_values %d \n", read_values(stut_data_file));
 	dht11_init(dht11); //这个是DHT11.h/DHT11.c里的函数，初始化引脚
-					   //ESP.deepSleep(20000000, WAKE_RFCAL);
 }
 
 void loop()
 {
 	static short error_wifi_count = 0;
+	static int error_tcp_sum = 0; //tcp链接失败计次
 	int beeeeee = 0;
 	timer1_disable();
 
 	if (WiFi.status() != WL_CONNECTED)
 	{
-		//计次，超过三次就复位
-
+		//计次，超过三次就休眠
 		if (get_wifi(WIFI_ssid, WIFI_password, wifi_ssid_pw_file) == 0)
 		{
-			if (error_wifi_count > 1 && error_wifi_count < 2)
+			Serial.printf("error_wifi_count==%d\r\n", error_wifi_count);
+			if (error_wifi_count == 2)
 			{
-				WiFi.mode(WIFI_RESUME); //重新连接wifi
+				WiFi.mode(WIFI_OFF); //断开wifi 之后重新连接wifi
+				delay(1000);
 			}
 			else if (error_wifi_count == 3)
 			{
 				//超过6次链接失败，复位程序，重启
-				Serial.print("\r\ndeepSleep\r\n");
+				Serial.print("\r\ndeepSleep 20S\r\n");
 				ESP.deepSleep(20000000, WAKE_RFCAL);
-				//Serial.print("\r\nresetFunc\r\n");
-				//resetFunc();
 			}
-			//system_deep_sleep();
 			error_wifi_count++;
 			return;
 		}
@@ -594,18 +585,19 @@ void loop()
 	}
 	else
 	{
-		Serial.printf("tcp error,loop end :%d  \n", error_tcp_sum++);
-		delay(3000);
+		Serial.printf("error_tcp_sum=%d \r\n", error_tcp_sum++);
+		delay(3000); //等待3S再重连
 		if (error_tcp_sum > 3 && error_tcp_sum < 6)
 		{
-			WiFi.mode(WIFI_RESUME); //重新连接wifi
+			Serial.print("WiFi.mode(WIFI_OFF);\r\n");
+			WiFi.mode(WIFI_OFF); //重新连接wifi
 		}
 		else if (error_tcp_sum == 6)
 		{
 			//超过三次链接失败，复位程序，重启
-			resetFunc();
+			Serial.print("\r\nresetFunc\r\n");
+			ESP.restart(); //resetFunc();
 		}
-
 		return;
 	}
 	Serial.print("tcp ok");
@@ -623,7 +615,6 @@ void loop()
 			if (stat != 1)
 			{
 				//值转换出错，溢出或未找到有效值
-
 				Serial.print("\r\nnot found eid,deepSleep\r\n");
 				ESP.deepSleep(20000000, WAKE_RFCAL);
 			}
@@ -635,7 +626,7 @@ void loop()
 	}
 	else if (stat == 0)
 	{
-		Serial.print("\r\nservier error deepSleep\r\n");
+		Serial.print("\r\nservier error,deepSleep\r\n");
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 		//return;
 	}
@@ -763,7 +754,7 @@ void loop()
 		//TCP链接失效
 		else if (stat == 0)
 		{
-			Serial.printf("tcp error,loop end :%d", error_tcp_sum++);
+			Serial.printf("error_tcp_sum=%d \r\n", error_tcp_sum++);
 			delay(1000);
 			return;
 		}

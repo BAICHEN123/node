@@ -5,7 +5,7 @@
 //#include <Arduino.h>
 //#include <ESP8266WiFi.h>
 //复位函数
-void resetFunc();
+//ESP.restart();
 
 //定时器1 的单次中断时长
 #define TIMER1_timeout_ms 200
