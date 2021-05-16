@@ -63,6 +63,8 @@ char *str_data_names[MAX_NAME] = {"温度",
 								  "@低温警告/°C[0-40]",
 								  "@补光区间[0-10]",
 								  "@保存当前为断电记忆[0-1]"};
+
+const char *MODE_INFO = "@开关1模式[0-3]:手动，声控，光控，光声混控@开关2模式[0-3]:手动，声控，光控，光声混控@断电记忆[0-2]:本次不，仅本次，所有";
 struct DHT11_data dht11_data = {666, 666};
 
 const char *wifi_ssid_pw_file = "/wifidata.txt"; //储存 WiFi 账号和密码的文件
@@ -81,7 +83,7 @@ short switch_light_up_time_x_s = 0; //计数器用
 short TEMPERATURE_ERROR_HIGH = 40;
 short TEMPERATURE_ERROR_LOW = 10;
 uint8_t light_qu_yu = 5; //补光区间
-uint8_t power_save = 0;	 //补光区间
+uint8_t power_save = 0;	 //断电记忆
 
 //下面定义几个引脚的功能
 const uint8_t jd1 = 14;		//1号继电器
@@ -387,24 +389,6 @@ int set_databack()
 	return count_char;
 }
 
-/*将打包好的数据，用TCP发送出去*/
-char back_send_tcp(WiFiClient client)
-{
-	if (client.connected()) //函数第一次执行loop循环的时候这里可能会出错，因为 client 第一次赋值为局部变量，在setup 中修改他的初始化就可以了
-	{
-		//在这里合成需要发送出去的传感器数据？
-		client.write(tcp_send_data, set_databack());
-		//client.flush();
-		return 1;
-	}
-	else
-	{
-		//结束此次 loop ，到开始位置，重新连接TCP
-		client.stop();
-		return -1;
-	}
-}
-
 /*在这里修改控件的状态 i是名称对应的数组索引，value是用户赋值*/
 void set_data_(short i, short value)
 {
@@ -463,7 +447,7 @@ void set_data_(short i, short value)
 		}
 		break;
 	case 12:
-		if (value == 0 || value == 1)
+		if (value >= 0 && value <= 2)
 		{
 			power_save = value;
 		}
@@ -647,12 +631,10 @@ void loop()
 		if (millis() - time_old_ms > HEART_BEAT_ms)
 		{
 			//TCP发送一些数据
-			if (back_send_tcp(client) == -1)
+			if (back_send_tcp_(client,tcp_send_data,set_databack()) == -1)
 				return;
 			time_old_ms = millis();
 		}
-
-		//Serial.print(system_adc_read());//读取A0ADC的值，最大1024 我猜的略略略
 
 		if (millis() - beeeee_time_old_ms > 10)
 		{
@@ -665,7 +647,6 @@ void loop()
 			}
 
 			//Serial.printf(" %d", beeeeee);
-
 			beeeee_time_old_ms = millis(); //更新时间
 			beeeeee = 0;				   //更新计数器
 
@@ -708,10 +689,16 @@ void loop()
 
 			switch (*(my_tcp_cache.data + len_old))
 			{
-			case '+':
+			case '+'://获取传感器和模式的信息
 			case 'G':
 			case 'g':
-				if (back_send_tcp(client) == -1)
+				if (back_send_tcp_(client,tcp_send_data,set_databack()) == -1)
+					return;
+				time_old_ms = millis();
+				break; // 跳出 switch
+			case 'I'://获取一些模式id的详细描述
+			case 'i':
+				if (back_send_tcp(client,MODE_INFO) == -1)
 					return;
 				time_old_ms = millis();
 				break; // 跳出 switch
@@ -738,13 +725,16 @@ void loop()
 				//所有的指令已经执行完毕
 				brightness_work(); //更新一下光控灯的状态
 				//TCP 打包返还自己的状态
-				if (back_send_tcp(client) == -1)
+				if (back_send_tcp_(client,tcp_send_data,set_databack()) == -1)
 					return;
-				if (power_save == 1) //实时更新断电记忆的东西
+				if (power_save != 0) //实时更新断电记忆的东西
 				{
 					//file_save_stut();
 					Serial.printf(" save_values %d \n", save_values(stut_data_file));
-					power_save = 0; //如果不清零，则每次更改设置都会被flash记忆，flash擦写能力有限，我调试程序的就不每次擦写了
+					if (power_save == 1)
+					{
+						power_save = 0; //如果不清零，则每次更改设置都会被flash记忆，flash擦写能力有限，我调试程序的就不每次擦写了
+					}
 				}
 				break; //跳出 switch
 			}
