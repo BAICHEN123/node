@@ -81,7 +81,7 @@ TCP阻塞，等待 timeout_us_max ms
 		{
 			//在这里合成需要发送出去的传感器数据？
 			client.write(tcp_send_data, len);
-			client.flush();
+			client.flush(3000);//限制等待时间
 			return 1;
 		}
 		else

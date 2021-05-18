@@ -51,18 +51,18 @@ char tcp_send_data[MAX_TCP_DATA]; //随用随清，不设置长度数组
 */
 #define MAX_NAME 13
 const char *str_data_names[MAX_NAME] = {"温度",
-								  "湿度",
-								  "亮度",
-								  "@开关1[0-1]",
-								  "@开关1模式[0-3]",
-								  "@开关2[0-1]",
-								  "@开关2模式[0-3]",
-								  "@声控灯时长/S[1-300]",
-								  "声控灯剩余时长/S",
-								  "@高温警告/°C[0-40]",
-								  "@低温警告/°C[0-40]",
-								  "@补光区间[0-10]",
-								  "@保存当前为断电记忆[0-2]"};
+										"湿度",
+										"亮度",
+										"@开关1[0-1]",
+										"@开关1模式[0-3]",
+										"@开关2[0-1]",
+										"@开关2模式[0-3]",
+										"@声控灯时长/S[1-300]",
+										"声控灯剩余时长/S",
+										"@高温警告/°C[0-40]",
+										"@低温警告/°C[0-40]",
+										"@补光区间[0-10]",
+										"@保存当前为断电记忆[0-2]"};
 
 const char *MODE_INFO = "@开关1模式[0-3]:手动，声控，光控，光声混控@开关2模式[0-3]:手动，声控，光控，光声混控@断电记忆[0-2]:本次不，仅本次，所有";
 struct DHT11_data dht11_data = {666, 666};
@@ -569,7 +569,7 @@ void loop()
 	}
 	else
 	{
-		Serial.printf("error_tcp_sum=%d \r\n", error_tcp_sum++);
+		Serial.printf(" 1 error_tcp_sum=%d \r\n", error_tcp_sum++);
 		delay(3000); //等待3S再重连
 		if (error_tcp_sum > 3 && error_tcp_sum < 6)
 		{
@@ -631,8 +631,11 @@ void loop()
 		if (millis() - time_old_ms > HEART_BEAT_ms)
 		{
 			//TCP发送一些数据
-			if (back_send_tcp_(client,tcp_send_data,set_databack()) == -1)
+			if (back_send_tcp_(client, tcp_send_data, set_databack()) == -1)
+			{
+				Serial.printf(" 4 error_tcp_sum=%d \r\n", error_tcp_sum++);
 				return;
+			}
 			time_old_ms = millis();
 		}
 
@@ -689,16 +692,16 @@ void loop()
 
 			switch (*(my_tcp_cache.data + len_old))
 			{
-			case '+'://获取传感器和模式的信息
+			case '+': //获取传感器和模式的信息
 			case 'G':
 			case 'g':
-				if (back_send_tcp_(client,tcp_send_data,set_databack()) == -1)
+				if (back_send_tcp_(client, tcp_send_data, set_databack()) == -1)
 					return;
 				time_old_ms = millis();
 				break; // 跳出 switch
-			case 'I'://获取一些模式id的详细描述
+			case 'I':  //获取一些模式id的详细描述
 			case 'i':
-				if (back_send_tcp(client,MODE_INFO) == -1)
+				if (back_send_tcp(client, MODE_INFO) == -1)
 					return;
 				time_old_ms = millis();
 				break; // 跳出 switch
@@ -709,14 +712,14 @@ void loop()
 					{
 						if (0 <= str1_find_str2_1(my_tcp_cache.data, len_old, str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, ':'), str_data_names[i]))
 						{
-							int value=str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, ':');//获取'：:'相对于 my_tcp_cache.data 的位置
-							if(value<0)
+							int value = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, ':'); //获取'：:'相对于 my_tcp_cache.data 的位置
+							if (value < 0)
 							{
 								Serial.printf("get ':' error\n");
 								break;
 							}
-							value = str_to_u16(my_tcp_cache.data + value,my_tcp_cache.len-value); //将赋值的分隔符之后，my_tcp_cache.len之前范围内第一个数据转换成u16
-							if(value<0)
+							value = str_to_u16(my_tcp_cache.data + value, my_tcp_cache.len - value); //将赋值的分隔符之后，my_tcp_cache.len之前范围内第一个数据转换成u16
+							if (value < 0)
 							{
 								Serial.printf("get u16 error\n");
 								break;
@@ -736,8 +739,11 @@ void loop()
 				//所有的指令已经执行完毕
 				brightness_work(); //更新一下光控灯的状态
 				//TCP 打包返还自己的状态
-				if (back_send_tcp_(client,tcp_send_data,set_databack()) == -1)
+				if (back_send_tcp_(client, tcp_send_data, set_databack()) == -1)
+				{
+					Serial.printf(" 2 error_tcp_sum=%d \r\n", error_tcp_sum++);
 					return;
+				}
 				if (power_save != 0) //实时更新断电记忆的东西
 				{
 					//file_save_stut();
@@ -755,7 +761,7 @@ void loop()
 		//TCP链接失效
 		else if (stat == 0)
 		{
-			Serial.printf("error_tcp_sum=%d \r\n", error_tcp_sum++);
+			Serial.printf(" 3 error_tcp_sum=%d \r\n", error_tcp_sum++);
 			delay(1000);
 			return;
 		}
