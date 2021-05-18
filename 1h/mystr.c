@@ -7,26 +7,48 @@
 字符串转u16
 IPD, 10:12345678->10
 把传入的第一个自然数转换成u16
+传出正数则装换成功
+创出负数则转换失败，传回的复数是最后转换的有效位
 */
-int str_to_u16(char* str1)
+int str_to_u16(const char *str1, unsigned int len)
 {
-	int i;
-	while (*(str1) < '0' || *(str1) > '9')
-	{
-		str1++;
-	}
-	i = (*str1) & 15;//&207（1100 1111）  char 转 int
-	if (*(str1 - 1) == '-')
-	{
-		i = -1 * i;
-	}
-	str1++;
-	while ((*str1 > 47) && (*str1 < 58))
-	{
-		i = i * 10 + (*str1 & 15);
-		str1++;
-	}
-	return i;
+    int i;
+    char *q_str1 = (char *)str1;
+    while (*(q_str1) < '0' || *(q_str1) > '9')
+    {
+        q_str1++;
+        if (q_str1 - str1 > len)
+        {
+            return -1;
+        }
+    }
+    i = (*q_str1) & 15; //&207（1100 1111）  char 转 int
+    q_str1++;
+    while ((*q_str1 > 47) && (*q_str1 < 58) && (q_str1 - str1 < len))
+    {
+        /* 
+        65535
+        6552 后面可以跟 0-9
+        6553 后面只能跟 0-5
+        再大就会溢出
+        */
+        if (i < 6553)
+        {
+            i = i * 10 + (*q_str1 & 15);
+            q_str1++;
+        }
+        else if (i <= 6553 && *q_str1 <= '5')
+        {
+
+            i = i * 10 + (*q_str1 & 15);
+            q_str1++;
+        }
+        else
+        {
+            return -1 * i;
+        }
+    }
+    return i;
 }
 /*
 字符串转unsigned long long
@@ -43,52 +65,44 @@ status:	-1	在长度范围内没有找到任何一个数字
 		1	成功转换
 			return:	有效值
 */
-u64 str_to_u64(char *str1, unsigned int len, short *status)
+u64 str_to_u64(const char *str1, unsigned int len, short *status)
 {
     u64 i;
-    char *old_q = str1;
-    while (*(str1) < '1' || *(str1) > '9')//从 '0' 开始转换数字没有意义  &&  //从 1开始转换，不然后面统计位数会出错
+    char *old_q = (char *)str1;
+    while (*(old_q) < '0' || *(old_q) > '9') //从 '0' 开始转换数字没有意义  &&  //从 1开始转换，不然后面统计位数会出错
     {
-        str1++;
-        if (str1 - old_q > len)
+        old_q++;
+        if (old_q - str1 > len)
         {
             *status = -1;
             return 0;
-            //break;
         }
     }
-    old_q = str1;//统计被真正转换的位数
-    i = (*str1) & 15; //&207（1100 1111）  char 转 int
-
-    str1++;
-    while ((*str1 > 47) && (*str1 < 58))
+    i = (*old_q) & 15; //&207（1100 1111）  char 转 int
+    old_q++;
+    while ((*old_q > 47) && (*old_q < 58) && (old_q - str1 < len))
     {
-        //printf("%llu  \n", i);
-        if (str1 - old_q == 19)
+        /* 
+        1844674407370955160 后面可以跟 0-9
+        1844674407370955161 后面只能跟 0-5
+        再大就会溢出
+        */
+        if (i < 1844674407370955161llu)
         {
-            printf("19=%c  18=%c\n", *(str1 - 19), *(str1 - 18));
-            if (i <= 1844674407370955161 && *str1 <= '5')
-            {
-                i = i * 10 + (*str1 & 15);
-                str1++; //看一下下一位是不是数字
-                if ((*str1 > 47) && (*str1 < 58))
-                {
-                    //下一位还是数字，真的溢出了
-                    *status = -2;
-                    return i;
-                }
-                //刚好填满，后面没有数字
-                *status = 1;
-                return i;
-            }
-            else
-            {
-                *status = -2;
-                return i;
-            }
+            i = i * 10 + (*old_q & 15);
+            old_q++;
         }
-        i = i * 10 + (*str1 & 15);
-        str1++;
+        else if (i <= 1844674407370955161llu && *old_q <= '5')//18446744073709551615
+        {
+            
+            i = i * 10 + (*old_q & 15);
+            old_q++;
+        }
+        else
+        {
+            *status = -2;
+            return i;
+        }
     }
     *status = 1;
     return i;
@@ -175,7 +189,7 @@ str1
       |return
 
 */
-int str1_find_str2_1(char* str1, int start_i, int str_length, char* str2)
+int str1_find_str2_1(char* str1, int start_i, int str_length, const char* str2)
 {
 
 	int str1_i = start_i;

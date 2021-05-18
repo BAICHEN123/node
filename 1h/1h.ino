@@ -50,7 +50,7 @@ char tcp_send_data[MAX_TCP_DATA]; //随用随清，不设置长度数组
 2	修改程序逻辑的高低电平 和 01 的对应关系，方便设备的安装。
 */
 #define MAX_NAME 13
-char *str_data_names[MAX_NAME] = {"温度",
+const char *str_data_names[MAX_NAME] = {"温度",
 								  "湿度",
 								  "亮度",
 								  "@开关1[0-1]",
@@ -62,7 +62,7 @@ char *str_data_names[MAX_NAME] = {"温度",
 								  "@高温警告/°C[0-40]",
 								  "@低温警告/°C[0-40]",
 								  "@补光区间[0-10]",
-								  "@保存当前为断电记忆[0-1]"};
+								  "@保存当前为断电记忆[0-2]"};
 
 const char *MODE_INFO = "@开关1模式[0-3]:手动，声控，光控，光声混控@开关2模式[0-3]:手动，声控，光控，光声混控@断电记忆[0-2]:本次不，仅本次，所有";
 struct DHT11_data dht11_data = {666, 666};
@@ -709,10 +709,21 @@ void loop()
 					{
 						if (0 <= str1_find_str2_1(my_tcp_cache.data, len_old, str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, ':'), str_data_names[i]))
 						{
-							short value = str_to_u16(my_tcp_cache.data + str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, ':')); //将赋值的分隔符之后的数据转换成u16
+							int value=str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, ':');//获取'：:'相对于 my_tcp_cache.data 的位置
+							if(value<0)
+							{
+								Serial.printf("get ':' error\n");
+								break;
+							}
+							value = str_to_u16(my_tcp_cache.data + value,my_tcp_cache.len-value); //将赋值的分隔符之后，my_tcp_cache.len之前范围内第一个数据转换成u16
+							if(value<0)
+							{
+								Serial.printf("get u16 error\n");
+								break;
+							}
 							//这里作为调试用，串口发送很占时间
-							Serial.printf("\r\n	set id = %d	value= %d \r\n", i, value);
-							set_data_(i, value);
+							Serial.printf("\r\nset id = %d	value= %d ", i, (u16)value);
+							set_data_(i, (u16)value);
 							time_old_ms = millis();
 							break;
 						}

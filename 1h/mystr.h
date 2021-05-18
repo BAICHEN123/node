@@ -18,10 +18,10 @@ status:	-1	在长度范围内没有找到任何一个数字
 		   1	成功转换
 			   return:	有效值
 */
-u64 str_to_u64(char *str1, unsigned int len, short *status);
+u64 str_to_u64(const char *str1, unsigned int len, short *status);
 
 //u64 str_to_u64(char* str1, unsigned int len,short *status);
-int str_to_u16(char *str1);
+int str_to_u16(const char *str1, unsigned int len);
 /*
 字符数组查找字符串
 str1:数据
@@ -30,7 +30,7 @@ str2:需要找到的字符串
 查找成功：返回str2在str1中的开始位置
 查找失败：返回-1
 */
-int str1_find_str2_1(char *str1, int start_i, int str_length, char *str2);
+int str1_find_str2_1(char *str1, int start_i, int str_length,const char *str2);
 /*
 //字符串查找字符串
 str1:数据
