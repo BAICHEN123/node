@@ -64,10 +64,10 @@ TCP阻塞，等待 timeout_us_max ms
 		short start_id = tcp_data->len;
 		while (client.available() && tcp_data->len < MAX_TCP_DATA)
 		{
-			if (tcp_data->len >= MAX_TCP_DATA)
-			{
-				return -1;
-			}
+			// if (tcp_data->len >= MAX_TCP_DATA)
+			// {
+			// 	return -1;
+			// }
 			tcp_data->data[tcp_data->len++] = static_cast<char>(client.read());
 		}
 		tcp_data->data[tcp_data->len] = '\0';

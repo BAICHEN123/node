@@ -624,18 +624,21 @@ void loop()
 	set_timer1_ms(timer1_worker, TIMER1_timeout_ms); //强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
 	//（仅在程序复位的时候可以成功，原因：timer2_count 没有复位就不会被初始化，自然调用不到定时器的初始化函数），
 	dht11_get(); //读取dht11的数据，顺便启动定时器//这里有问题，当断网重连之后，定时器函数有可能不会被重新填充
-	while (1)	 //tcp断开之后无法重新链接，我只能重新声明试试，但是好像也没什么用处???，只能计次，然后软件复位程序
+	while (client.connected())	 //tcp断开之后无法重新链接，我只能重新声明试试，但是好像也没什么用处???，只能计次，然后软件复位程序
 	{
 		//time_old_ms = millis();
 		//隔一段时间就发送一次本机数据，怕tcp失效
 		if (millis() - time_old_ms > HEART_BEAT_ms)
 		{
+			Serial.print('#');
 			//TCP发送一些数据
 			if (back_send_tcp_(client, tcp_send_data, set_databack()) == -1)
 			{
 				Serial.printf(" 4 error_tcp_sum=%d \r\n", error_tcp_sum++);
 				return;
 			}
+			//在这里插入心跳包的返回值检测，超时未回复，就认定链接失效，重新建立tcp的链接
+			/*实现方式：添加两个标志？记录发送状态和接收状态，判断发送和接受状态的情况*/
 			time_old_ms = millis();
 		}
 
