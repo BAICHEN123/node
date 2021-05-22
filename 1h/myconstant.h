@@ -20,6 +20,8 @@
 
 //心跳包时间间隔
 #define HEART_BEAT_ms 60 * 1000
+//心跳包回复时间上限，超时认为连接断裂，重新连接,
+#define HEART_BEAT_TIMEOUT_ms HEART_BEAT_ms*2-1
 
 #define list_values_len_max 10 //需要存储多少个变量的值
 

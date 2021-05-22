@@ -515,7 +515,7 @@ void setup()
 	Serial.printf("CHIP_ID %x \n", CHIP_ID);
 	if (get_wifi(WIFI_ssid, WIFI_password, wifi_ssid_pw_file) == 0)
 	{
-		Serial.print("flash error ,file open error -2,deepSleep");
+		Serial.print("wifi error 0,deepSleep");
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 	}
 
@@ -578,9 +578,11 @@ void loop()
 		}
 		else if (error_tcp_sum == 6)
 		{
-			//超过三次链接失败，复位程序，重启
-			Serial.print("\r\nresetFunc\r\n");
-			ESP.restart(); //resetFunc();
+			//超过6次链接失败，复位程序，重启
+			Serial.print("\r\nnet error,deepSleep\r\n");
+			ESP.deepSleep(20000000, WAKE_RFCAL);
+			//Serial.print("\r\nresetFunc\r\n");
+			//ESP.restart(); //resetFunc();
 		}
 		return;
 	}
@@ -615,8 +617,10 @@ void loop()
 		//return;
 	}
 
-	unsigned long time_old_ms = millis();
+	unsigned long get_time_old_ms = millis();
+	unsigned long send_time_old_ms = millis();
 	unsigned long beeeee_time_old_ms = millis();
+	//micros();//us
 	short len_old;
 	brightness_work(); //初始化引脚之前，先调整高低电平，减少不必要的继电器响声
 	pinMode(jd2, OUTPUT);
@@ -624,12 +628,26 @@ void loop()
 	set_timer1_ms(timer1_worker, TIMER1_timeout_ms); //强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
 	//（仅在程序复位的时候可以成功，原因：timer2_count 没有复位就不会被初始化，自然调用不到定时器的初始化函数），
 	dht11_get(); //读取dht11的数据，顺便启动定时器//这里有问题，当断网重连之后，定时器函数有可能不会被重新填充
-	while (client.connected())	 //tcp断开之后无法重新链接，我只能重新声明试试，但是好像也没什么用处???，只能计次，然后软件复位程序
+	while (client.connected())
 	{
-		//time_old_ms = millis();
+		/*
+		之前的理解	//tcp断开之后无法重新链接，我只能重新声明试试，但是好像也没什么用处???，只能计次，然后软件复位程序
+		现在的理解	2021年5月22日11点54分	tcp链接由于 WiFi网络租约结束 而断开，无法完成数据通讯，过20min左右才会被系统感知发现，然后 client.connected() 判定才为假
+					在这之间的20min里，发送的数据均无法到达服务器，链接实际上是断开的状态，似乎是是由于没有收到tcp的挥手，链接判定值为真
+		解决方案	依靠更合理的心跳包。心跳包就是心跳包，没有按时收到消息就是暴毙了。
+			每隔1min发送一次tcp心跳包，发送后2min内收到回复视为正常		//考虑到服务器在以后可能收到很多设备的心跳包，处理起来占用很多时间，将这个搞成动态时间间隔？
+			如果没有收到心跳包的回复就开始重新建立链接	这里直接 return 就可以了
+		实现情况	无
+		*/
+		//tcp链接发送数据时候过将近20min才会被系统感知发现，然后 client.connected() 判定才为假
 		//隔一段时间就发送一次本机数据，怕tcp失效
-		if (millis() - time_old_ms > HEART_BEAT_ms)
+		if (millis() - send_time_old_ms > HEART_BEAT_ms) //无符号整型的加减运算，就算溢出了，也不影响差的计算，windows gcc 0-0xfffffffe=2;
 		{
+			if (millis() - get_time_old_ms > HEART_BEAT_TIMEOUT_ms)
+			{
+				Serial.printf(" %d not get tcp data ,return\r\n", HEART_BEAT_TIMEOUT_ms);
+				return;
+			}
 			Serial.print('#');
 			//TCP发送一些数据
 			if (back_send_tcp_(client, tcp_send_data, set_databack()) == -1)
@@ -639,17 +657,15 @@ void loop()
 			}
 			//在这里插入心跳包的返回值检测，超时未回复，就认定链接失效，重新建立tcp的链接
 			/*实现方式：添加两个标志？记录发送状态和接收状态，判断发送和接受状态的情况*/
-			time_old_ms = millis();
+			send_time_old_ms = millis();
 		}
-
+		//声音的采样间隔，查看 beeeee_time_old_ms 时间间隔内的高电平数量，作为声控的判定标准
 		if (millis() - beeeee_time_old_ms > 10)
 		{
-			//进行操作
 			if (beeeeee > 10) //要大于五是因为偶尔会采样出错，一般是连续的三个，正常人发出的声音远大于此
 			{
 				//更新声控灯剩余时长
 				switch_light_up_time_x_s = switch_light_up_TIME_s;
-				//Serial.printf("switch_light_up_time_x_s  :%d \r\n", switch_light_up_time_x_s);
 			}
 
 			//Serial.printf(" %d", beeeeee);
@@ -667,46 +683,47 @@ void loop()
 			}
 		}
 
-		//micros();
-		//int time_old = micros();//这个是我用来测试TCP响应时间的，读取当前时间，之后用新时间减去这个值
 		//如果回复重要，就多等一下，把 timeout_ms_max 改大一点
 		stat = timeout_back_us(client, 100); //等待100us tcp是否有数据返回
-		//对声音采样
-		//直接加上就可以了，反正就是010101001010101
+		//对声音采样//直接加上就可以了，反正就是010101001010101
 		beeeeee = beeeeee + digitalRead(shengyin);
-		//有收到TCP数据
-		if (stat == 1)
+
+		if (stat == 1) //有收到TCP数据
 		{
 			//Serial.printf("回复响应时间：%d \n", micros() - time_old);
 			len_old = my_tcp_cache.len;
 			stat = get_tcp_data(client, &my_tcp_cache);
-			//这里还有问题， get_tcp_data 可能返回-1 这是溢出的标志
-			/*
-				if(stat==-1)
-				{
-					//这里填写处理溢出的方案
-				}
-			*/
+			if (my_tcp_cache.len - len_old > 0) //收到有效字节
+			{
+				get_time_old_ms = millis(); //最后一次接收到数据的时间戳
+			}
+			else
+			{
+				continue; //没有收到有效的数据，不用继续往后
+			}
 			//如果需要对TCP链接返回的数据进行处理，请在这后面写，-----------------------------------------------------------------------
-			//示例
-			//将TCP返回的数据当作字符串输出
+			//示例//将TCP返回的数据当作字符串输出
 			Serial.print(my_tcp_cache.data + len_old);
-			//Serial.printf("udp send id=%d\n", debug_udp_count);
 
 			switch (*(my_tcp_cache.data + len_old))
 			{
+			case 'T':
+			case 't':
+				//这里处理心跳包返回的时间戳，无需返回任何数据
+
+				break;
 			case '+': //获取传感器和模式的信息
 			case 'G':
 			case 'g':
 				if (back_send_tcp_(client, tcp_send_data, set_databack()) == -1)
 					return;
-				time_old_ms = millis();
+				send_time_old_ms = millis();//这里发送了，就没有必要一直发心跳包了，跟新一下心跳包的时间戳
 				break; // 跳出 switch
 			case 'I':  //获取一些模式id的详细描述
 			case 'i':
 				if (back_send_tcp(client, MODE_INFO) == -1)
 					return;
-				time_old_ms = millis();
+				send_time_old_ms = millis();//这里发送了，就没有必要一直发心跳包了，跟新一下心跳包的时间戳
 				break; // 跳出 switch
 			case '@':  //set
 				while (len_old >= 0 && len_old < my_tcp_cache.len)
@@ -730,7 +747,6 @@ void loop()
 							//这里作为调试用，串口发送很占时间
 							Serial.printf("\r\nset id = %d	value= %d ", i, (u16)value);
 							set_data_(i, (u16)value);
-							time_old_ms = millis();
 							break;
 						}
 					}
@@ -747,6 +763,7 @@ void loop()
 					Serial.printf(" 2 error_tcp_sum=%d \r\n", error_tcp_sum++);
 					return;
 				}
+				send_time_old_ms = millis();//这里发送了，就没有必要一直发心跳包了，跟新一下心跳包的时间戳
 				if (power_save != 0) //实时更新断电记忆的东西
 				{
 					//file_save_stut();
@@ -769,4 +786,7 @@ void loop()
 			return;
 		}
 	}
+
+	client.stop();
+	Serial.printf(" 4 error_tcp_sum=%d \r\n", error_tcp_sum++);
 }
