@@ -36,4 +36,8 @@
 //做服务器时监听的端口
 #define SERVER_CLIENT_PROT 9997
 
+
+
+#define HEART_BEAT_FIG '\t'
+#define COMMAND_FIG '#'
 #endif

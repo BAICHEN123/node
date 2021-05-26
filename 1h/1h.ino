@@ -40,6 +40,16 @@ char tcp_send_data[MAX_TCP_DATA]; //随用随清，不设置长度数组
 4	是否可以强制唤醒？
 
 */
+/*关于心跳包被误认为指令返回值的解决方案
+原先时候：	单片机：tcp返回的打包函数 set_databack 会将第一个字节首先填充为 '#' 
+			手机端：对其进行解析（split("#+")）的时候会将连续的 ‘#’ 识别为一段。
+			服务器：先丢包，发指令，转发结果
+预期方案：	单片机：set_databack 添加输入参数，分辨心跳包和指令返回包
+					在原先的 set_databack 基础之上，所有的数据向后移动一位，第一位用来填充服务器判定标志位
+					心跳包：'\t' //'\0'   指令包：'#'	//stm32采用at指令控制esp8266联网时无法发送 '\0',所以决定使用'\t'替换'\0'
+			手机端代码不用改
+			服务端：舍弃数据的环节放在标志判定为之后，仅对'#'开头的数据进行转发
+*/
 /*
 //为数据命名，设定个数
 //关于LED的状态，在与用户的手机沟通期间 1认为电灯属于开启状态 0认为电灯关闭，
@@ -325,11 +335,12 @@ void set_timer1_ms(timercallback userFunc, uint32_t time_ms)
 }
 
 /*将数据放在一个数组里发送。 返回数据的长度*/
-int set_databack()
+int set_databack(const char fig)
 {
 	int i, k, count_char;
-	tcp_send_data[0] = '#'; //在这里插入开始符号
-	count_char = 1;
+	tcp_send_data[0] = fig; //在这里插入开始符号
+	tcp_send_data[1] = '#'; //在这里插入开始符号
+	count_char = 2;
 	for (i = 0; i < MAX_NAME; i++)
 	{
 		k = 0;
@@ -588,11 +599,11 @@ void loop()
 	}
 	Serial.print("tcp ok");
 
-	stat = timeout_back_ms(client, 3000);
+	stat = timeout_back_ms(&client, 3000);
 	if (stat == 1)
 	{
 		//这里收到的信息可能是服务器返回的第一条信息
-		Serial.println(my_tcp_cache.data + get_tcp_data(client, &my_tcp_cache));
+		Serial.println(my_tcp_cache.data + get_tcp_data(&client, &my_tcp_cache));
 		//beeeeee 临时储存一下+EID的开始位置
 		beeeeee = str1_find_str2_(my_tcp_cache.data, my_tcp_cache.len, "+EID");
 		if (beeeeee >= 0)
@@ -630,9 +641,9 @@ void loop()
 	dht11_get(); //读取dht11的数据，顺便启动定时器//这里有问题，当断网重连之后，定时器函数有可能不会被重新填充
 	while (client.connected())
 	{
-		/*
+		/*关于00：00断网
 		之前的理解	//tcp断开之后无法重新链接，我只能重新声明试试，但是好像也没什么用处???，只能计次，然后软件复位程序
-		现在的理解	2021年5月22日11点54分	tcp链接由于 WiFi网络租约结束 而断开，无法完成数据通讯，过20min左右才会被系统感知发现，然后 client.connected() 判定才为假
+		现在的理解	2021年5月22日11点54分	tcp链接由于 校园网日租网络租约结束 而断开，无法完成数据通讯，过20min左右才会被系统感知发现，然后 client.connected() 判定才为假
 					在这之间的20min里，发送的数据均无法到达服务器，链接实际上是断开的状态，似乎是是由于没有收到tcp的挥手，链接判定值为真
 		解决方案	依靠更合理的心跳包。心跳包就是心跳包，没有按时收到消息就是暴毙了。
 			每隔1min发送一次tcp心跳包，发送后2min内收到回复视为正常		//考虑到服务器在以后可能收到很多设备的心跳包，处理起来占用很多时间，将这个搞成动态时间间隔？
@@ -649,8 +660,8 @@ void loop()
 				return;
 			}
 			Serial.print('#');
-			//TCP发送一些数据
-			if (back_send_tcp_(client, tcp_send_data, set_databack()) == -1)
+			//TCP发送心跳包
+			if (back_send_tcp_(&client, tcp_send_data, set_databack(HEART_BEAT_FIG)) == -1)
 			{
 				Serial.printf(" 4 error_tcp_sum=%d \r\n", error_tcp_sum++);
 				return;
@@ -684,7 +695,7 @@ void loop()
 		}
 
 		//如果回复重要，就多等一下，把 timeout_ms_max 改大一点
-		stat = timeout_back_us(client, 100); //等待100us tcp是否有数据返回
+		stat = timeout_back_us(&client, 100); //等待100us tcp是否有数据返回
 		//对声音采样//直接加上就可以了，反正就是010101001010101
 		beeeeee = beeeeee + digitalRead(shengyin);
 
@@ -692,7 +703,7 @@ void loop()
 		{
 			//Serial.printf("回复响应时间：%d \n", micros() - time_old);
 			len_old = my_tcp_cache.len;
-			stat = get_tcp_data(client, &my_tcp_cache);
+			stat = get_tcp_data(&client, &my_tcp_cache);
 			if (my_tcp_cache.len - len_old > 0) //收到有效字节
 			{
 				get_time_old_ms = millis(); //最后一次接收到数据的时间戳
@@ -715,13 +726,13 @@ void loop()
 			case '+': //获取传感器和模式的信息
 			case 'G':
 			case 'g':
-				if (back_send_tcp_(client, tcp_send_data, set_databack()) == -1)
+				if (back_send_tcp_(&client, tcp_send_data, set_databack(COMMAND_FIG)) == -1)
 					return;
 				send_time_old_ms = millis();//这里发送了，就没有必要一直发心跳包了，跟新一下心跳包的时间戳
 				break; // 跳出 switch
 			case 'I':  //获取一些模式id的详细描述
 			case 'i':
-				if (back_send_tcp(client, MODE_INFO) == -1)
+				if (back_send_tcp(&client, MODE_INFO) == -1)
 					return;
 				send_time_old_ms = millis();//这里发送了，就没有必要一直发心跳包了，跟新一下心跳包的时间戳
 				break; // 跳出 switch
@@ -758,7 +769,7 @@ void loop()
 				//所有的指令已经执行完毕
 				brightness_work(); //更新一下光控灯的状态
 				//TCP 打包返还自己的状态
-				if (back_send_tcp_(client, tcp_send_data, set_databack()) == -1)
+				if (back_send_tcp_(&client, tcp_send_data, set_databack(COMMAND_FIG)) == -1)
 				{
 					Serial.printf(" 2 error_tcp_sum=%d \r\n", error_tcp_sum++);
 					return;
