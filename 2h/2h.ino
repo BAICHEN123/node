@@ -626,11 +626,12 @@ short get_wifi()
 /*
 将数据放在一个数组里发送。
 */
-int set_databack()
+int set_databack(const char fig)
 {
 	int i, k, count_char;
-	tcp_send_data[0] = '#'; //在这里插入开始符号
-	count_char = 1;
+	tcp_send_data[0] = fig; //在这里插入开始符号
+	tcp_send_data[1] = '#'; //在这里插入开始符号
+	count_char = 2;
 	for (i = 0; i < MAX_NAME; i++)
 	{
 		k = 0;
@@ -803,12 +804,12 @@ short file_read_stut()
 /*
 将打包好的数据，用TCP发送出去
 */
-char back_send_tcp(WiFiClient client)
+char back_send_tcp(WiFiClient client, char *send_data, int len)
 {
 	if (client.connected()) //函数第一次执行loop循环的时候这里可能会出错，因为 client 第一次赋值为局部变量，在setuo 中修改他的初始化就可以了
 	{
 		//在这里合成需要发送出去的传感器数据？
-		client.write(tcp_send_data, set_databack());
+		client.write(send_data, len);
 		//client.flush();
 		return 1;
 	}
@@ -951,7 +952,7 @@ void setup()
 {
 	pinMode(16, OUTPUT);
 	digitalWrite(16, HIGH); //不知道为啥，这个模块的初始状态是LOW，然后我一插上跳线帽就开始无限重启//是电压低的问题，默认未初始化的电压低于判定电压，在 nodemcu 上没有出现错误可能是因为产品型号/批次的不同，经过电压表测量，nodemcu的电压在0.8V左右，单个小模块的电压不到0.3
-	
+
 	//SPIFFS.format();//第一次使用flash需要将flash格式化
 	Serial.begin(115200);
 	CHIP_ID = ESP.getChipId();
@@ -999,7 +1000,7 @@ void setup()
 		Serial.print("\r\ndeepSleep\r\n");
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 	}
-	Serial.printf(" file_read_stut %d sizeof(u64) %d sizeof(unsigned long) %d \n", file_read_stut(),sizeof(u64),sizeof(unsigned long));
+	Serial.printf(" file_read_stut %d sizeof(u64) %d sizeof(unsigned long) %d \n", file_read_stut(), sizeof(u64), sizeof(unsigned long));
 	//DHT11_init(5);//这个是DHT11.h/DHT11.c里的函数
 	//ESP.deepSleep(20000000, WAKE_RFCAL);
 	//开始循环之前先调用一次，初始化一下温湿度的值
@@ -1106,7 +1107,7 @@ void loop()
 		if (millis() - time_old_ms > 5000)
 		{
 			//TCP发送一些数据
-			if (back_send_tcp(client) == -1)
+			if (back_send_tcp(client, tcp_send_data, set_databack('\t')) == -1)
 				return;
 			time_old_ms = millis();
 		}
@@ -1160,7 +1161,7 @@ void loop()
 			case '+':
 			case 'G':
 			case 'g':
-				if (back_send_tcp(client) == -1)
+				if (back_send_tcp(client, tcp_send_data, set_databack('#')) == -1)
 					return;
 				time_old_ms = millis();
 				break; // 跳出 switch
@@ -1186,7 +1187,7 @@ void loop()
 				//所有的指令已经执行完毕
 				//brightness_work();//更新一下光控灯的状态
 				//TCP 打包返还自己的状态
-				if (back_send_tcp(client) == -1)
+				if (back_send_tcp(client, tcp_send_data, set_databack('#')) == -1)
 					return;
 				if (power_save == 1) //实时更新断电记忆的东西
 				{
