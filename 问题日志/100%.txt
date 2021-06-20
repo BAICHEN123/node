@@ -1,0 +1,88 @@
+218615
+
+
+
+hcc@iZ8vbheg6uhfmkqdlg2kd2Z:~$ ps -aux
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root           1  0.0  0.6 104772 12520 ?        Ss   Mar18   0:42 /sbin/init noibrs
+root           2  0.0  0.0      0     0 ?        S    Mar18   0:00 [kthreadd]
+root           3  0.0  0.0      0     0 ?        I<   Mar18   0:00 [rcu_gp]
+root           4  0.0  0.0      0     0 ?        I<   Mar18   0:00 [rcu_par_gp]
+root           6  0.0  0.0      0     0 ?        I<   Mar18   0:00 [kworker/0:0H-kblockd]
+root           9  0.0  0.0      0     0 ?        I<   Mar18   0:00 [mm_percpu_wq]
+root          10  0.0  0.0      0     0 ?        S    Mar18   0:53 [ksoftirqd/0]
+root          11  0.0  0.0      0     0 ?        I    Mar18  13:13 [rcu_sched]
+root          12  0.0  0.0      0     0 ?        S    Mar18   0:17 [migration/0]
+root          13  0.0  0.0      0     0 ?        S    Mar18   0:00 [idle_inject/0]
+root          14  0.0  0.0      0     0 ?        S    Mar18   0:00 [cpuhp/0]
+root          15  0.0  0.0      0     0 ?        S    Mar18   0:00 [kdevtmpfs]
+root          16  0.0  0.0      0     0 ?        I<   Mar18   0:00 [netns]
+root          17  0.0  0.0      0     0 ?        S    Mar18   0:00 [rcu_tasks_kthre]
+root          18  0.0  0.0      0     0 ?        S    Mar18   0:00 [kauditd]
+root          19  0.0  0.0      0     0 ?        S    Mar18   0:01 [khungtaskd]
+root          20  0.0  0.0      0     0 ?        S    Mar18   0:00 [oom_reaper]
+root          21  0.0  0.0      0     0 ?        I<   Mar18   0:00 [writeback]
+root          22  0.0  0.0      0     0 ?        S    Mar18   0:00 [kcompactd0]
+root          23  0.0  0.0      0     0 ?        SN   Mar18   0:00 [ksmd]
+root          24  0.0  0.0      0     0 ?        SN   Mar18   0:08 [khugepaged]
+root          70  0.0  0.0      0     0 ?        I<   Mar18   0:00 [kintegrityd]
+root          71  0.0  0.0      0     0 ?        I<   Mar18   0:00 [kblockd]
+root          72  0.0  0.0      0     0 ?        I<   Mar18   0:00 [blkcg_punt_bio]
+root          73  0.0  0.0      0     0 ?        I<   Mar18   0:00 [tpm_dev_wq]
+root          74  0.0  0.0      0     0 ?        I<   Mar18   0:00 [ata_sff]
+root          75  0.0  0.0      0     0 ?        I<   Mar18   0:00 [md]
+root          76  0.0  0.0      0     0 ?        I<   Mar18   0:00 [edac-poller]
+root          77  0.0  0.0      0     0 ?        I<   Mar18   0:00 [devfreq_wq]
+root          78  0.0  0.0      0     0 ?        S    Mar18   0:00 [watchdogd]
+root          81  0.0  0.0      0     0 ?        S    Mar18   0:04 [kswapd0]
+root          82  0.0  0.0      0     0 ?        S    Mar18   0:00 [ecryptfs-kthrea]
+root          84  0.0  0.0      0     0 ?        I<   Mar18   0:00 [kthrotld]
+root          85  0.0  0.0      0     0 ?        I<   Mar18   0:00 [acpi_thermal_pm]
+root          86  0.0  0.0      0     0 ?        S    Mar18   0:00 [scsi_eh_0]
+root          87  0.0  0.0      0     0 ?        I<   Mar18   0:00 [scsi_tmf_0]
+root          88  0.0  0.0      0     0 ?        S    Mar18   0:00 [scsi_eh_1]
+root          89  0.0  0.0      0     0 ?        I<   Mar18   0:00 [scsi_tmf_1]
+root          91  0.0  0.0      0     0 ?        I<   Mar18   0:00 [vfio-irqfd-clea]
+root          92  0.0  0.0      0     0 ?        I<   Mar18   0:00 [ipv6_addrconf]
+root         102  0.0  0.0      0     0 ?        I<   Mar18   0:00 [kstrp]
+root         105  0.0  0.0      0     0 ?        I<   Mar18   0:00 [kworker/u5:0]
+root         118  0.0  0.0      0     0 ?        I<   Mar18   0:00 [charger_manager]
+root         158  0.0  0.0      0     0 ?        I<   Mar18   0:13 [kworker/0:1H-kblockd]
+root         177  0.0  0.0      0     0 ?        S    Mar18   0:35 [jbd2/vda1-8]
+root         178  0.0  0.0      0     0 ?        I<   Mar18   0:00 [ext4-rsv-conver]
+root         223  0.0  2.4 109432 47388 ?        S<s  Mar18   0:24 /lib/systemd/systemd-journald
+root         251  0.0  0.2  20928  5016 ?        Ss   Mar18   0:12 /lib/systemd/systemd-udevd
+root         299  0.0  0.0      0     0 ?        I<   Mar18   0:00 [cryptd]
+root         333  0.0  0.0      0     0 ?        I<   Mar18   0:00 [nfit]
+systemd+     400  0.0  0.3  26924  7640 ?        Ss   Mar18   0:10 /lib/systemd/systemd-networkd
+systemd+     416  0.0  0.6  24356 12404 ?        Ss   Mar18   2:20 /lib/systemd/systemd-resolved
+root         431  0.0  0.4 238860  7912 ?        Ssl  Mar18   1:28 /usr/lib/accountsservice/accounts-daemon
+message+     446  0.0  0.2   7604  4448 ?        Ss   Mar18   0:02 /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+_chrony      473  0.0  0.1  13212  2512 ?        S    Mar18   0:18 /usr/sbin/chronyd -F -1
+_chrony      474  0.0  0.1   5032  2260 ?        S    Mar18   0:00 /usr/sbin/chronyd -F -1
+root         506  0.0  0.7  31620 15548 ?        Ss   Mar18   0:00 /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+syslog       510  0.0  0.2 224348  5368 ?        Ssl  Mar18   0:04 /usr/sbin/rsyslogd -n -iNONE
+root         521  0.0  0.4  17364  8296 ?        Ss   Mar18   0:08 /lib/systemd/systemd-logind
+daemon       527  0.0  0.1   3792  2224 ?        Ss   Mar18   0:00 /usr/sbin/atd -f
+root         583  0.0  0.1   8200  1992 ttyS0    Ss+  Mar18   0:00 /sbin/agetty -o -p -- \u --keep-baud 115200,38400,9600 ttyS0 vt220
+root         596  0.0  0.0   8428  1752 tty1     Ss+  Mar18   0:00 /sbin/agetty -o -p -- \u --noclear tty1 linux
+mysql      20249  0.0 20.3 1287832 396656 ?      Ssl  Mar21 110:38 /usr/sbin/mysqld
+root       24111  0.0  0.2  12176  5848 ?        Ss   Mar22   0:03 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups
+root       92379  0.0  0.1   9412  2912 ?        Ss   Apr10   0:08 /usr/sbin/cron -f
+root      145748  0.0  0.4 484408  9644 ?        Ssl  Apr29   0:01 /usr/local/cloudmonitor/CmsGoAgent.linux-amd64
+root      145758  0.1  1.0 724808 20572 ?        Sl   Apr29  72:24 CmsGoAgent-Worker start
+hcc       155186  0.0  0.4  18336  8880 ?        Ss   May03   0:00 /lib/systemd/systemd --user
+hcc       155187  0.0  0.2 105984  4268 ?        S    May03   0:00 (sd-pam)
+root      162828  0.0  0.6 804936 12944 ?        Ssl  May07  26:24 /usr/local/share/aliyun-assist/2.2.3.187/aliyun-service
+root      162977  0.0  0.1  17888  2000 ?        Ssl  May07   7:13 /usr/local/share/assist-daemon/assist_daemon
+root      202789  0.0  0.3  22288  6612 ?        S<sl May31  10:32 /usr/local/aegis/aegis_update/AliYunDunUpdate
+root      202830  0.7  1.0 111444 19612 ?        S<sl May31 125:05 /usr/local/aegis/aegis_client/aegis_10_97/AliYunDun
+hcc       218615  2.2  1.1 473964 21612 ?        Sl   Jun09  57:41 python3 -u ./the-server/web.py
+root      220751  0.0  0.0      0     0 ?        I    07:01   0:15 [kworker/0:1-events]
+root      221410  0.0  0.0      0     0 ?        I    13:41   0:00 [kworker/0:0]
+root      221469  0.0  0.0      0     0 ?        I    15:17   0:00 [kworker/u4:0-events_unbound]
+root      221663  0.0  0.0      0     0 ?        I    17:59   0:00 [kworker/u4:1-events_power_efficient]
+root      221694  0.0  0.4  13788  8992 ?        Ss   18:25   0:00 sshd: hcc [priv]
+hcc       221722  0.0  0.3  13924  5888 ?        S    18:25   0:00 sshd: hcc@pts/0
+hcc       221723  0.4  0.2  10892  5312 pts/0    Ss   18:25   0:00 -bash
+hcc       221735  0.0  0.1  11684  3572 pts/0    R+   18:25   0:00 ps -aux

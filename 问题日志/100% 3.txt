@@ -1,0 +1,205 @@
+#Time 2021-06-11 16:52:27	#Time 2021-06-11 16:53:27	#Time 2021-06-11 16:54:27	#Time 2021-06-11 16:55:27	#Time 2021-06-11 16:56:27	#Time 2021-06-11 16:57:27	#Time 2021-06-11 16:58:27	#Time 2021-06-11 16:59:27	#Time 2021-06-11 17:00:27	#Time 2021-06-11 17:01:27	#Time 2021-06-11 17:02:27	#Time 2021-06-11 17:03:27	#Time 2021-06-11 17:04:27	#Time 2021-06-11 17:05:27	#Time 2021-06-11 17:06:27	#Time 2021-06-11 17:07:27	#Time 2021-06-11 17:08:27	#Time 2021-06-11 17:09:27	#Time 2021-06-11 17:10:28	#Time 2021-06-11 17:11:28	#Time 2021-06-11 17:12:28	#Time 2021-06-11 17:13:28	#Time 2021-06-11 17:14:28	#Time 2021-06-11 17:15:28	#Time 2021-06-11 17:16:28	#Time 2021-06-11 17:17:28	#Time 2021-06-11 17:18:28	#Time 2021-06-11 17:19:28	#Time 2021-06-11 17:20:28	#Time 2021-06-11 17:21:28	#Time 2021-06-11 17:22:28	#Time 2021-06-11 17:23:28	#Time 2021-06-11 17:24:28	## 119999 not get tcp data ,return
+ 1 error_tcp_sum=0 
+ 1 error_tcp_sum=1 
+ 1 error_tcp_sum=2 
+ 1 error_tcp_sum=3 
+WiFi.mode(WIFI_OFF);
+Connecting to Tenda_MK2
+...............WiFi connected
+IP address: 
+192.168.0.104
+ 1 error_tcp_sum=4 
+WiFi.mode(WIFI_OFF);
+Connecting to Tenda_MK2
+...............WiFi connected
+IP address: 
+192.168.0.104
+ 1 error_tcp_sum=5 
+
+net error,deepSleep
+rll芫?宑鉶?d?"|巸靝泏矞>?B勻NN?$Nn茆?cp寧cl`{$p騈??l屲co銃?$?廱寍~鹢?l寧l ?NN$ ns帗搉cl`r挓?b$`渃帍l矌r? 鼉o?getFlashChipId 1458208 
+getChipId 2507829  
+SPIFFS Started.
+/wifidata.txt FOUND.
+star1#WIFI_ssid:Tenda_MK2  WIFI_password:333666999  UID:0 CHIP_ID 264435 
+Connecting to Tenda_MK2
+...............WiFi connected
+IP address: 
+192.168.0.104
+read count = 11 
+ read_values 11 
+ 1 error_tcp_sum=0 
+ 1 error_tcp_sum=1 
+ 1 error_tcp_sum=2 
+ 1 error_tcp_sum=3 
+WiFi.mode(WIFI_OFF);
+Connecting to Tenda_MK2
+....................error_wifi_count==0
+Connecting to Tenda_MK2
+...................WiFi connected
+IP address: 
+192.168.0.104
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok>>> Client Timeout !
+# 119999 not get tcp data ,return
+tcp ok>>> Client Timeout !
+# 119999 not get tcp data ,return
+tcp ok>>> Client Timeout !
+# 119999 not get tcp data ,return
+tcp ok>>> Client Timeout !
+# 119999 not get tcp data ,return
+tcp ok>>> Client Timeout !
+# 119999 not get tcp data ,return
+tcp ok>>> Client Timeout !
+# 119999 not get tcp data ,return
+tcp ok>>> Client Timeout !
++EID:20
+# 119999 not get tcp data ,return
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,# 119999 not get tcp data ,return
+tcp ok>>> Client Timeout !
+# 119999 not get tcp data ,return
+tcp ok>>> Client Timeout !
+# 119999 not get tcp data ,return
+tcp ok>>> Client Timeout !
+# 119999 not get tcp data ,return
+tcp ok>>> Client Timeout !
+# 119999 not get tcp data ,return
+ 1 error_tcp_sum=0 
+tcp ok>>> Client Timeout !
+# 119999 not get tcp data ,return
+tcp ok>>> Client Timeout !
++EID:20
+# 119999 not get tcp data ,return
+tcp ok>>> Client Timeout !
+# 4 error_tcp_sum=0 
+ 1 error_tcp_sum=1 
+tcp ok+EID:20
+
++EID=20,chip_id=2507829,Time 2021-06-11 19:26:49	#Time 2021-06-11 19:27:49	#Time 2021-06-11 19:28:49	#Time 2021-06-11 19:29:50	#Time 2021-06-11 19:30:50	#Time 2021-06-11 19:31:50	#Time 2021-06-11 19:32:50	#Time 2021-06-11 19:33:50	#Time 2021-06-11 19:34:50	#Time 2021-06-11 19:35:50	#Time 2021-06-11 19:36:50	#Time 2021-06-11 19:37:50	#Time 2021-06-11 19:38:50	#Time 2021-06-11 19:39:50	#Time 2021-06-11 19:40:50	#Time 2021-06-11 19:41:50	#Time 2021-06-11 19:42:50	#
