@@ -20,7 +20,7 @@
 //心跳包时间间隔
 #define HEART_BEAT_ms 60 * 1000
 //心跳包回复时间上限，超时认为连接断裂，重新连接,
-#define HEART_BEAT_TIMEOUT_ms HEART_BEAT_ms*2-1
+#define HEART_BEAT_TIMEOUT_ms HEART_BEAT_ms * 2 - 1
 
 #define list_values_len_max 10 //需要存储多少个变量的值
 
@@ -48,5 +48,7 @@ extern u64 EID;
 extern String UDP_head_data;
 extern String UDP_send_data;
 extern const char *wifi_ssid_pw_file; //储存 WiFi 账号和密码的文件
+extern const char *stut_data_file;    //储存设备各功能配置状态的文件
+extern const char *MYHOST;            //服务器 ip 地址
 
 #endif

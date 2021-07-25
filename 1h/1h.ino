@@ -19,13 +19,9 @@ extern "C"
 
 char WIFI_ssid[WIFI_SSID_LEN] = {'\0'};
 char WIFI_password[WIFI_PASSWORD_LEN] = {'\0'};
-char str_EID[22] = {0};
 static u64 UID = 0;
 uint32_t CHIP_ID = 0;
-
 struct Tcp_cache my_tcp_cache; //TCP缓存数组
-
-
 char tcp_send_data[MAX_TCP_DATA]; //随用随清，不设置长度数组
 
 /*
@@ -59,10 +55,6 @@ char tcp_send_data[MAX_TCP_DATA]; //随用随清，不设置长度数组
 */
 
 
-const char *stut_data_file = "/stutdata.txt";	 //储存设备各功能配置状态的文件
-const char *MYHOST = "121.89.243.207";			 //服务器 ip 地址
-//const uint16_t TCP_PORT = 9999;
-//const uint16_t UDP_PORT = 9998;
 
 void setup()
 {
@@ -199,6 +191,7 @@ void loop()
 				Serial.print("\r\nnot found eid,deepSleep\r\n");
 				ESP.deepSleep(20000000, WAKE_RFCAL);
 			}
+			char str_EID[22] = {0};
 			sprintf(str_EID, "%llu", EID); //垃圾string(),居然不能装换long long类型的数据，还要我自己动手
 			UDP_head_data = "+EID=" + String(str_EID) + ",chip_id=" + String(CHIP_ID) + ",";
 			Serial.print(UDP_head_data);
