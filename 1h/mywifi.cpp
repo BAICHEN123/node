@@ -204,7 +204,7 @@ extern "C"
         //WiFi.mode()
         char data[1024];
         int ind = 0;
-        WiFi.mode(WIFI_RESUME);
+        //WiFi.mode(WIFI_RESUME);//更新到了3.xx的esp8266之后这个宏定义不见了
         IPAddress softLocal(192, 168, 128, 1); // 1 设置内网WIFI IP地址
         IPAddress softGateway(192, 168, 128, 1);
         IPAddress softSubnet(255, 255, 255, 0);

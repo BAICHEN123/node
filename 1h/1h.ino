@@ -466,7 +466,7 @@ void set_data_(short i, short value)
 	}
 }
 
-/*添加需要保存的变量，上限为 list_values_len_max */
+/*添加需要保存到flash的变量，上限为 list_values_len_max */
 void add_values()
 {
 	add_value(&switch_1, sizeof(switch_1));
@@ -519,7 +519,7 @@ void setup()
 		ESP.deepSleep(300 * 1000); //us
 	}
 	//连接wifi
-	if (WIFI_password[0] == '\0' || WIFI_ssid == '\0')
+	if (WIFI_password[0] == '\0' || WIFI_ssid[0] == '\0')
 	{
 		Serial.println("delete & restart");
 		file_delete(wifi_ssid_pw_file);
