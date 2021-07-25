@@ -2,10 +2,10 @@
 #define _MYTCP_H
 
 #include <WiFiClient.h>
-
+#include "myconstant.h"
 extern "C"
 {
-#include "myconstant.h"
+#define TCP_PORT 9999
     struct Tcp_cache
     {
         char data[MAX_TCP_DATA];

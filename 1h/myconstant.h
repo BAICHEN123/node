@@ -1,9 +1,8 @@
-//#pragma once
 #ifndef _MYCONSTANT_h
 #define _MYCONSTANT_h
 
-//#include <Arduino.h>
-//#include <ESP8266WiFi.h>
+#include <Arduino.h>
+#include <ESP8266WiFi.h>
 //复位函数
 //ESP.restart();
 
@@ -36,8 +35,18 @@
 //做服务器时监听的端口
 #define SERVER_CLIENT_PROT 9997
 
-
+//以下两个定时可以同时调用，间隔时间不是很准确，当发生网络请求的时候，RUAN_TIMEer_us 可能会变大
+//软定时，主函数循环调用的间隔时间
+#define RUAN_TIMEer_ms 10
+//软定时，主函数循环调用的间隔时间
+#define RUAN_TIMEer_us 100
 
 #define HEART_BEAT_FIG '\t'
 #define COMMAND_FIG '#'
+
+extern u64 EID;
+extern String UDP_head_data;
+extern String UDP_send_data;
+extern const char *wifi_ssid_pw_file; //储存 WiFi 账号和密码的文件
+
 #endif

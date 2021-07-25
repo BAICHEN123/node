@@ -826,7 +826,7 @@ char tcp_server_get_wifi_data()
 	//WiFi.mode()
 	char data[1024];
 	int ind = 0;
-	WiFi.mode(WIFI_RESUME);
+	//WiFi.mode(WIFI_RESUME);
 	IPAddress softLocal(192, 168, 128, 1); // 1 设置内网WIFI IP地址
 	IPAddress softGateway(192, 168, 128, 1);
 	IPAddress softSubnet(255, 255, 255, 0);
@@ -986,7 +986,7 @@ void setup()
 		resetFunc();
 	}
 	//连接wifi
-	if (WIFI_password[0] == '\0' || WIFI_ssid == '\0')
+	if (WIFI_password[0] == '\0' || WIFI_ssid[0] == '\0')
 	{
 		Serial.println("delete & restart");
 		file_delete_wifidata();
@@ -1018,11 +1018,7 @@ void loop()
 
 		if (get_wifi() == 0)
 		{
-			if (error_wifi_count > 1 && error_wifi_count < 2)
-			{
-				WiFi.mode(WIFI_RESUME); //重新连接wifi
-			}
-			else if (error_wifi_count == 3)
+			if (error_wifi_count == 3)
 			{
 				//超过6次链接失败，复位程序，重启
 				Serial.print("\r\ndeepSleep\r\n");
@@ -1055,11 +1051,7 @@ void loop()
 	{
 		Serial.printf("tcp error,loop end :%d  \n", error_tcp_sum++);
 		delay(3000);
-		if (error_tcp_sum > 3 && error_tcp_sum < 6)
-		{
-			WiFi.mode(WIFI_RESUME); //重新连接wifi
-		}
-		else if (error_tcp_sum == 6)
+		if (error_tcp_sum == 6)
 		{
 			//超过三次链接失败，复位程序，重启
 			resetFunc();

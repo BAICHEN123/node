@@ -3,9 +3,9 @@
 
 #include <Arduino.h>
 #include <LittleFS.h>
+#include "myconstant.h"
 extern "C"
 {
-#include "myconstant.h"
     int get_list_values_len();
     /*如果要保存一个数组，len请输入数组的字节长度*/
     int add_value(void *data, int len);
