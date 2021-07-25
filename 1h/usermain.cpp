@@ -17,6 +17,8 @@ extern "C"
 
 	const char *MODE_INFO = "@开关1模式[0-3]:手动，声控，光控，光声混控@开关2模式[0-3]:手动，声控，光控，光声混控@断电记忆[0-2]:关闭，仅本次，所有";
 	uint8_t power_save = 0; //断电记忆
+
+
 	struct DHT11_data dht11_data = {666, 666};
 	//两个开关，当他为2时，是自动模式，其他时候读取12 和14号脚的电平
 	uint8_t LED1 = 0;
@@ -71,10 +73,6 @@ extern "C"
 		beeeeee = beeeeee + digitalRead(shengyin);
 	}
 
-	const char *get_MODE_INFO()
-	{
-		return MODE_INFO;
-	}
 
 	/*
 此函数根据光强返回是否需要开灯
