@@ -193,7 +193,7 @@ void loop()
 			}
 			char str_EID[22] = {0};
 			sprintf(str_EID, "%llu", EID); //垃圾string(),居然不能装换long long类型的数据，还要我自己动手
-			UDP_head_data = "+EID=" + String(str_EID) + ",chip_id=" + String(CHIP_ID) + ",";
+			UDP_head_data = "+EID=" + String(str_EID) + ",chip_id=" + String(CHIP_ID);
 			Serial.print(UDP_head_data);
 		}
 		my_tcp_cache.len = 0;

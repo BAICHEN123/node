@@ -166,9 +166,7 @@ extern "C"
 		set_jdq(jd2, switch_2, &LED2);
 	}
 
-	/*
-此函数在定时中断中调用，处理温湿度传感器的40bit读取
-*/
+	/*此函数在定时中断中调用，处理温湿度传感器的40bit读取*/
 	void DHT11_read_and_send()
 	{
 		//读取温湿度，并将异常情况返回
@@ -187,13 +185,11 @@ extern "C"
 		{
 			if (dht11_data.temperature > TEMPERATURE_ERROR_HIGH)
 			{
-				UDP_send_data = UDP_send_data + UDP_head_data + "temperature high";
-				//UDP_Send(MYHOST, UDP_PORT, UDP_head_data + "temperature high");
+				UDP_send_data =  UDP_head_data + "w2,temperature high";
 			}
 			else if (dht11_data.temperature < TEMPERATURE_ERROR_LOW)
 			{
-				UDP_send_data = UDP_send_data + UDP_head_data + "temperature low";
-				//UDP_Send(MYHOST, UDP_PORT, UDP_head_data + "temperature low");
+				UDP_send_data = UDP_head_data + "w1,temperature low";
 			}
 		}
 	}
