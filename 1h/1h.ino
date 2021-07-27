@@ -61,7 +61,7 @@ void setup()
 	digitalWrite(16, HIGH); //不知道为啥，这个模块的初始状态是LOW，然后我一插上跳线帽就开始无限重启//是电压低的问题，默认未初始化的电压低于判定电压，在 nodemcu 上没有出现错误可能是因为产品型号/批次的不同，经过电压表测量，nodemcu的电压在0.8V左右，单个小模块的电压不到0.3
 	pinMode(15, OUTPUT);
 	digitalWrite(15, HIGH); //不知道为啥，看门狗会自己复位，可我根本没有启动看门狗，论坛找到说是15号引脚复位的，让我试试
-
+	pinMode(0, INPUT); //按键1
 	add_values();			//挂载读取信息。//这里可以优化，仅在读取写入的时候使用数组，建立//但是也没多大用，一个不超过50字节的数组
 	set_anjian1(0);	//配置wifi的清除数据按键
 
@@ -76,7 +76,6 @@ void setup()
 	Serial.printf("getChipId %d  \n", ESP.getChipId());
 
 	pinMode(LED_BUILTIN, OUTPUT);
-
 	short stat = file_read_wifidata(WIFI_ssid, WIFI_password, wifi_ssid_pw_file);
 	Serial.printf("star%d", stat);
 	if (stat == -1)

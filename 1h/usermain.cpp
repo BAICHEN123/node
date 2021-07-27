@@ -73,10 +73,10 @@ extern "C"
 	}
 
 	/*
-此函数根据光强返回是否需要开灯
-1	开灯
-0	关灯
-*/
+	此函数根据光强返回是否需要开灯
+	1	开灯
+	0	关灯
+	*/
 	uint8_t light_high()
 	{
 		static unsigned long last_time = millis();
@@ -97,10 +97,10 @@ extern "C"
 	}
 
 	/*
-此函数根据声音返回是否需要开灯
-1	开灯
-0	关灯
-*/
+	此函数根据声音返回是否需要开灯
+	1	开灯
+	0	关灯
+	*/
 	uint8_t sheng_yin_high()
 	{
 		if (switch_light_up_time_x_s > 0)
@@ -114,10 +114,10 @@ extern "C"
 	}
 
 	/*
-此函数根据 声音 和光强  返回是否需要开灯
-1	开灯
-0	关灯
-*/
+	此函数根据 声音 和光强  返回是否需要开灯
+	1	开灯
+	0	关灯
+	*/
 	uint8_t shengyin_and_light_high()
 	{
 		return sheng_yin_high() && light_high();
@@ -223,9 +223,7 @@ extern "C"
 		}
 	}
 
-	/*
-定时器工作内容
-*/
+	/*	定时器工作内容	*/
 	void timer1_worker()
 	{
 		//delay(20);//时间中断函数里不可以用delay
@@ -235,9 +233,7 @@ extern "C"
 		dht11_get();						//调用DHT11的读取函数
 	}
 
-	/*
-此函数在定时中断中调用，处理温湿度传感器通讯协议中18ms下拉
-*/
+	/*	此函数在定时中断中调用，处理温湿度传感器通讯协议中18ms下拉	*/
 	void read_dht11()
 	{
 		//让DHT11的信号引脚拉低，等待20ms，之后调用get_DHT11_DATA() 开始正式调用读取函数

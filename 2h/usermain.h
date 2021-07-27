@@ -31,7 +31,7 @@ extern "C"
     void ruan_timer_us();//每隔 RUAN_TIMEer_us
     
     //str_data_names 的长度
-    #define MAX_NAME 13 
+    #define MAX_NAME 5
     extern const char *str_data_names[MAX_NAME];
     //可选变量描述
     extern const char *MODE_INFO;
