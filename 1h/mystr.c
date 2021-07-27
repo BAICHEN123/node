@@ -50,6 +50,57 @@ int str_to_u16(const char *str1, unsigned int len)
     }
     return i;
 }
+
+
+/*
+字符串转u16
+IPD, 10:12345678->10
+把传入的第一个自然数转换成u16
+传出正数则装换成功
+创出负数则转换失败，传回的复数是最后转换的有效位
+*/
+long long str_to_u32(const char *str1, unsigned int len)
+{
+    long long i;
+    char *q_str1 = (char *)str1;
+    while (*(q_str1) < '0' || *(q_str1) > '9')
+    {
+        q_str1++;
+        if (q_str1 - str1 > len)
+        {
+            return -1;
+        }
+    }
+    i = (*q_str1) & 15; //&207（1100 1111）  char 转 int
+    q_str1++;
+    while ((*q_str1 > 47) && (*q_str1 < 58) && (q_str1 - str1 < len))
+    {
+        /* 
+        4294967295
+        429496728 后面可以跟 0-9
+        429496729 后面只能跟 0-5
+        再大就会溢出
+        */
+        if (i < 429496729)
+        {
+            i = i * 10 + (*q_str1 & 15);
+            q_str1++;
+        }
+        else if (i <= 429496729 && *q_str1 <= '5')
+        {
+
+            i = i * 10 + (*q_str1 & 15);
+            q_str1++;
+        }
+        else
+        {
+            return -1 * i;
+        }
+    }
+    return i;
+}
+
+
 /*
 字符串转unsigned long long
 IPD, 10:12345678->10

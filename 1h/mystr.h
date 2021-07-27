@@ -20,6 +20,8 @@ status:	-1	在长度范围内没有找到任何一个数字
 */
 u64 str_to_u64(const char *str1, unsigned int len, short *status);
 
+long long str_to_u32(const char *str1, unsigned int len);
+
 //u64 str_to_u64(char* str1, unsigned int len,short *status);
 int str_to_u16(const char *str1, unsigned int len);
 /*

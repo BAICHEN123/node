@@ -207,11 +207,12 @@ void loop()
 	unsigned long get_time_old_ms = millis();
 	unsigned long send_time_old_ms = millis();
 	unsigned long ruan_time_old_ms = millis();
+	long long tmp;
 	//micros();//us
 	short len_old;
 	//用户初始化
 	my_init();
-	
+
 	while (client.connected())
 	{
 		/*关于00：00断网
@@ -288,7 +289,13 @@ void loop()
 			case 'w':
 			case 'e':
 				//这里是服务器收到udp消息之后的回复
-				warn_ack(str_to_u16(my_tcp_cache.data+1,len_old));
+				tmp=str_to_u32(my_tcp_cache.data+1,len_old);
+				if(tmp<0)
+				{
+					Serial.printf("   loop str_to_u32 error	%lld",tmp);
+					break;
+				}
+				warn_ack((unsigned int)tmp);
 				break;
 			case 'T':
 			case 't':
