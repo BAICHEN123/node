@@ -4,6 +4,7 @@
 #include "savevalues.h"
 #include "mywifi.h"
 #include "myconstant.h"
+#include "mywarn.h"
 extern "C"
 {
 #include "DHT11.h"

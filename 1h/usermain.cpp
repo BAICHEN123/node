@@ -18,7 +18,6 @@ extern "C"
 	const char *MODE_INFO = "@开关1模式[0-3]:手动，声控，光控，光声混控@开关2模式[0-3]:手动，声控，光控，光声混控@断电记忆[0-2]:关闭，仅本次，所有";
 	uint8_t power_save = 0; //断电记忆
 
-
 	struct DHT11_data dht11_data = {666, 666};
 	//两个开关，当他为2时，是自动模式，其他时候读取12 和14号脚的电平
 	uint8_t LED1 = 0;
@@ -72,7 +71,6 @@ extern "C"
 	{
 		beeeeee = beeeeee + digitalRead(shengyin);
 	}
-
 
 	/*
 此函数根据光强返回是否需要开灯
@@ -171,6 +169,9 @@ extern "C"
 	{
 		//读取温湿度，并将异常情况返回
 		short t = dht11_read_data(&dht11_data);
+		//+EID=20,chip_id=2507829w2,temperature high
+		static struct Udpwarn temperature_low_error = {WARN, NOT_WARN, 0, 1, "温度低于设定值"};
+		static struct Udpwarn temperature_high_error = {WARN, NOT_WARN, 0, 2, "温度高于设定值"};
 		if (t == 0)
 		{
 			Serial.print("DHT11 error :timeout 超时未回复\n");
@@ -185,12 +186,26 @@ extern "C"
 		{
 			if (dht11_data.temperature > TEMPERATURE_ERROR_HIGH)
 			{
-				UDP_send_data =  UDP_head_data + "w2,temperature high";
+				if (temperature_high_error.status == NOT_WARN)
+				{
+					temperature_high_error.status = IS_WARN;
+					set_warn(&temperature_high_error);
+				}
 			}
 			else if (dht11_data.temperature < TEMPERATURE_ERROR_LOW)
 			{
-				UDP_send_data = UDP_head_data + "w1,temperature low";
+				if (temperature_low_error.status == NOT_WARN)
+				{
+					temperature_low_error.status = IS_WARN;
+					set_warn(&temperature_low_error);
+				}
 			}
+		}
+		else
+		{
+			//可以在这里插入警报恢复的提示
+			temperature_low_error.status = NOT_WARN;
+			temperature_high_error.status = NOT_WARN;
 		}
 	}
 

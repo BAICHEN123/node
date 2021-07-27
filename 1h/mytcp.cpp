@@ -4,13 +4,13 @@ extern "C"
 {
 
 	/*
-TCP阻塞，等待 timeout_ms_max ms
-看看有没有TCP包返回回来，不会自动断开链接
-返回值
-0，TCP失效了
-1，等到了TCP包
-2，没有等到，超时
-*/
+	TCP阻塞，等待 timeout_ms_max ms
+	看看有没有TCP包返回回来，不会自动断开链接
+	返回值
+	0，TCP失效了
+	1，等到了TCP包
+	2，没有等到，超时
+	*/
 	short timeout_back_ms(WiFiClient *client, unsigned short timeout_ms_max)
 	{
 		unsigned long timeout = millis();
@@ -30,28 +30,36 @@ TCP阻塞，等待 timeout_ms_max ms
 	}
 
 	/*
-TCP阻塞，等待 timeout_us_max ms
-看看有没有TCP包返回回来，不会自动断开链接
-返回值
-0，TCP失效了
-1，等到了TCP包
-2，没有等到，超时
-*/
+	TCP阻塞，等待 timeout_us_max ms
+	timeout_us_max 时间间隔为上次调用此函数的的时间
+	看看有没有TCP包返回回来，不会自动断开链接
+	返回值
+	0，TCP失效了
+	1，等到了TCP包
+	2，没有等到，超时
+	*/
 	short timeout_back_us(WiFiClient *client, unsigned short timeout_us_max)
 	{
-		unsigned long timeout = micros();
+		static unsigned long timenext = micros();
 		while (client->available() == 0)
 		{
-			if (micros() - timeout > timeout_us_max)
+			//阻塞 timeout_us_max
+			if (micros() - timenext > timeout_us_max)
 			{
 				//Serial.println(">>> Client Timeout !");
+				timenext = micros();
 				return 2;
 			}
+
+			//链接失效
 			if (client->connected() == 0)
 			{
+				timenext = micros();
 				return 0;
 			}
 		}
+		
+		timenext = micros();
 		return 1;
 	}
 

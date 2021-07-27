@@ -10,6 +10,7 @@
 #include "myconstant.h"
 #include "myudp.h"
 #include "usermain.h"
+#include "mywarn.h"
 extern "C"
 {
 #include "DHT11.h"
@@ -33,8 +34,7 @@ char tcp_send_data[MAX_TCP_DATA]; //随用随清，不设置长度数组
 	重复上一步骤
 4	是否可以强制唤醒？
 
-*/
-/*关于心跳包被误认为指令返回值的解决方案
+关于心跳包被误认为指令返回值的解决方案
 原先时候：	单片机：tcp返回的打包函数 set_databack 会将第一个字节首先填充为 '#' 
 			手机端：对其进行解析（split("#+")）的时候会将连续的 ‘#’ 识别为一段。
 			服务器：先丢包，发指令，转发结果
@@ -43,8 +43,7 @@ char tcp_send_data[MAX_TCP_DATA]; //随用随清，不设置长度数组
 					心跳包：'\t' //'\0'   指令包：'#'	//stm32采用at指令控制esp8266联网时无法发送 '\0',所以决定使用'\t'替换'\0'
 			手机端代码不用改
 			服务端：舍弃数据的环节放在标志判定为之后，仅对'#'开头的数据进行转发
-*/
-/*
+			
 //为数据命名，设定个数
 //关于LED的状态，在与用户的手机沟通期间 1认为电灯属于开启状态 0认为电灯关闭，
 //由于服务器将1设为亮灯状态，所以必须确保安装设备完成之后，必须确保手机上显示的状态和电灯的状态一样
@@ -207,11 +206,12 @@ void loop()
 
 	unsigned long get_time_old_ms = millis();
 	unsigned long send_time_old_ms = millis();
-	unsigned long beeeee_time_old_ms = millis();
+	unsigned long ruan_time_old_ms = millis();
 	//micros();//us
 	short len_old;
-
+	//用户初始化
 	my_init();
+	
 	while (client.connected())
 	{
 		/*关于00：00断网
@@ -243,22 +243,22 @@ void loop()
 			/*实现方式：添加两个标志？记录发送状态和接收状态，判断发送和接受状态的情况*/
 			send_time_old_ms = millis();
 		}
-		//声音的采样间隔，查看 beeeee_time_old_ms 时间间隔内的高电平数量，作为声控的判定标准
-		if (millis() - beeeee_time_old_ms > RUAN_TIMEer_ms)
+		//声音的采样间隔，查看 ruan_time_old_ms 时间间隔内的高电平数量，作为声控的判定标准
+		if (millis() - ruan_time_old_ms > RUAN_TIMEer_ms)
 		{
 			
+			warn_send();
     		ruan_timer_ms();//每隔 RUAN_TIMEer_ms
-			beeeee_time_old_ms = millis(); //更新时间
-
-			if (UDP_send_data == NULL)
-			{
-				UDP_send_data = "";
-			}
-			else if (!UDP_send_data.equals(""))
-			{
-				UDP_Send(MYHOST, UDP_PORT, UDP_send_data);
-				UDP_send_data = "";
-			}
+			ruan_time_old_ms = millis(); //更新时间
+			// if (UDP_send_data == NULL)
+			// {
+			// 	UDP_send_data = "";
+			// }
+			// else if (!UDP_send_data.equals(""))
+			// {
+			// 	UDP_Send(MYHOST, UDP_PORT, UDP_send_data);
+			// 	UDP_send_data = "";
+			// }
 		}
 		//如果回复重要，就多等一下，把 timeout_ms_max 改大一点
 		stat = timeout_back_us(&client, RUAN_TIMEer_us); //等待100us tcp是否有数据返回
@@ -283,6 +283,13 @@ void loop()
 
 			switch (*(my_tcp_cache.data + len_old))
 			{
+			case 'm':
+				//do_message()
+			case 'w':
+			case 'e':
+				//这里是服务器收到udp消息之后的回复
+				warn_ack(str_to_u16(my_tcp_cache.data+1,len_old));
+				break;
 			case 'T':
 			case 't':
 				//这里处理心跳包返回的时间戳，无需返回任何数据

@@ -41,6 +41,11 @@
 //软定时，主函数循环调用的间隔时间
 #define RUAN_TIMEer_us 100
 
+#if RUAN_TIMEer_ms>TIMER1_timeout_ms
+#error "软定时调用时间大于定时中断，会导致udp无法发送完成"
+#endif
+
+//心跳包使用 HEART_BEAT_FIG 开头，数据包采用 COMMAND_FIG 开头
 #define HEART_BEAT_FIG '\t'
 #define COMMAND_FIG '#'
 
