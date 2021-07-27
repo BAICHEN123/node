@@ -29,24 +29,25 @@ extern "C"
 
 	int warn_exist(struct Udpwarn *warn)
 	{
-		struct WarnLink *tail = &head;
+		struct WarnLink *p = head.next;
 		for (int i = 0; i < len_warn; i++)
 		{
-			if (tail == NULL)
+			if (p == NULL)
 			{
 				return -1;
 			}
-			else if (tail->warn = warn)
+			else if (p->warn = warn)
 			{
 				return i;
 			}
-			tail = tail->next;
+			p = p->next;
 		}
 		return -1;
 	}
 
 	int set_warn(struct Udpwarn *warn)
 	{
+		Serial.printf(" set_warn %s   ",warn->str_waring);
 		if (len_warn < WARN_LEN)
 		{
 			//记录错误
@@ -76,6 +77,7 @@ extern "C"
 		}
 		else
 		{
+			Serial.printf(" set_warn error len_warn %d",len_warn);
 			return -1;
 		}
 	}

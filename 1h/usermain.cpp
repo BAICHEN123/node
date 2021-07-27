@@ -200,12 +200,12 @@ extern "C"
 					set_warn(&temperature_low_error);
 				}
 			}
-		}
-		else
-		{
-			//可以在这里插入警报恢复的提示
-			temperature_low_error.status = NOT_WARN;
-			temperature_high_error.status = NOT_WARN;
+			else
+			{
+				//可以在这里插入警报恢复的提示
+				temperature_low_error.status = NOT_WARN;
+				temperature_high_error.status = NOT_WARN;
+			}
 		}
 	}
 
