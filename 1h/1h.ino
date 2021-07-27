@@ -13,7 +13,7 @@
 #include "mywarn.h"
 extern "C"
 {
-#include "DHT11.h"
+//#include "DHT11.h"
 #include "mystr.h"
 #include "mytimer.h"
 }
@@ -76,6 +76,7 @@ void setup()
 	Serial.printf("getChipId %d  \n", ESP.getChipId());
 
 	pinMode(LED_BUILTIN, OUTPUT);
+	digitalWrite(LED_BUILTIN, HIGH);
 	short stat = file_read_wifidata(WIFI_ssid, WIFI_password, wifi_ssid_pw_file);
 	Serial.printf("star%d", stat);
 	if (stat == -1)
@@ -345,7 +346,7 @@ void loop()
 					//只识别 @ 类型的数据，get类型的数据一般不会组合发送，舍弃此部分
 				}
 				//所有的指令已经执行完毕
-				brightness_work(); //更新一下光控灯的状态
+				refresh_work(); //更新一下光控灯的状态
 				//TCP 打包返还自己的状态
 				if (back_send_tcp_(&client, tcp_send_data, set_databack(COMMAND_FIG,tcp_send_data)) == -1)
 				{

@@ -30,6 +30,7 @@ extern "C"
     void ruan_timer_ms();//每隔 RUAN_TIMEer_ms
     void ruan_timer_us();//每隔 RUAN_TIMEer_us
     
+    void refresh_work();
     //str_data_names 的长度
     #define MAX_NAME 5
     extern const char *str_data_names[MAX_NAME];

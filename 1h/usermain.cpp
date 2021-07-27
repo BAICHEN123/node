@@ -43,7 +43,7 @@ extern "C"
 	void my_init()
 	{
 
-		brightness_work(); //初始化引脚之前，先调整高低电平，减少不必要的继电器响声
+		refresh_work(); //初始化引脚之前，先调整高低电平，减少不必要的继电器响声
 
 		dht11_init(dht11);		  //这个是DHT11.h/DHT11.c里的函数，初始化引脚
 		pinMode(light, INPUT);	  //光
@@ -158,7 +158,7 @@ extern "C"
 	}
 
 	/*根据模式更新继电器开关的状态*/
-	void brightness_work()
+	void refresh_work()
 	{
 		set_jdq(jd1, switch_1, &LED1);
 		set_jdq(jd2, switch_2, &LED2);
@@ -228,7 +228,7 @@ extern "C"
 	{
 		//delay(20);//时间中断函数里不可以用delay
 		clear_wifi_data(wifi_ssid_pw_file); //长按按键1清除wifi账号密码记录
-		brightness_work();					//更新继电器状态
+		refresh_work();					//更新继电器状态
 		shengyin_timeout_out();				//更新声控灯倒计时
 		dht11_get();						//调用DHT11的读取函数
 	}

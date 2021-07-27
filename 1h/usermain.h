@@ -31,6 +31,7 @@ extern "C"
     void ruan_timer_ms();//每隔 RUAN_TIMEer_ms
     void ruan_timer_us();//每隔 RUAN_TIMEer_us
     
+    void refresh_work();
     //str_data_names 的长度
     #define MAX_NAME 13 
     extern const char *str_data_names[MAX_NAME];
@@ -53,7 +54,6 @@ extern "C"
     uint8_t shengyin_and_light_high();
     void shengyin_timeout_out();
     void set_jdq(const uint8_t pin_x, short switch_x, uint8_t *LEDx);
-    void brightness_work();
     void DHT11_read_and_send();
     void dht11_get();
     void read_dht11();

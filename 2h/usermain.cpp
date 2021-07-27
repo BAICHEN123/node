@@ -53,7 +53,9 @@ void ruan_timer_us()
 
 
 }
-int set_databack(const char fig,char *tcp_send_data);
+
+
+int set_databack(const char fig,char *tcp_send_data)
 {
 	int i, k, count_char;
 	tcp_send_data[0] = fig; //在这里插入开始符号
