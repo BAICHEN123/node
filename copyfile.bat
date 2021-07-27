@@ -16,4 +16,5 @@ mklink /H  .\2h\mywifi.cpp   .\1h\mywifi.cpp
 mklink /H  .\2h\mywifi.h   .\1h\mywifi.h
 mklink /H  .\2h\savevalues.cpp   .\1h\savevalues.cpp
 mklink /H  .\2h\savevalues.h   .\1h\savevalues.h
+mklink /H  .\2h\2h.ino   .\1h\1h.ino
 
