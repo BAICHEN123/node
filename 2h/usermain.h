@@ -32,7 +32,7 @@ extern "C"
     
     void refresh_work();
     //str_data_names 的长度
-    #define MAX_NAME 5
+    #define MAX_NAME 6
     extern const char *str_data_names[MAX_NAME];
     //可选变量描述
     extern const char *MODE_INFO;
