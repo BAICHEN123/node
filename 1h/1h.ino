@@ -286,6 +286,11 @@ void loop()
 			{
 			case 'm':
 				//do_message()
+				if (back_send_tcp_(&client, "udp message test", strlen("udp message test")) == -1)
+				{return;}
+
+				break;
+				
 			case 'w':
 			case 'e':
 				//这里是服务器收到udp消息之后的回复

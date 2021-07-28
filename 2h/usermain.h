@@ -30,7 +30,9 @@ extern "C"
     void ruan_timer_ms();//每隔 RUAN_TIMEer_ms
     void ruan_timer_us();//每隔 RUAN_TIMEer_us
     
+    //刷新数据状态，默认会在用户请求数据之前调用一次
     void refresh_work();
+    
     //str_data_names 的长度
     #define MAX_NAME 6
     extern const char *str_data_names[MAX_NAME];
@@ -46,6 +48,8 @@ extern "C"
 
 
 //选择实现的
+
+
 
 }
 #endif
