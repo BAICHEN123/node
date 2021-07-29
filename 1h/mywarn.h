@@ -6,7 +6,7 @@
 
 报错信息分类为  udp 分包
 	//格式要求	"^\+EID=(\d+),chip_id=(\d+)([mwe])(\d+),(.+)$"
-	格式要求	"^\+EID=(\d+),chip_id=(\d+)((?:[mwe]\d+){3})$"   "[mwe]\d+"
+	格式要求	"^\+EID=(\d+),chip_id=(\d+)((?:[mwe]\d+){3})$"   "([mwe])(\d+)"
 	区别不同内容的udp包
 	消息，警告，错误		mesg，warn，erro		m,w,e//只是用第一个字节来表示包的性质
 	m:设备之间联动指令
@@ -61,14 +61,14 @@ struct Udpwarn
 };
 
 
-#define WARN_LEN 3
+#define WARN_LEN 5
 #define UDP_TIME_OUT_MS 3000 
 //extern int len_warn_id=0;
 
 //int warn_exist(struct Udpwarn *warn);
 int set_warn(struct Udpwarn *warn);
 void warn_send();
-void warn_ack(unsigned int id);
+int warn_ack(unsigned int id, char *tcp_send_data);
 
 
 

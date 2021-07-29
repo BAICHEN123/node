@@ -11,6 +11,9 @@ extern "C"
 	static struct WarnLink head = {NULL, NULL};
 	static struct WarnLink *tail = &head;
 
+//定义零时数组的长度，仅储存 "([mwe])(\d+)"
+#define UDP_TMP_MAX 200
+
 	//删掉p->next节点
 	void del_next_link(struct WarnLink *p)
 	{
@@ -28,13 +31,13 @@ extern "C"
 	int warn_exist(struct Udpwarn *warn)
 	{
 		struct WarnLink *p = head.next;
-		for (int i = 0; i < len_warn; i++)
+		for (int i = 0; i < WARN_LEN; i++)
 		{
 			if (p == NULL)
 			{
 				return -1;
 			}
-			else if (p->warn = warn)
+			if (p->warn == warn)
 			{
 				return i;
 			}
@@ -68,6 +71,7 @@ extern "C"
 				len_warn++;
 				//尾巴向后挪一位
 				tail = tail->next;
+				Serial.printf(" set_warn len_warn %d", len_warn);
 				//Serial.printf(" set_warn ok %d",len_warn);
 			}
 			//告知现在的错误总数
@@ -85,6 +89,8 @@ extern "C"
 		//遍历链表，对不同状态的错误做出反应
 		struct WarnLink *p;	  //储存要操作的节点
 		struct WarnLink *tmp; //储存上一个节点
+		char udp_send_data[UDP_TMP_MAX] = {0};
+		int data_len = 0;
 		tmp = &head;
 		p = head.next;
 		if (p == NULL)
@@ -110,13 +116,15 @@ extern "C"
 				break;
 
 			case TIMEOUT:
-				p->warn->time = millis();//更新一下时间然后重新走发送流程，不更新时间的话，会导致高频发送
-				Serial.printf(" warn_send TIMEOUT ack timeout");
+				Serial.printf(" warn_send TIMEOUT ack timeout %u  %u %s  ",p->warn->id,p->warn->time,p->warn->str_waring);
+				p->warn->time = millis(); //更新一下时间然后重新走发送流程，不更新时间的话，会导致高频发送
+				Serial.printf(" timeout new %u   ",p->warn->time);
 
 			case IS_WARN:
 			case WAIT_SEND:
 				//Serial.printf(" warn_send WAIT_SEND send %s   ",p->warn->str_waring);
-				UDP_Send(MYHOST, UDP_PORT, UDP_head_data + String((char)(p->warn->cmsg)) + String(p->warn->id) + "," + String(p->warn->str_waring));
+				data_len = data_len + sprintf(udp_send_data + data_len, "%c%u", (char)(p->warn->cmsg), p->warn->id);
+				//UDP_send_data = UDP_send_data + String((char)(p->warn->cmsg)) + String(p->warn->id);
 				p->warn->status = WAIT_ACK;
 				//Serial.printf(" warn_send WAIT_SEND send end");
 				break;
@@ -135,19 +143,26 @@ extern "C"
 			tmp = p;
 			p = p->next;
 		} while (p != NULL);
+		if (data_len > 0)
+		{
+			Serial.printf(" UDP SNED DATA %s   ",udp_send_data);
+			UDP_Send(MYHOST, UDP_PORT, UDP_head_data + String(udp_send_data));
+		}
 		//Serial.printf(" warn_send end  ");
 		return;
 	}
 
-	void warn_ack(unsigned int id)
+	int warn_ack(unsigned int id, char *tcp_send_data)
 	{
 		struct WarnLink *p;	  //储存要操作的节点
 		struct WarnLink *tmp; //储存上一个节点
+		int len = 1;
+		*tcp_send_data = '#';
 		tmp = &head;
 		p = head.next;
 		if (p == NULL)
 		{
-			return;
+			return 0;
 		}
 		do
 		{
@@ -160,10 +175,13 @@ extern "C"
 			if (p->warn->id == id)
 			{
 				p->warn->status = WARN_ACK;
+				len = len + sprintf(tcp_send_data + len, "%s#", p->warn->str_waring);
+				//strcpy(tcp_send_data,p->warn->str_waring);
 				Serial.printf(" warn_ack ACK %d  %s   ", id, p->warn->str_waring);
 			}
 			tmp = p;
 			p = p->next;
 		} while (p != NULL);
+		return len;
 	}
 }

@@ -1,19 +1,23 @@
 #include "usermain.h"
 extern "C"
 {
-	const char *str_data_names[MAX_NAME] = {"温度",
-											"湿度",
-											"亮度",
-											"@开关1[0-1]",
-											"@开关1模式[0-3]",
-											"@开关2[0-1]",
-											"@开关2模式[0-3]",
-											"@声控灯时长/S[1-300]",
-											"声控灯剩余时长/S",
-											"@高温警告/°C[0-40]",
-											"@低温警告/°C[0-40]",
-											"@补光区间[0-10]",
-											"@断电记忆[0-2]"};
+	const char *str_data_names[MAX_NAME] = {
+		"温度",
+		"湿度",
+		"亮度",
+		"@开关1[0-1]",
+		"@开关1模式[0-3]",
+		"@开关2[0-1]",
+		"@开关2模式[0-3]",
+		"@声控灯时长/S[1-300]",
+		"声控灯剩余时长/S",
+		"@高温警告/°C[0-40]",
+		"@低温警告/°C[0-40]",
+		"@补光区间[0-10]",
+		"@断电记忆[0-2]",
+		"@test1[0-1]" //测试错误并发用
+
+	};
 
 	const char *MODE_INFO = "@开关1模式[0-3]:手动，声控，光控，光声混控@开关2模式[0-3]:手动，声控，光控，光声混控@断电记忆[0-2]:关闭，仅本次，所有";
 	uint8_t power_save = 0; //断电记忆
@@ -228,7 +232,7 @@ extern "C"
 	{
 		//delay(20);//时间中断函数里不可以用delay
 		clear_wifi_data(wifi_ssid_pw_file); //长按按键1清除wifi账号密码记录
-		refresh_work();					//更新继电器状态
+		refresh_work();						//更新继电器状态
 		shengyin_timeout_out();				//更新声控灯倒计时
 		dht11_get();						//调用DHT11的读取函数
 	}
@@ -300,6 +304,9 @@ extern "C"
 			case 12:
 				count_char = count_char + sprintf(tcp_send_data + count_char, "%d", power_save);
 				break;
+			case 13:
+				count_char = count_char + sprintf(tcp_send_data + count_char, "0");
+				break;
 			}
 			tcp_send_data[count_char++] = '#'; //在这里插入单个数据结束符
 		}
@@ -368,6 +375,32 @@ extern "C"
 			if (value >= 0 && value <= 2)
 			{
 				power_save = value;
+			}
+			break;
+		case 13:
+			if (value == 1)
+			{
+				static struct Udpwarn test111 = {WARN, NOT_WARN, 0, 3, "test111111"};
+				static struct Udpwarn test222 = {WARN, NOT_WARN, 0, 4, "test2222222"};
+				if (test111.status == WARN_ACK)
+				{
+					test111.status = NOT_WARN;
+				}
+				else
+				{
+					test111.status = IS_WARN;
+					set_warn(&test111);
+				}
+
+				if (test222.status == WARN_ACK)
+				{
+					test222.status = NOT_WARN;
+				}
+				else
+				{
+					test222.status = IS_WARN;
+					set_warn(&test222);
+				}
 			}
 			break;
 		}

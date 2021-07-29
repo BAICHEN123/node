@@ -22,7 +22,7 @@ char WIFI_ssid[WIFI_SSID_LEN] = {'\0'};
 char WIFI_password[WIFI_PASSWORD_LEN] = {'\0'};
 static u64 UID = 0;
 uint32_t CHIP_ID = 0;
-struct Tcp_cache my_tcp_cache; //TCP缓存数组
+struct Tcp_cache my_tcp_cache;	  //TCP缓存数组
 char tcp_send_data[MAX_TCP_DATA]; //随用随清，不设置长度数组
 
 /*
@@ -53,17 +53,15 @@ char tcp_send_data[MAX_TCP_DATA]; //随用随清，不设置长度数组
 2	修改程序逻辑的高低电平 和 01 的对应关系，方便设备的安装。
 */
 
-
-
 void setup()
 {
 	pinMode(16, OUTPUT);
 	digitalWrite(16, HIGH); //不知道为啥，这个模块的初始状态是LOW，然后我一插上跳线帽就开始无限重启//是电压低的问题，默认未初始化的电压低于判定电压，在 nodemcu 上没有出现错误可能是因为产品型号/批次的不同，经过电压表测量，nodemcu的电压在0.8V左右，单个小模块的电压不到0.3
 	pinMode(15, OUTPUT);
 	digitalWrite(15, HIGH); //不知道为啥，看门狗会自己复位，可我根本没有启动看门狗，论坛找到说是15号引脚复位的，让我试试
-	pinMode(0, INPUT); //按键1
+	pinMode(0, INPUT);		//按键1
 	add_values();			//挂载读取信息。//这里可以优化，仅在读取写入的时候使用数组，建立//但是也没多大用，一个不超过50字节的数组
-	set_anjian1(0);	//配置wifi的清除数据按键
+	set_anjian1(0);			//配置wifi的清除数据按键
 
 	//LittleFS.format();//第一次使用flash需要将flash格式化
 
@@ -183,7 +181,7 @@ void loop()
 		beeeeee = str1_find_str2_(my_tcp_cache.data, my_tcp_cache.len, "+EID");
 		if (beeeeee >= 0)
 		{
-			EID=str_to_u64(my_tcp_cache.data + beeeeee, my_tcp_cache.len, &stat);
+			EID = str_to_u64(my_tcp_cache.data + beeeeee, my_tcp_cache.len, &stat);
 			if (stat != 1)
 			{
 				//值转换出错，溢出或未找到有效值
@@ -235,7 +233,7 @@ void loop()
 			}
 			Serial.print('#');
 			//TCP发送心跳包
-			if (back_send_tcp_(&client, tcp_send_data, set_databack(HEART_BEAT_FIG,tcp_send_data)) == -1)
+			if (back_send_tcp_(&client, tcp_send_data, set_databack(HEART_BEAT_FIG, tcp_send_data)) == -1)
 			{
 				Serial.printf(" 4 error_tcp_sum=%d \r\n", error_tcp_sum++);
 				return;
@@ -247,23 +245,23 @@ void loop()
 		//声音的采样间隔，查看 ruan_time_old_ms 时间间隔内的高电平数量，作为声控的判定标准
 		if (millis() - ruan_time_old_ms > RUAN_TIMEer_ms)
 		{
-			
+
 			warn_send();
-    		ruan_timer_ms();//每隔 RUAN_TIMEer_ms
+			ruan_timer_ms();			 //每隔 RUAN_TIMEer_ms
 			ruan_time_old_ms = millis(); //更新时间
-			// if (UDP_send_data == NULL)
-			// {
-			// 	UDP_send_data = "";
-			// }
-			// else if (!UDP_send_data.equals(""))
-			// {
-			// 	UDP_Send(MYHOST, UDP_PORT, UDP_send_data);
-			// 	UDP_send_data = "";
-			// }
+										 // if (UDP_send_data == NULL)
+										 // {
+										 // 	UDP_send_data = "";
+										 // }
+										 // else if (!UDP_send_data.equals(""))
+										 // {
+										 // 	UDP_Send(MYHOST, UDP_PORT, UDP_send_data);
+										 // 	UDP_send_data = "";
+										 // }
 		}
 		//如果回复重要，就多等一下，把 timeout_ms_max 改大一点
 		stat = timeout_back_us(&client, RUAN_TIMEer_us); //等待100us tcp是否有数据返回
-    	ruan_timer_us();//每隔 RUAN_TIMEer_us
+		ruan_timer_us();								 //每隔 RUAN_TIMEer_us
 
 		if (stat == 1) //有收到TCP数据
 		{
@@ -286,21 +284,30 @@ void loop()
 			{
 			case 'm':
 				//do_message()
-				if (back_send_tcp_(&client, "udp message test", strlen("udp message test")) == -1)
-				{return;}
+				// if (back_send_tcp_(&client, "udp message test", strlen("udp message test")) == -1)
+				// {return;}
 
-				break;
-				
+				// break;
+
 			case 'w':
 			case 'e':
 				//这里是服务器收到udp消息之后的回复
-				tmp=str_to_u32(my_tcp_cache.data+1,len_old);
-				if(tmp<0)
+				tmp = str_to_u32(my_tcp_cache.data, my_tcp_cache.len);
+				if (tmp < 0)
 				{
-					Serial.printf("   loop str_to_u32 error	%lld",tmp);
+					Serial.printf("   loop str_to_u32 error	%lld", tmp);
 					break;
 				}
-				warn_ack((unsigned int)tmp);
+				tmp = warn_ack((unsigned int)tmp, tcp_send_data); //tmp原来存错误id现在存长度
+				if (tmp < 1)
+				{
+					Serial.printf("   loop warn_ack return 0 ");
+				}
+				if (back_send_tcp_(&client, tcp_send_data, (int)tmp)==-1)
+				{
+					return;
+				}
+				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
 				break;
 			case 'T':
 			case 't':
@@ -310,17 +317,17 @@ void loop()
 			case '+': //获取传感器和模式的信息
 			case 'G':
 			case 'g':
-				if (back_send_tcp_(&client, tcp_send_data, set_databack(COMMAND_FIG,tcp_send_data)) == -1)
+				if (back_send_tcp_(&client, tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data)) == -1)
 					return;
-				send_time_old_ms = millis();//这里发送了，就没有必要一直发心跳包了，跟新一下心跳包的时间戳
-				break; // 跳出 switch
-			case 'I':  //获取一些模式id的详细描述
+				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
+				break;						 // 跳出 switch
+			case 'I':						 //获取一些模式id的详细描述
 			case 'i':
 				if (back_send_tcp(&client, MODE_INFO) == -1)
 					return;
-				send_time_old_ms = millis();//这里发送了，就没有必要一直发心跳包了，跟新一下心跳包的时间戳
-				break; // 跳出 switch
-			case '@':  //set
+				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
+				break;						 // 跳出 switch
+			case '@':						 //set
 				while (len_old >= 0 && len_old < my_tcp_cache.len)
 				{
 					for (short i = 0; i < MAX_NAME; i++)
@@ -353,13 +360,13 @@ void loop()
 				//所有的指令已经执行完毕
 				refresh_work(); //更新一下光控灯的状态
 				//TCP 打包返还自己的状态
-				if (back_send_tcp_(&client, tcp_send_data, set_databack(COMMAND_FIG,tcp_send_data)) == -1)
+				if (back_send_tcp_(&client, tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data)) == -1)
 				{
 					Serial.printf(" 2 error_tcp_sum=%d \r\n", error_tcp_sum++);
 					return;
 				}
-				send_time_old_ms = millis();//这里发送了，就没有必要一直发心跳包了，跟新一下心跳包的时间戳
-				if (power_save != 0) //实时更新断电记忆的东西
+				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
+				if (power_save != 0)		 //实时更新断电记忆的东西
 				{
 					//file_save_stut();
 					Serial.printf(" save_values %d \n", save_values(stut_data_file));
