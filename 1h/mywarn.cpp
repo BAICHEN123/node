@@ -48,7 +48,7 @@ extern "C"
 
 	int set_warn(struct Udpwarn *warn)
 	{
-		Serial.printf(" set_warn %s   ", warn->str_waring);
+		//Serial.printf(" set_warn %s   ", warn->str_waring);
 		if (len_warn < WARN_LEN)
 		{
 			//记录错误
@@ -71,7 +71,7 @@ extern "C"
 				len_warn++;
 				//尾巴向后挪一位
 				tail = tail->next;
-				Serial.printf(" set_warn len_warn %d", len_warn);
+				//Serial.printf(" set_warn len_warn %d", len_warn);
 				//Serial.printf(" set_warn ok %d",len_warn);
 			}
 			//告知现在的错误总数
@@ -116,9 +116,9 @@ extern "C"
 				break;
 
 			case TIMEOUT:
-				Serial.printf(" warn_send TIMEOUT ack timeout %u  %u %s  ",p->warn->id,p->warn->time,p->warn->str_waring);
+				//Serial.printf(" warn_send TIMEOUT ack timeout %u  %u %s  ",p->warn->id,p->warn->time,p->warn->str_waring);
 				p->warn->time = millis(); //更新一下时间然后重新走发送流程，不更新时间的话，会导致高频发送
-				Serial.printf(" timeout new %u   ",p->warn->time);
+				//Serial.printf(" timeout new %u   ",p->warn->time);
 
 			case IS_WARN:
 			case WAIT_SEND:
