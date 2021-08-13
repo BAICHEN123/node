@@ -4,6 +4,8 @@ mklink /H  .\2h\myconstant.cpp   .\1h\myconstant.cpp
 mklink /H  .\2h\myconstant.h   .\1h\myconstant.h
 mklink /H  .\2h\mystr.c   .\1h\mystr.c
 mklink /H  .\2h\mystr.h   .\1h\mystr.h
+mklink /H  .\2h\mytype.c   .\1h\mytype.c
+mklink /H  .\2h\mytype.h   .\1h\mytype.h
 mklink /H  .\2h\mytcp.cpp  .\1h\mytcp.cpp
 mklink /H  .\2h\mytcp.h   .\1h\mytcp.h
 mklink /H  .\2h\mytimer.c   .\1h\mytimer.c
