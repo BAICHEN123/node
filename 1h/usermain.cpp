@@ -105,7 +105,7 @@ extern "C"
 	{
 		static unsigned long last_time = millis();
 		static uint16 brightness = system_adc_read();
-		liangdu = brightness * 100 / 1024;
+		//liangdu = brightness * 100 / 1024;
 		if (last_time - millis() > 10) //限制adc读取频率
 		{
 			brightness = system_adc_read(); //值越大约黑暗 最高1024
@@ -256,6 +256,7 @@ extern "C"
 		refresh_work();						//更新继电器状态
 		shengyin_timeout_out();				//更新声控灯倒计时
 		dht11_get();						//调用DHT11的读取函数
+		liangdu = system_adc_read() * 100 / 1024.00;
 	}
 
 	/*	此函数在定时中断中调用，处理温湿度传感器通讯协议中18ms下拉	*/
