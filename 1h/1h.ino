@@ -16,6 +16,7 @@ extern "C"
 //#include "DHT11.h"
 #include "mystr.h"
 #include "mytimer.h"
+#include "mytype.h"
 }
 
 char WIFI_ssid[WIFI_SSID_LEN] = {'\0'};
@@ -52,6 +53,38 @@ char tcp_send_data[MAX_TCP_DATA]; //随用随清，不设置长度数组
 	一共有三个脚，可以控制电灯的状态，应确保 继电器 上电 前后 电灯的状态是相同的（除非从文件系统读取了最后的状态）。
 2	修改程序逻辑的高低电平 和 01 的对应关系，方便设备的安装。
 */
+
+/*将数据放在一个数组里发送。 返回数据的长度*/
+int set_databack(const char fig, char *tcp_send_data, int max_len)
+{
+	int i, k, count_char, tmp;
+	tcp_send_data[0] = fig; //在这里插入开始符号
+	tcp_send_data[1] = '#'; //在这里插入开始符号
+	count_char = 2;
+	for (i = 0; i < MAX_NAME; i++)
+	{
+		k = 0;
+		while (data_list[i].name[k] != '\0') //把数据的名字填充到数组里
+		{
+			tcp_send_data[count_char] = data_list[i].name[k];
+			k++;
+			count_char++;
+		}
+		tcp_send_data[count_char++] = ':'; //在这里插入分隔符
+		//char** str_data_names = { "温度" ,"湿度","灯0" ,"灯1" };
+		tmp = get_data_unit_str(data_list + i, tcp_send_data + count_char, max_len - count_char);
+		if (tmp == -1)
+		{
+			Serial.printf("get_data_unit_str error -1  i=%d  \n", i);
+			tcp_send_data[count_char++] = '#'; //在这里插入单个数据结束符
+			continue;
+		}
+		count_char = count_char + tmp;
+		tcp_send_data[count_char++] = '#'; //在这里插入单个数据结束符
+	}
+	//Serial.printf("  count_char :%d  ", count_char);
+	return count_char;
+}
 
 void setup()
 {
@@ -233,7 +266,7 @@ void loop()
 			}
 			Serial.print('#');
 			//TCP发送心跳包
-			if (back_send_tcp_(&client, tcp_send_data, set_databack(HEART_BEAT_FIG, tcp_send_data)) == -1)
+			if (back_send_tcp_(&client, tcp_send_data, set_databack(HEART_BEAT_FIG, tcp_send_data,MAX_TCP_DATA)) == -1)
 			{
 				Serial.printf(" 4 error_tcp_sum=%d \r\n", error_tcp_sum++);
 				return;
@@ -303,7 +336,7 @@ void loop()
 				{
 					Serial.printf("   loop warn_ack return 0 ");
 				}
-				if (back_send_tcp_(&client, tcp_send_data, (int)tmp)==-1)
+				if (back_send_tcp_(&client, tcp_send_data, (int)tmp) == -1)
 				{
 					return;
 				}
@@ -317,7 +350,7 @@ void loop()
 			case '+': //获取传感器和模式的信息
 			case 'G':
 			case 'g':
-				if (back_send_tcp_(&client, tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data)) == -1)
+				if (back_send_tcp_(&client, tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data,MAX_TCP_DATA)) == -1)
 					return;
 				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
 				break;						 // 跳出 switch
@@ -332,8 +365,10 @@ void loop()
 				{
 					for (short i = 0; i < MAX_NAME; i++)
 					{
-						if (0 <= str1_find_str2_1(my_tcp_cache.data, len_old, str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, ':'), str_data_names[i]))
+						if (0 <= str1_find_str2_1(my_tcp_cache.data, len_old, str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, ':'), data_list[i].name))
 						{
+							//这后面的代码也可以改一改了，添加了数据条目的数据类型分类，可以对收到的数据进行不同的格式化处理了。
+
 							int value = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, ':'); //获取'：:'相对于 my_tcp_cache.data 的位置
 							if (value < 0)
 							{
@@ -352,7 +387,6 @@ void loop()
 							break;
 						}
 					}
-
 					my_tcp_cache.data[len_old] = 0; //清楚标志位的数据
 					len_old = str1_find_char_1(my_tcp_cache.data, len_old + 1, my_tcp_cache.len, '@');
 					//只识别 @ 类型的数据，get类型的数据一般不会组合发送，舍弃此部分
@@ -360,7 +394,7 @@ void loop()
 				//所有的指令已经执行完毕
 				refresh_work(); //更新一下光控灯的状态
 				//TCP 打包返还自己的状态
-				if (back_send_tcp_(&client, tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data)) == -1)
+				if (back_send_tcp_(&client, tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data,MAX_TCP_DATA)) == -1)
 				{
 					Serial.printf(" 2 error_tcp_sum=%d \r\n", error_tcp_sum++);
 					return;

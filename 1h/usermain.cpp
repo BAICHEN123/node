@@ -1,6 +1,7 @@
 #include "usermain.h"
 extern "C"
 {
+	/*
 	const char *str_data_names[MAX_NAME] = {
 		"温度",
 		"湿度",
@@ -18,11 +19,12 @@ extern "C"
 		"@test1[0-1]" //测试错误并发用
 
 	};
-
+	*/
 	const char *MODE_INFO = "@开关1模式[0-3]:手动，声控，光控，光声混控@开关2模式[0-3]:手动，声控，光控，光声混控@断电记忆[0-2]:关闭，仅本次，所有";
 	uint8_t power_save = 0; //断电记忆
 
 	struct DHT11_data dht11_data = {666, 666};
+	double liangdu = 0;
 	//两个开关，当他为2时，是自动模式，其他时候读取12 和14号脚的电平
 	uint8_t LED1 = 0;
 	uint8_t switch_1 = 2;
@@ -33,7 +35,7 @@ extern "C"
 	short TEMPERATURE_ERROR_HIGH = 40;
 	short TEMPERATURE_ERROR_LOW = 10;
 	uint8_t light_qu_yu = 5; //补光区间
-
+	uint8_t test = 0;
 	static int beeeeee = 0;
 
 	//下面定义几个引脚的功能
@@ -43,6 +45,24 @@ extern "C"
 	const uint8_t shengyin = 4; //声音逻辑输入
 	const uint8_t anjian1 = 0;	//按键1输入
 	const uint8_t dht11 = 5;	//按键1输入
+
+	struct MyType data_list[MAX_NAME] = {
+		{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature)},
+		{"湿度", "%", TYPE_FLOAT, sizeof(dht11_data.humidity), &(dht11_data.humidity)},
+		{"亮度", "%", TYPE_DOUBLE, sizeof(liangdu), &liangdu},
+		{"@开关1[0-1]", NULL, TYPE_u8, sizeof(LED1), &LED1},
+		{"@开关1模式[0-3]", NULL, TYPE_u8, sizeof(switch_1), &switch_1},
+		{"@开关2[0-1]", NULL, TYPE_u8, sizeof(LED2), &LED2},
+		{"@开关2模式[0-3]", NULL, TYPE_u8, sizeof(switch_2), &switch_2},
+		{"@声控灯时长/S[1-300]", NULL, TYPE_SHORT, sizeof(switch_light_up_TIME_s), &switch_light_up_TIME_s},
+		{"声控灯剩余时长/S", "S", TYPE_SHORT, sizeof(switch_light_up_time_x_s), &switch_light_up_time_x_s},
+		{"@高温警告/°C[0-40]", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_HIGH), &TEMPERATURE_ERROR_HIGH},
+		{"@低温警告/°C[0-40]", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_LOW), &TEMPERATURE_ERROR_LOW},
+		{"@补光区间[0-10]", NULL, TYPE_u8, sizeof(light_qu_yu), &light_qu_yu},
+		{"@断电记忆[0-2]", NULL, TYPE_u8, sizeof(power_save), &power_save},
+		{"@test1[0-1]", NULL, TYPE_u8, sizeof(test), &test} //测试错误并发用
+
+	};
 
 	void my_init()
 	{
@@ -85,6 +105,7 @@ extern "C"
 	{
 		static unsigned long last_time = millis();
 		static uint16 brightness = system_adc_read();
+		liangdu = brightness * 100 / 1024;
 		if (last_time - millis() > 10) //限制adc读取频率
 		{
 			brightness = system_adc_read(); //值越大约黑暗 最高1024
@@ -246,6 +267,7 @@ extern "C"
 	}
 
 	/*将数据放在一个数组里发送。 返回数据的长度*/
+	/*
 	int set_databack(const char fig, char *tcp_send_data)
 	{
 		int i, k, count_char;
@@ -305,7 +327,7 @@ extern "C"
 				count_char = count_char + sprintf(tcp_send_data + count_char, "%d", power_save);
 				break;
 			case 13:
-				count_char = count_char + sprintf(tcp_send_data + count_char, "0");
+				count_char = count_char + sprintf(tcp_send_data + count_char, "%u", test);
 				break;
 			}
 			tcp_send_data[count_char++] = '#'; //在这里插入单个数据结束符
@@ -313,6 +335,8 @@ extern "C"
 		//Serial.printf("  count_char :%d  ", count_char);
 		return count_char;
 	}
+
+	*/
 
 	/*在这里修改控件的状态 i是名称对应的数组索引，value是用户赋值*/
 	void set_data_(short i, short value)

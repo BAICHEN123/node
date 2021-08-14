@@ -9,6 +9,7 @@ extern "C"
 {
 #include "DHT11.h"
 #include "mytimer.h"
+#include "mytype.h"
 //必须实现的
     /*初始化函数，初始化此项目需要使用的引脚*/
     void my_init();
@@ -24,8 +25,6 @@ extern "C"
     一个变量变动，所有的变量都会保存一次*/
     void add_values();
 
-    /*打包数据，将状态值和名称按协议打包好，存放在 tcp_send_data 里，主函数会在需要发送的时候调用这个函数*/
-    int set_databack(const char fig,char *tcp_send_data);
 
     //下面2个函数禁止执行长时间任务
     void ruan_timer_ms();//每隔 RUAN_TIMEer_ms
@@ -34,7 +33,8 @@ extern "C"
     void refresh_work();
     //str_data_names 的长度
     #define MAX_NAME 14
-    extern const char *str_data_names[MAX_NAME];
+    //extern const char *str_data_names[MAX_NAME];
+    extern struct MyType data_list[MAX_NAME];
     //可选变量描述
     extern const char *MODE_INFO;
     //断电记忆的可选参数

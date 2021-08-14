@@ -57,6 +57,9 @@ int get_data_unit_str(struct MyType *mytype, char *data, int len_data)
 {
 	int len = 0;
 	len = get_data_str(mytype, data, len_data);
-	len = len + sprintf(data + len, "%s", mytype->unit);
+	if(mytype->unit!=NULL)
+	{
+		len = len + sprintf(data + len, "%s", mytype->unit);
+	}
 	return len;
 }
