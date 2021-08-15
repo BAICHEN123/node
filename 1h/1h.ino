@@ -71,6 +71,7 @@ int set_databack(const char fig, char *tcp_send_data, int max_len)
 			tcp_send_data[count_char++] = '#'; //在这里插入单个数据结束符
 			continue;
 		}
+		count_char = count_char + tmp;
 		// while (data_list[i].name[k] != '\0') //把数据的名字填充到数组里
 		// {
 		// 	tcp_send_data[count_char] = data_list[i].name[k];
