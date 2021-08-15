@@ -64,12 +64,19 @@ int set_databack(const char fig, char *tcp_send_data, int max_len)
 	for (i = 0; i < MAX_NAME; i++)
 	{
 		k = 0;
-		while (data_list[i].name[k] != '\0') //把数据的名字填充到数组里
+		tmp = get_name_str(data_list + i, tcp_send_data + count_char, max_len - count_char);
+		if (tmp == -1)
 		{
-			tcp_send_data[count_char] = data_list[i].name[k];
-			k++;
-			count_char++;
+			Serial.printf("get_name_str error -1  i=%d  \n", i);
+			tcp_send_data[count_char++] = '#'; //在这里插入单个数据结束符
+			continue;
 		}
+		// while (data_list[i].name[k] != '\0') //把数据的名字填充到数组里
+		// {
+		// 	tcp_send_data[count_char] = data_list[i].name[k];
+		// 	k++;
+		// 	count_char++;
+		// }
 		tcp_send_data[count_char++] = ':'; //在这里插入分隔符
 		//char** str_data_names = { "温度" ,"湿度","灯0" ,"灯1" };
 		tmp = get_data_unit_str(data_list + i, tcp_send_data + count_char, max_len - count_char);
