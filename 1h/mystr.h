@@ -55,6 +55,10 @@ str2:需要找到的字符串
 查找失败：返回-1
 */
 int str1_find_str2_1(char *str1, int start_i, int str_length, const char *str2);
+
+int str1_eq_str2(char *str1, int start_i, int str_length, const char *str2);
+
+
 /*
 //字符串查找字符串
 str1:数据

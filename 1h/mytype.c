@@ -133,16 +133,26 @@ int set_value(struct MyType *mytype, char *data, int len_data)
 		}
 		return 0;
 	case TYPE_INT8:
-		if (*(char *)(mytype->min) <= data[0] && data[0] <= *(char *)(mytype->max))
+		value1 = str_to_64(data, len_data, &status);
+		if (status != 1)
 		{
-			*(char *)(mytype->data) = data[0];
+			return 0;
+		}
+		if (*(char *)(mytype->min) <= value1 && value1 <= *(char *)(mytype->max))
+		{
+			*(char *)(mytype->data) = (char)value1;
 			return 1;
 		}
 		return 0;
 	case TYPE_u8:
-		if (*(unsigned char *)(mytype->min) <= data[0] && data[0] <= *(unsigned char *)(mytype->max))
+		value1 = str_to_64(data, len_data, &status);
+		if (status != 1)
 		{
-			*(unsigned char *)(mytype->data) = data[0];
+			return 0;
+		}
+		if (*(unsigned char *)(mytype->min) <= value1 && value1 <= *(unsigned char *)(mytype->max))
+		{
+			*(unsigned char *)(mytype->data) = (unsigned char)value1;
 			return 1;
 		}
 		return 0;

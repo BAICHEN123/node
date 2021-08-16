@@ -373,22 +373,23 @@ void loop()
 				{
 					for (short i = 0; i < MAX_NAME; i++)
 					{
-						int value = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, ':'); //获取'：:'相对于 my_tcp_cache.data 的位置
+						int value = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, '['); //获取'：:'相对于 my_tcp_cache.data 的位置
 						if (value < 0)
 						{
 							Serial.printf("get ':' error\n");
 							break;
 						}
-						if (0 <= str1_find_str2_1(my_tcp_cache.data, len_old, value, data_list[i].name))
+						if (1 == str1_eq_str2(my_tcp_cache.data, len_old, value, data_list[i].name))
 						{
+							value = str1_find_char_1(my_tcp_cache.data, value, my_tcp_cache.len, ':') + 1; //找到的是 ':' 真正的数据从下一位开始
 							//这后面的代码也可以改一改了，添加了数据条目的数据类型分类，可以对收到的数据进行不同的格式化处理了。
-							if(set_value(data_list+i,my_tcp_cache.data + value,my_tcp_cache.len - value)==1)
+							if (set_value(data_list + i, my_tcp_cache.data + value, my_tcp_cache.len - value) == 1)
 							{
-								Serial.printf("set_value ok %d\n",i);
+								Serial.printf("set_value ok %d\n", i);
 							}
 							else
 							{
-								Serial.printf("set_value error %d %s\n",i,my_tcp_cache.data + value);
+								Serial.printf("set_value error %d %s\n", i, my_tcp_cache.data + value);
 							}
 							break;
 

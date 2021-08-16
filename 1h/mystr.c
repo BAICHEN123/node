@@ -310,6 +310,27 @@ int str1_find_str2_1(char *str1, int start_i, int str_length, const char *str2)
 	return -1; //比对失败
 }
 
+int str1_eq_str2(char *str1, int start_i, int str_length, const char *str2)
+{
+	int i = 0;
+	for (i = 0; i < str_length-start_i; i++)
+	{
+		if (str1[start_i + i] != str2[i])
+		{
+			return -1;
+		}
+	}
+	if (str2[i] == '\0')
+	{
+
+		return 1; //成功
+	}
+	else
+	{
+		return -1;
+	}
+}
+
 /*
 字符数组查找字符
 str1:数据
