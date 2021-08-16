@@ -1,7 +1,10 @@
 #ifndef _MYSTR_h
 #define _MYSTR_h
 
-#include "arduino.h"
+//#include "arduino.h"
+#ifndef u64
+#define u64 unsigned long long
+#endif
 
 /*
 字符串转unsigned long long
@@ -20,6 +23,25 @@ status:	-1	在长度范围内没有找到任何一个数字
 */
 u64 str_to_u64(const char *str1, unsigned int len, short *status);
 
+/*
+字符串转long long
+IPD, 10:12345678->10
+把传入的第一个自然数数转换成long long
+str1:字符串指针的开始位置
+len:需要查找的数组长度
+
+status:	-1	在长度范围内没有找到任何一个数字
+			return:	0
+		-2	转换过程溢出
+			return:	溢出前最后的有效值
+		//0	极限反杀	//调试的时候用过，这个留念用的
+		1	成功转换
+			return:	有效值
+*/
+long long str_to_64(char *str1, unsigned int len, short *status);
+
+double str_to_double(char *str1, short *status);
+
 long long str_to_u32(const char *str1, unsigned int len);
 
 //u64 str_to_u64(char* str1, unsigned int len,short *status);
@@ -32,7 +54,7 @@ str2:需要找到的字符串
 查找成功：返回str2在str1中的开始位置
 查找失败：返回-1
 */
-int str1_find_str2_1(char *str1, int start_i, int str_length,const char *str2);
+int str1_find_str2_1(char *str1, int start_i, int str_length, const char *str2);
 /*
 //字符串查找字符串
 str1:数据
