@@ -1,6 +1,7 @@
 #ifndef __MYTYPE_H
 #define __MYTYPE_H
 #include "arduino.h"
+#include "mystr.h"
 #ifndef NULL
 #define NULL (void*)0
 #endif
@@ -40,4 +41,5 @@ int mystrcpy(char *str1, char *str2, int len1, int len2);
 int get_data_str(struct MyType *mytype, char *data, int len_data);
 int get_data_unit_str(struct MyType *mytype, char *data, int len_data);
 int get_name_str(struct MyType *mytype, char *data, int len_data);
+int set_value(struct MyType *mytype, char *data, int len_data);
 #endif

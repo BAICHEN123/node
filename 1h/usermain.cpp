@@ -343,96 +343,96 @@ extern "C"
 	*/
 
 	/*在这里修改控件的状态 i是名称对应的数组索引，value是用户赋值*/
-	void set_data_(short i, short value)
-	{
-		switch (i)
-		{ //在这里修改控件的状态
-		case 3:
-			if (value > -1 && value < 2)
-			{
-				LED1 = value; //1号继电器
-			}
-			break;
+	// void set_data_(short i, short value)
+	// {
+	// 	switch (i)
+	// 	{ //在这里修改控件的状态
+	// 	case 3:
+	// 		if (value > -1 && value < 2)
+	// 		{
+	// 			LED1 = value; //1号继电器
+	// 		}
+	// 		break;
 
-		case 4:
-			if (value > -1 && value < 4)
-			{
-				switch_1 = value; //1号继电器 工作模式
-			}
-			break;
+	// 	case 4:
+	// 		if (value > -1 && value < 4)
+	// 		{
+	// 			switch_1 = value; //1号继电器 工作模式
+	// 		}
+	// 		break;
 
-		case 5:
-			if (value > -1 && value < 2)
-			{
-				LED2 = value; //2号继电器
-			}
-			break;
+	// 	case 5:
+	// 		if (value > -1 && value < 2)
+	// 		{
+	// 			LED2 = value; //2号继电器
+	// 		}
+	// 		break;
 
-		case 6:
-			if (value > -1 && value < 4)
-			{
-				switch_2 = value; //2号继电器 工作模式
-			}
-			break;
+	// 	case 6:
+	// 		if (value > -1 && value < 4)
+	// 		{
+	// 			switch_2 = value; //2号继电器 工作模式
+	// 		}
+	// 		break;
 
-		case 7:
-			if (value > 0 && value < 301)
-			{
-				switch_light_up_TIME_s = value;
-			}
-			break;
-		case 9:
-			if (value >= 0 && value <= 40)
-			{
-				TEMPERATURE_ERROR_HIGH = value;
-			}
-			break;
-		case 10:
-			if (value >= 0 && value <= 40)
-			{
-				TEMPERATURE_ERROR_LOW = value;
-			}
-			break;
-		case 11:
-			if (value >= 0 && value <= 10)
-			{
-				light_qu_yu = value;
-			}
-			break;
-		case 12:
-			if (value >= 0 && value <= 2)
-			{
-				power_save = value;
-			}
-			break;
-		case 13:
-			if (value == 1)
-			{
-				static struct Udpwarn test111 = {WARN, NOT_WARN, 0, 3, "test111111"};
-				static struct Udpwarn test222 = {WARN, NOT_WARN, 0, 4, "test2222222"};
-				if (test111.status == WARN_ACK)
-				{
-					test111.status = NOT_WARN;
-				}
-				else
-				{
-					test111.status = IS_WARN;
-					set_warn(&test111);
-				}
+	// 	case 7:
+	// 		if (value > 0 && value < 301)
+	// 		{
+	// 			switch_light_up_TIME_s = value;
+	// 		}
+	// 		break;
+	// 	case 9:
+	// 		if (value >= 0 && value <= 40)
+	// 		{
+	// 			TEMPERATURE_ERROR_HIGH = value;
+	// 		}
+	// 		break;
+	// 	case 10:
+	// 		if (value >= 0 && value <= 40)
+	// 		{
+	// 			TEMPERATURE_ERROR_LOW = value;
+	// 		}
+	// 		break;
+	// 	case 11:
+	// 		if (value >= 0 && value <= 10)
+	// 		{
+	// 			light_qu_yu = value;
+	// 		}
+	// 		break;
+	// 	case 12:
+	// 		if (value >= 0 && value <= 2)
+	// 		{
+	// 			power_save = value;
+	// 		}
+	// 		break;
+	// 	case 13:
+	// 		if (value == 1)
+	// 		{
+	// 			static struct Udpwarn test111 = {WARN, NOT_WARN, 0, 3, "test111111"};
+	// 			static struct Udpwarn test222 = {WARN, NOT_WARN, 0, 4, "test2222222"};
+	// 			if (test111.status == WARN_ACK)
+	// 			{
+	// 				test111.status = NOT_WARN;
+	// 			}
+	// 			else
+	// 			{
+	// 				test111.status = IS_WARN;
+	// 				set_warn(&test111);
+	// 			}
 
-				if (test222.status == WARN_ACK)
-				{
-					test222.status = NOT_WARN;
-				}
-				else
-				{
-					test222.status = IS_WARN;
-					set_warn(&test222);
-				}
-			}
-			break;
-		}
-	}
+	// 			if (test222.status == WARN_ACK)
+	// 			{
+	// 				test222.status = NOT_WARN;
+	// 			}
+	// 			else
+	// 			{
+	// 				test222.status = IS_WARN;
+	// 				set_warn(&test222);
+	// 			}
+	// 		}
+	// 		break;
+	// 	}
+	// }
 
 	/*添加需要保存到flash的变量，上限为 list_values_len_max */
 	void add_values()

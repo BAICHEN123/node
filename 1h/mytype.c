@@ -89,8 +89,8 @@ int get_name_str(struct MyType *mytype, char *data, int len_data)
 			return sprintf(data, "%s[%.0f-%.0f]", mytype->name, *(double *)(mytype->min), *(double *)(mytype->max));
 		//case TYPE_CHAR_N:
 		//	return sprintf(data, "%s", (char *)(mytype->data));
-		case TYPE_STR_N:
-			return mystrcpy(data, (char *)(mytype->data), len_data, mytype->byte_len);
+		//case TYPE_STR_N:
+		//	return mystrcpy(data, (char *)(mytype->data), len_data, mytype->byte_len);
 		default:
 			return -1;
 		}
@@ -110,4 +110,143 @@ int get_data_unit_str(struct MyType *mytype, char *data, int len_data)
 		len = len + sprintf(data + len, "%s", mytype->unit);
 	}
 	return len;
+}
+
+/*
+传入的data必须是字符串的开始位置，可以直接data[0]访问
+*/
+
+int set_value(struct MyType *mytype, char *data, int len_data)
+{
+
+	int status = 0;
+	long long value1;
+	unsigned long long value2;
+	double value3;
+	switch (mytype->ID)
+	{
+	case TYPE_CHAR:
+		if (*(char *)(mytype->min) <= data[0] && data[0] <= *(char *)(mytype->max))
+		{
+			*(char *)(mytype->data) = data[0];
+			return 1;
+		}
+		return 0;
+	case TYPE_INT8:
+		if (*(char *)(mytype->min) <= data[0] && data[0] <= *(char *)(mytype->max))
+		{
+			*(char *)(mytype->data) = data[0];
+			return 1;
+		}
+		return 0;
+	case TYPE_u8:
+		if (*(unsigned char *)(mytype->min) <= data[0] && data[0] <= *(unsigned char *)(mytype->max))
+		{
+			*(unsigned char *)(mytype->data) = data[0];
+			return 1;
+		}
+		return 0;
+	case TYPE_SHORT:
+		value1 = str_to_64(data, len_data, &status);
+		if (status != 1)
+		{
+			return 0;
+		}
+		if (*(short *)(mytype->min) <= value1 && value1 <= *(short *)(mytype->max))
+		{
+			*(short *)(mytype->data) = (short)value1;
+			return 1;
+		}
+		return 0;
+	case TYPE_USHORT:
+		value1 = str_to_u16(data, len_data);
+		if (value1 < 0)
+		{
+			return 0;
+		}
+		if (*(unsigned short *)(mytype->min) <= value1 && value1 <= *(unsigned short *)(mytype->max))
+		{
+			*(unsigned short *)(mytype->data) = (short)value1;
+			return 1;
+		}
+		return 0;
+	case TYPE_INT:
+		value1 = str_to_64(data, len_data, &status);
+		if (status != 1)
+		{
+			return 0;
+		}
+		if (*(int *)(mytype->min) <= value1 && value1 <= *(int *)(mytype->max))
+		{
+			*(int *)(mytype->data) = (int)value1;
+			return 1;
+		}
+		return 0;
+	case TYPE_UINT:
+		value2 = str_to_u64(data, len_data, &status);
+		if (status != 1)
+		{
+			return 0;
+		}
+		if (*(unsigned int *)(mytype->min) <= value2 && value2 <= *(unsigned int *)(mytype->max))
+		{
+			*(unsigned int *)(mytype->data) = (unsigned int)value2;
+			return 1;
+		}
+		return 0;
+	case TYPE_INT64:
+		value1 = str_to_64(data, len_data, &status);
+		if (status != 1)
+		{
+			return 0;
+		}
+		if (*(long long *)(mytype->min) <= value1 && value1 <= *(long long *)(mytype->max))
+		{
+			*(long long *)(mytype->data) = value1;
+			return 1;
+		}
+		return 0;
+	case TYPE_U64:
+		value2 = str_to_u64(data, len_data, &status);
+		if (status != 1)
+		{
+			return 0;
+		}
+		if (*(unsigned long long *)(mytype->min) <= value2 && value2 <= *(unsigned long long *)(mytype->max))
+		{
+			*(unsigned long long *)(mytype->data) = value2;
+			return 1;
+		}
+		return 0;
+	case TYPE_FLOAT:
+		value3 = 0;
+		status = sscanf(data, "%lf", &value3);
+		if (status == 0)
+		{
+			return 0;
+		}
+		if (*(float *)(mytype->min) <= value3 && value3 <= *(float *)(mytype->max))
+		{
+			*(float *)(mytype->data) = (float)value3;
+			return 1;
+		}
+		return 0;
+	case TYPE_DOUBLE:
+		value3 = 0;
+		status = sscanf(data, "%lf", &value3);
+		if (status == 0)
+		{
+			return 0;
+		}
+		if (*(double *)(mytype->min) <= value3 && value3 <= *(double *)(mytype->max))
+		{
+			*(double *)(mytype->data) = value3;
+			return 1;
+		}
+		return 0;
+	//case TYPE_CHAR_N:
+	//case TYPE_STR_N:
+	default:
+		return -1;
+	}
 }
