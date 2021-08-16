@@ -17,7 +17,7 @@ extern "C"
 	i	   str_data_names 对应的索引
 	value   需要设置的值
 	*/
-	void set_data_(short i, short value);
+	//void set_data_(short i, short value);
 
 	/*在函数内设置需要在断电保存的变量
 	变量会在 power_save > 0 && 发生变动 的时候保存到 flash 

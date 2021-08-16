@@ -29,13 +29,15 @@ const char *str_data_names[MAX_NAME] = {
 	const uint8_t hongwai_renti = 5; //红外人体
 	const uint8_t anjian1 = 0;		 //按键1输入
 
+	unsigned char CONST1[3]={0,1,2};
+
 	struct MyType data_list[MAX_NAME] = {
-		{"红外人体检测", NULL, TYPE_u8, sizeof(hongwai), &hongwai},
-		{"烟雾逻辑", NULL, TYPE_u8, sizeof(yanwu), &yanwu},
-		{"烟雾模拟", "%", TYPE_DOUBLE, sizeof(yanwu_my), &yanwu_my},
-		{"@开关1[0-1]", NULL, TYPE_u8, sizeof(LED1), &LED1},
-		{"@开关2[0-1]", NULL, TYPE_u8, sizeof(LED2), &LED2},
-		{"@断电记忆[0-2]", NULL, TYPE_u8, sizeof(power_save), &power_save}
+		{"红外人体检测", NULL, TYPE_u8, sizeof(hongwai), &hongwai,NULL,NULL},
+		{"烟雾逻辑", NULL, TYPE_u8, sizeof(yanwu), &yanwu,NULL,NULL},
+		{"烟雾模拟", "%", TYPE_DOUBLE, sizeof(yanwu_my), &yanwu_my,NULL,NULL},
+		{"@开关1", NULL, TYPE_u8, sizeof(LED1), &LED1,CONST1,CONST1+1},
+		{"@开关2", NULL, TYPE_u8, sizeof(LED2), &LED2,CONST1,CONST1+1},
+		{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save,CONST1,CONST1+2}
 
 	};
 
@@ -52,6 +54,8 @@ const char *str_data_names[MAX_NAME] = {
 		pinMode(yan_wu, INPUT);
 		pinMode(anjian1, INPUT); //按键1
 		pinMode(hongwai_renti, INPUT);
+		pinMode(jd2, OUTPUT);
+		pinMode(jd1, OUTPUT);
 		set_timer1_ms(timer1_worker, TIMER1_timeout_ms); //强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
 	}
 
@@ -71,8 +75,11 @@ const char *str_data_names[MAX_NAME] = {
 	{
 	}
 
+	//刷新状态
 	void refresh_work()
 	{
+		digitalWrite(jd1, LED1);
+		digitalWrite(jd2, LED2);
 	}
 
 	/*
@@ -121,32 +128,32 @@ int set_databack(const char fig,char *tcp_send_data)
 }
 */
 
-	void set_data_(short i, short value)
-	{
-		switch (i)
-		{ //在这里修改控件的状态
-		case 3:
-			if (value > -1 && value < 2)
-			{
-				LED1 = value;
-				digitalWrite(jd1, LED1);
-			}
-			break;
+	// void set_data_(short i, short value)
+	// {
+	// 	switch (i)
+	// 	{ //在这里修改控件的状态
+	// 	case 3:
+	// 		if (value > -1 && value < 2)
+	// 		{
+	// 			LED1 = value;
+	// 			digitalWrite(jd1, LED1);
+	// 		}
+	// 		break;
 
-		case 4:
-			if (value > -1 && value < 2)
-			{
-				LED2 = value;
-				digitalWrite(jd2, LED2);
-			}
-			break;
+	// 	case 4:
+	// 		if (value > -1 && value < 2)
+	// 		{
+	// 			LED2 = value;
+	// 			digitalWrite(jd2, LED2);
+	// 		}
+	// 		break;
 
-		case 5:
-			if (value >= 0 && value <= 2)
-			{
-				power_save = value;
-			}
-			break;
-		}
-	}
+	// 	case 5:
+	// 		if (value >= 0 && value <= 2)
+	// 		{
+	// 			power_save = value;
+	// 		}
+	// 		break;
+	// 	}
+	// }
 }
