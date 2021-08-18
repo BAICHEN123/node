@@ -47,7 +47,7 @@ extern "C"
 	const uint8_t dht11 = 5;	//按键1输入
 
 	//关于这里和后面的使用时的警告，将其定义为const完全不影响使用，但是会出现警告，只要自己不要在后面的使用过程中对其赋值就没有问题
-	uint8_t CONST1[4] = {0, 1, 2, 3};
+	uint8_t CONST1[5] = {0, 1, 2, 3,10};
 	short CONST2[3] = {0,45, 300};
 	struct MyType data_list[MAX_NAME] = {
 		{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature), NULL, NULL},
