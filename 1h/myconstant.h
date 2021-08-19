@@ -56,4 +56,7 @@ extern const char *wifi_ssid_pw_file; //储存 WiFi 账号和密码的文件
 extern const char *stut_data_file;    //储存设备各功能配置状态的文件
 extern const char *MYHOST;            //服务器 ip 地址
 
+
+
+
 #endif

@@ -11,12 +11,13 @@
 #include "myudp.h"
 #include "usermain.h"
 #include "mywarn.h"
+#include "mytype.h"
+#include "jiantin.h"
 extern "C"
 {
 //#include "DHT11.h"
 #include "mystr.h"
 #include "mytimer.h"
-#include "mytype.h"
 }
 
 char WIFI_ssid[WIFI_SSID_LEN] = {'\0'};
@@ -257,6 +258,7 @@ void loop()
 	unsigned long send_time_old_ms = millis();
 	unsigned long ruan_time_old_ms = millis();
 	long long tmp;
+	int tmp1;
 	//micros();//us
 	short len_old;
 	//用户初始化
@@ -333,6 +335,21 @@ void loop()
 
 			switch (*(my_tcp_cache.data + len_old))
 			{
+			case 'A':
+				tmp1=add_jiantin(my_tcp_cache.data + len_old,my_tcp_cache.len);
+				if(tmp1>=0)
+				{
+					jiantin_print();
+					tmp1=sprintf(tcp_send_data,"L%d",tmp1+1);
+					back_send_tcp_(&client, tcp_send_data, tmp1);
+				}
+				else
+				{
+					Serial.printf("add_jiantin= %d ", tmp1);
+					tmp1=sprintf(tcp_send_data,"L%d",tmp1);
+					back_send_tcp_(&client, tcp_send_data, tmp1);
+				}
+				break;
 			case 'm':
 				//do_message()
 				// if (back_send_tcp_(&client, "udp message test", strlen("udp message test")) == -1)
