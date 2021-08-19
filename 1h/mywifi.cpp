@@ -144,6 +144,8 @@ extern "C"
     {
         Serial.print("Connecting to ");
         Serial.println(WIFI_ssid);
+        Serial.print("WIFI_password ");
+        Serial.println(WIFI_password);
         WiFi.mode(WIFI_STA);
         WiFi.begin(WIFI_ssid, WIFI_password);
         short i = 20;

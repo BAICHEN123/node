@@ -164,6 +164,7 @@ void loop()
 			Serial.printf("error_wifi_count==%d\r\n", error_wifi_count);
 			if (error_wifi_count == 2)
 			{
+				Serial.print("WiFi.mode(WIFI_OFF);\r\n");
 				WiFi.mode(WIFI_OFF); //断开wifi 之后重新连接wifi
 				delay(1000);
 			}
@@ -171,7 +172,16 @@ void loop()
 			{
 				//超过6次链接失败，复位程序，重启
 				Serial.print("\r\ndeepSleep 20S\r\n");
-				ESP.deepSleep(20000000, WAKE_RFCAL);
+				if (error_tcp_sum > 0)
+				{
+					//曾经连上过，但是tcp重新连接时候失败了，wifi可能没问题，尝试重启单片机
+					ESP.restart();
+				}
+				else
+				{
+					//一次都没连上过，可能wifi有问题，休眠单片机
+					ESP.deepSleep(20000000, WAKE_RFCAL);
+				}
 			}
 			error_wifi_count++;
 			return;
@@ -195,20 +205,20 @@ void loop()
 	else
 	{
 		Serial.printf(" 1 error_tcp_sum=%d \r\n", error_tcp_sum++);
-		delay(3000); //等待3S再重连
-		if (error_tcp_sum > 3 && error_tcp_sum < 6)
+		delay(3000);		   //等待3S再重连
+		if (error_tcp_sum > 3) // && error_tcp_sum < 6)
 		{
 			Serial.print("WiFi.mode(WIFI_OFF);\r\n");
 			WiFi.mode(WIFI_OFF); //重新连接wifi
 		}
-		else if (error_tcp_sum == 6)
-		{
-			//超过6次链接失败，复位程序，重启
-			Serial.print("\r\nnet error,deepSleep\r\n");
-			ESP.deepSleep(20000000, WAKE_RFCAL);
-			//Serial.print("\r\nresetFunc\r\n");
-			//ESP.restart(); //resetFunc();
-		}
+		// else if (error_tcp_sum == 6)
+		// {
+		// 	//超过6次链接失败，复位程序，重启
+		// 	Serial.print("\r\nnet error,deepSleep\r\n");
+		// 	ESP.deepSleep(20000000, WAKE_RFCAL);
+		// 	//Serial.print("\r\nresetFunc\r\n");
+		// 	//ESP.restart(); //resetFunc();
+		// }
 		return;
 	}
 	Serial.print("tcp ok");
@@ -373,16 +383,22 @@ void loop()
 				{
 					for (short i = 0; i < MAX_NAME; i++)
 					{
-						int value = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, '['); //获取'：:'相对于 my_tcp_cache.data 的位置
-						if (value < 0)
+
+						int value = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, '['); //获取 '[' 相对于 my_tcp_cache.data 的位置
+						if (value < 0 || value - len_old > 50)											 //限制名字的长度,找不到 '[' 就去找 ':'
 						{
-							Serial.printf("get ':' error\n");
+							Serial.printf("get '[' error value= %d %d\n", value, len_old);
+							value = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, ':'); //获取':'相对于 my_tcp_cache.data 的位置
+						}
+						if (value < 0 || value - len_old > 50) //
+						{
+							Serial.printf("get ':' error value= %d \n", value);
 							break;
 						}
 						if (1 == str1_eq_str2(my_tcp_cache.data, len_old, value, data_list[i].name))
 						{
 							value = str1_find_char_1(my_tcp_cache.data, value, my_tcp_cache.len, ':') + 1; //找到的是 ':' 真正的数据从下一位开始
-							//这后面的代码也可以改一改了，添加了数据条目的数据类型分类，可以对收到的数据进行不同的格式化处理了。
+
 							if (set_value(data_list + i, my_tcp_cache.data + value, my_tcp_cache.len - value) == 1)
 							{
 								Serial.printf("set_value ok %d\n", i);
