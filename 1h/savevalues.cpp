@@ -61,8 +61,14 @@ extern "C"
         int read_data;         //读取一个字节的数据，判断是否为 -1（异常）
         int cou = 0;           //统计一共读取了多少字节
         //打开文件
-        File dataFile = LittleFS.open(file_name, "r");
 
+		if(!LittleFS.exists(file_name))
+		{
+			return 0;
+		}
+
+        File dataFile = LittleFS.open(file_name, "r");
+		
         for (int i = 0; i < list_values_len_max && i < list_values_len; i++)
         {
             p_data = (unsigned char *)list_values[i].data;

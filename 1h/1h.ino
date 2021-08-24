@@ -121,7 +121,6 @@ void setup()
 	Serial.printf("star%d", stat);
 	if (stat == -1)
 	{
-
 		digitalWrite(LED_BUILTIN, LOW);
 		tcp_server_get_wifi_data(WIFI_ssid, WIFI_password, UID, CHIP_ID, wifi_ssid_pw_file);
 		digitalWrite(LED_BUILTIN, HIGH);
@@ -147,7 +146,13 @@ void setup()
 	}
 
 	//Serial.printf(" file_read_stut %d ", file_read_stut());
-	Serial.printf(" read_values %d \n", read_values(stut_data_file));
+	stat= read_values(stut_data_file);
+	Serial.printf(" read_values %d \n",stat);
+	if(stat==-1)
+	{
+		file_delete(stut_data_file);
+		ESP.restart();
+	}
 }
 
 void loop()
@@ -336,17 +341,17 @@ void loop()
 			switch (*(my_tcp_cache.data + len_old))
 			{
 			case 'A':
-				tmp1=add_jiantin(my_tcp_cache.data + len_old,my_tcp_cache.len);
-				if(tmp1>=0)
+				tmp1 = add_jiantin(my_tcp_cache.data + len_old, my_tcp_cache.len);
+				if (tmp1 >= 0)
 				{
 					jiantin_print();
-					tmp1=sprintf(tcp_send_data,"L%d",tmp1+1);
+					tmp1 = sprintf(tcp_send_data, "L%d", tmp1 + 1);
 					back_send_tcp_(&client, tcp_send_data, tmp1);
 				}
 				else
 				{
 					Serial.printf("add_jiantin= %d ", tmp1);
-					tmp1=sprintf(tcp_send_data,"L%d",tmp1);
+					tmp1 = sprintf(tcp_send_data, "L%d", tmp1);
 					back_send_tcp_(&client, tcp_send_data, tmp1);
 				}
 				break;
@@ -398,20 +403,27 @@ void loop()
 			case '@':						 //set
 				while (len_old >= 0 && len_old < my_tcp_cache.len)
 				{
+					//计算查找名字数据分割线的范围，取最小值
+					tmp1 = len_old + 50;
+					if (my_tcp_cache.len < tmp1)
+					{
+						tmp1 = my_tcp_cache.len;
+					}
+					//查找名字数据之间的分割符号
+					int value = str1_find_char_1(my_tcp_cache.data, len_old, tmp1, '['); //获取 '[' 相对于 my_tcp_cache.data 的位置
+					if (value < 0)														 //限制名字的长度,找不到 '[' 就去找 ':'
+					{
+						//Serial.printf("get '[' error value= %d %d\n", value, len_old);
+						value = str1_find_char_1(my_tcp_cache.data, len_old, tmp1, ':'); //获取':'相对于 my_tcp_cache.data 的位置
+					}
+					if (value < 0) //
+					{
+						//Serial.printf("get ':' error value= %d \n", value);
+						break;
+					}
+
 					for (short i = 0; i < MAX_NAME; i++)
 					{
-
-						int value = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, '['); //获取 '[' 相对于 my_tcp_cache.data 的位置
-						if (value < 0 || value - len_old > 50)											 //限制名字的长度,找不到 '[' 就去找 ':'
-						{
-							Serial.printf("get '[' error value= %d %d\n", value, len_old);
-							value = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, ':'); //获取':'相对于 my_tcp_cache.data 的位置
-						}
-						if (value < 0 || value - len_old > 50) //
-						{
-							Serial.printf("get ':' error value= %d \n", value);
-							break;
-						}
 						if (1 == str1_eq_str2(my_tcp_cache.data, len_old, value, data_list[i].name))
 						{
 							value = str1_find_char_1(my_tcp_cache.data, value, my_tcp_cache.len, ':') + 1; //找到的是 ':' 真正的数据从下一位开始

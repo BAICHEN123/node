@@ -34,7 +34,7 @@ extern "C"
 	short switch_light_up_time_x_s = 0; //计数器用
 	short TEMPERATURE_ERROR_HIGH = 40;
 	short TEMPERATURE_ERROR_LOW = 10;
-	uint8_t light_qu_yu = 5; //补光区间
+	double light_qu_yu = 5; //补光区间
 	uint8_t test = 0;
 	static int beeeeee = 0;
 
@@ -49,6 +49,8 @@ extern "C"
 	//关于这里和后面的使用时的警告，将其定义为const完全不影响使用，但是会出现警告，只要自己不要在后面的使用过程中对其赋值就没有问题
 	uint8_t CONST1[5] = {0, 1, 2, 3,10};
 	short CONST2[3] = {0,45, 300};
+	double CONST3[2]={10,100};
+
 	struct MyType data_list[MAX_NAME] = {
 		{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature), NULL, NULL},
 		{"湿度", "%", TYPE_FLOAT, sizeof(dht11_data.humidity), &(dht11_data.humidity), NULL, NULL},
@@ -61,7 +63,7 @@ extern "C"
 		{"声控灯剩余时长/S", "S", TYPE_SHORT, sizeof(switch_light_up_time_x_s), &switch_light_up_time_x_s, NULL, NULL},
 		{"@高温警告/°C", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_HIGH), &TEMPERATURE_ERROR_HIGH, &TEMPERATURE_ERROR_LOW, CONST2 +1},
 		{"@低温警告/°C", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_LOW), &TEMPERATURE_ERROR_LOW, CONST2, &TEMPERATURE_ERROR_HIGH},
-		{"@补光区间", NULL, TYPE_u8, sizeof(light_qu_yu), &light_qu_yu, CONST1, CONST1 + 4},
+		{"@补光区间", "%", TYPE_DOUBLE, sizeof(light_qu_yu), &light_qu_yu, CONST3, CONST3 + 1},
 		{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save, CONST1, CONST1 + 2},
 		{"@test1", NULL, TYPE_u8, sizeof(test), &test, CONST1, CONST1 + 1} //测试错误并发用
 

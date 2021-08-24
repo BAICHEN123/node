@@ -45,7 +45,7 @@ extern "C"
 		case TYPE_FLOAT:
 			return sprintf(data, "%.2f", *(float *)(mytype_data));
 		case TYPE_DOUBLE:
-			return sprintf(data, "%.2f", *(double *)(mytype_data));
+			return sprintf(data, "%.2lf", *(double *)(mytype_data));
 		//case TYPE_CHAR_N:
 		//	return sprintf(data, "%s", (char *)(mytype_data));
 		case TYPE_STR_N:
@@ -85,9 +85,9 @@ extern "C"
 			case TYPE_U64:
 				return sprintf(data, "%s[%llu-%llu]", mytype->name, *(unsigned long long *)(mytype->min), *(unsigned long long *)(mytype->max));
 			case TYPE_FLOAT:
-				return sprintf(data, "%s[%.0f-%.0f]", mytype->name, *(float *)(mytype->min), *(float *)(mytype->max));
+				return sprintf(data, "%s[%.2f-%.2f]", mytype->name, *(float *)(mytype->min), *(float *)(mytype->max));
 			case TYPE_DOUBLE:
-				return sprintf(data, "%s[%.0f-%.0f]", mytype->name, *(double *)(mytype->min), *(double *)(mytype->max));
+				return sprintf(data, "%s[%.2lf-%.2lf]", mytype->name, *(double *)(mytype->min), *(double *)(mytype->max));
 			//case TYPE_CHAR_N:
 			//	return sprintf(data, "%s", (char *)(mytype->data));
 			//case TYPE_STR_N:
@@ -108,7 +108,7 @@ extern "C"
 		len = get_data_str(mytype->data, mytype->byte_len, mytype->ID, data, len_data);
 		if (mytype->unit != NULL)
 		{
-			len = len + sprintf(data + len, "%s", mytype->unit);
+			len = len + sprintf(data + len, "(%s)", mytype->unit);
 		}
 		return len;
 	}
