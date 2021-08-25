@@ -118,7 +118,7 @@ u64 str_to_u64(const char *str1, unsigned int len, short *status)
 {
 	u64 i;
 	char *old_q = (char *)str1;
-	while (*(old_q) < '0' || *(old_q) > '9') //从 '0' 开始转换数字没有意义  &&  //从 1开始转换，不然后面统计位数会出错
+	while (*(old_q) < '0' || *(old_q) > '9')
 	{
 		old_q++;
 		if (old_q - str1 > len)

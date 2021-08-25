@@ -116,7 +116,7 @@ extern "C"
 			brightness = system_adc_read(); //值越大约黑暗 最高1024
 			last_time = millis();
 		}
-		if (brightness > light_qu_yu * 100)
+		if (brightness > light_qu_yu * 10)
 		{
 			return 1;
 		}

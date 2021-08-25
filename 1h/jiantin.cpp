@@ -45,7 +45,8 @@ extern "C"
 	}
 	/*
 	
-	return 添加成功返回 0+
+	return 	测试时返回0
+			添加成功返回 0+
 			-1 数据错误
 			-2 内存申请失败
 			-3 监听到达上限
@@ -68,14 +69,21 @@ extern "C"
 
 
 		jt.sql_id = str_to_u64(tcp_data, data_len, &statu);
+		Serial.printf("sql_id %llu  %d\r\n", jt.sql_id,statu);
+		if(statu!=1)
+		{
+			return -10;
+		}
+
 		name = str1_find_char_1(tcp_data, 1, data_len, '#'); //name前的#
 
 		strd = str1_find_char_1(tcp_data, name + 1, data_len, '#'); //比较符号前的#
 
 		if (name < 0 || strd < 0 || tcp_data[strd + 2] != '#')
 		{
-			return -10;
+			return -11;
 		}
+
 		name = name + 1;
 		tcp_data[strd] = '\0';
 		jt.fuhao = tcp_data[strd + 1];
@@ -126,7 +134,13 @@ extern "C"
 			return -8;
 		}
 
-		//验证所有的数据都合法之后，申请一块内存，储存前面的数据
+		if(jt.sql_id==0llu)
+		{
+			//sql_id==0 的时候，是服务器在测试数据是否合法，到这里就可以了，后面都是数据存储
+			return 0;
+		}
+
+		//验证所有的数据都合法之后，申请多块内存，储存前面的数据
 		struct JianTin *jt1;
 
 		jt1 = (struct JianTin *)malloc(sizeof(struct JianTin));
@@ -141,7 +155,8 @@ extern "C"
 
 		link[link_len] = jt1;
 		link_len = link_len + 1;
-		return jt.name_id;
+		
+		return jt.name_id+1;
 	}
 
 	void jiantin_print()
@@ -150,7 +165,7 @@ extern "C"
 		for (int i = 0; i < link_len; i++)
 		{
 			get_data_str(link[i]->data, link[i]->data_len, data_list[link[i]->name_id].ID, tmp, link[i]->data_len);
-			Serial.printf("jiantin_print  %d	%lld	%s %c %s\r\n", i, link[i]->sql_id, link[i]->name,link[i]->fuhao,tmp);
+			Serial.printf("jiantin_print  %d	%llu	%s %c %s\r\n", i, link[i]->sql_id, link[i]->name,link[i]->fuhao,tmp);
 
 		}
 	}

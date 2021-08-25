@@ -345,7 +345,7 @@ void loop()
 				if (tmp1 >= 0)
 				{
 					jiantin_print();
-					tmp1 = sprintf(tcp_send_data, "L%d", tmp1 + 1);
+					tmp1 = sprintf(tcp_send_data, "L%d", tmp1);
 					back_send_tcp_(&client, tcp_send_data, tmp1);
 				}
 				else
