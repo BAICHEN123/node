@@ -47,9 +47,9 @@ extern "C"
 	const uint8_t dht11 = 5;	//按键1输入
 
 	//关于这里和后面的使用时的警告，将其定义为const完全不影响使用，但是会出现警告，只要自己不要在后面的使用过程中对其赋值就没有问题
-	uint8_t CONST1[5] = {0, 1, 2, 3,10};
-	short CONST2[3] = {0,45, 300};
-	double CONST3[2]={10,100};
+	uint8_t CONST1[5] = {0, 1, 2, 3, 10};
+	short CONST2[3] = {0, 45, 300};
+	double CONST3[2] = {10, 100};
 
 	struct MyType data_list[MAX_NAME] = {
 		{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature), NULL, NULL},
@@ -61,7 +61,7 @@ extern "C"
 		{"@开关2模式", NULL, TYPE_u8, sizeof(switch_2), &switch_2, CONST1, CONST1 + 3},
 		{"@声控灯时长/S", "S", TYPE_SHORT, sizeof(switch_light_up_TIME_s), &switch_light_up_TIME_s, CONST2, CONST2 + 2},
 		{"声控灯剩余时长/S", "S", TYPE_SHORT, sizeof(switch_light_up_time_x_s), &switch_light_up_time_x_s, NULL, NULL},
-		{"@高温警告/°C", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_HIGH), &TEMPERATURE_ERROR_HIGH, &TEMPERATURE_ERROR_LOW, CONST2 +1},
+		{"@高温警告/°C", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_HIGH), &TEMPERATURE_ERROR_HIGH, &TEMPERATURE_ERROR_LOW, CONST2 + 1},
 		{"@低温警告/°C", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_LOW), &TEMPERATURE_ERROR_LOW, CONST2, &TEMPERATURE_ERROR_HIGH},
 		{"@补光区间", "%", TYPE_DOUBLE, sizeof(light_qu_yu), &light_qu_yu, CONST3, CONST3 + 1},
 		{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save, CONST1, CONST1 + 2},
@@ -94,6 +94,32 @@ extern "C"
 			switch_light_up_time_x_s = switch_light_up_TIME_s;
 		}
 		beeeeee = 0;
+
+		if (test == 1)
+		{
+			static struct Udpwarn test111 = {WARN, NOT_WARN, 0, 3, "test111111"};
+			static struct Udpwarn test222 = {WARN, NOT_WARN, 0, 4, "test2222222"};
+			if (test111.status == WARN_ACK)
+			{
+				test111.status = NOT_WARN;
+			}
+			else
+			{
+				test111.status = IS_WARN;
+				set_warn(&test111);
+			}
+
+			if (test222.status == WARN_ACK)
+			{
+				test222.status = NOT_WARN;
+			}
+			else
+			{
+				test222.status = IS_WARN;
+				set_warn(&test222);
+			}
+			test=0;
+		}
 	}
 
 	void ruan_timer_us()
@@ -218,7 +244,7 @@ extern "C"
 			{
 				if (temperature_high_error.status == NOT_WARN)
 				{
-					temperature_high_error.status = IS_WARN;
+					//temperature_high_error.status = IS_WARN;
 					set_warn(&temperature_high_error);
 				}
 			}
@@ -226,7 +252,7 @@ extern "C"
 			{
 				if (temperature_low_error.status == NOT_WARN)
 				{
-					temperature_low_error.status = IS_WARN;
+					//temperature_low_error.status = IS_WARN;
 					set_warn(&temperature_low_error);
 				}
 			}

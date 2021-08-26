@@ -59,7 +59,7 @@ struct Udpwarn
 	enum UdpMessageClass cmsg;//记录此条内容的警告级别
 	enum WarnType status;//记录和服务器的交互状态
 	unsigned long time;//记录时间
-	unsigned int id;//记录报错的 id 号
+	unsigned long long  id;//记录报错的 id 号
 	const char* str_waring;//要告知用户的话
 };
 
@@ -70,7 +70,7 @@ struct Udpwarn
 
 int set_warn(struct Udpwarn *warn);
 void warn_send();
-int warn_ack(unsigned int id, char *tcp_send_data);
+int warn_ack(unsigned long long id, enum UdpMessageClass class1, char *tcp_send_data);
 
 /*检查 警告 是否已经在内存中出现了，根据警告的内存地址来判定警告是否相同。
 返回-1为没有占用，其他值为处在链结中的位置

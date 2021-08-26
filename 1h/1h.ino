@@ -146,9 +146,9 @@ void setup()
 	}
 
 	//Serial.printf(" file_read_stut %d ", file_read_stut());
-	stat= read_values(stut_data_file);
-	Serial.printf(" read_values %d \n",stat);
-	if(stat==-1)
+	stat = read_values(stut_data_file);
+	Serial.printf(" read_values %d \n", stat);
+	if (stat == -1)
 	{
 		file_delete(stut_data_file);
 		ESP.restart();
@@ -262,7 +262,10 @@ void loop()
 	unsigned long get_time_old_ms = millis();
 	unsigned long send_time_old_ms = millis();
 	unsigned long ruan_time_old_ms = millis();
+	int tcp_senddata_len = 0;
+	int tmp_status;
 	long long tmp;
+	unsigned long long tmpL = 0;
 	int tmp1;
 	//micros();//us
 	short len_old;
@@ -304,7 +307,7 @@ void loop()
 		if (millis() - ruan_time_old_ms > RUAN_TIMEer_ms)
 		{
 			//验证监听数据
-			if(jiantin_loop()<0)
+			if (jiantin_loop() < 0)
 			{
 				Serial.printf("   jiantin_loop error\r\n");
 			}
@@ -348,19 +351,19 @@ void loop()
 			{
 			case 'A':
 				//尝试使用 '\t' 作为分割符号，一次接收多个监听指令
-				tmp1 = add_jiantin(my_tcp_cache.data + len_old, my_tcp_cache.len);
-				if (tmp1 >= 0)
+				tcp_senddata_len = 0;
+				tmp_status = 0;
+				tmp1 = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, '\t');
+				while (tmp1 > 0)
 				{
-					jiantin_print();
-					tmp1 = sprintf(tcp_send_data, "L%d", tmp1);
-					back_send_tcp_(&client, tcp_send_data, tmp1);
+					my_tcp_cache.data[tmp1] = '\0';
+					tmp_status = add_jiantin(my_tcp_cache.data + len_old, tmp1);
+					tcp_senddata_len = tcp_senddata_len + sprintf(tcp_send_data + tcp_senddata_len, "L%d", tmp_status);
+					len_old = tmp1 + 1;
+					tmp1 = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, '\t');
 				}
-				else
-				{
-					Serial.printf("add_jiantin= %d ", tmp1);
-					tmp1 = sprintf(tcp_send_data, "L%d", tmp1);
-					back_send_tcp_(&client, tcp_send_data, tmp1);
-				}
+				jiantin_print();
+				back_send_tcp_(&client, tcp_send_data, tcp_senddata_len);
 				break;
 			case 'm':
 				//do_message()
@@ -372,18 +375,18 @@ void loop()
 			case 'w':
 			case 'e':
 				//这里是服务器收到udp消息之后的回复
-				tmp = str_to_u32(my_tcp_cache.data, my_tcp_cache.len);
-				if (tmp < 0)
+				tmpL = str_to_u64(my_tcp_cache.data, my_tcp_cache.len, &stat);
+				if (stat < 0)
 				{
-					Serial.printf("   loop str_to_u32 error	%lld", tmp);
+					Serial.printf("   loop str_to_u32 error	%d", stat);
 					break;
 				}
-				tmp = warn_ack((unsigned int)tmp, tcp_send_data); //tmp原来存错误id现在存长度
-				if (tmp < 1)
+				tcp_senddata_len = warn_ack(tmpL, (enum UdpMessageClass) * (my_tcp_cache.data + len_old), tcp_send_data); //tmp原来存错误id现在存长度
+				if (tcp_senddata_len < 1)
 				{
 					Serial.printf("   loop warn_ack return 0 ");
 				}
-				if (back_send_tcp_(&client, tcp_send_data, (int)tmp) == -1)
+				if (back_send_tcp_(&client, tcp_send_data, tcp_senddata_len) == -1)
 				{
 					return;
 				}

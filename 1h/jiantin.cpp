@@ -192,9 +192,14 @@ extern "C"
 					tmp2=(char *)malloc(str_len + 1);
 					if (tmp2 == NULL)
 					{
+						free(link[i]->warn);
+						link[i]->warn=NULL;
 						end = end - 1;
 						continue;
 					}
+
+					link[i]->warn->id=link[i]->sql_id;
+					link[i]->warn->cmsg=MESSAGE;
 					strcpy(tmp2, tmp);		//电脑上复制'\0'了，希望这里也复制了吧?
 					*(tmp2 + str_len) = 0; //末尾设置成0,手动 0
 					link[i]->warn->str_waring = tmp2;

@@ -9,7 +9,6 @@ extern "C"
 		struct WarnLink *next;
 	};
 
-
 	//关于此链表，会在警告状态为 NOT_WARN 时将链结删除，但是不会释放内存，因为有点地方是静态内存，不可以释放
 	//为了方便管理，请管理好自己申请的内存，自己释放
 	//可以调用 warn_exist 检查自己申请的内存是否处于被这里占用
@@ -33,7 +32,6 @@ extern "C"
 		len_warn--;
 		free(del);
 	}
-
 
 	/*检查 警告 是否已经在内存中出现了，根据警告的内存地址来判定警告是否相同。
 	返回-1为没有占用，其他值为处在链结中的位置
@@ -128,12 +126,12 @@ extern "C"
 			case TIMEOUT:
 				//Serial.printf(" warn_send TIMEOUT ack timeout %u  %u %s  ",p->warn->id,p->warn->time,p->warn->str_waring);
 				p->warn->time = millis(); //更新一下时间然后重新走发送流程，不更新时间的话，会导致高频发送
-				//Serial.printf(" timeout new %u   ",p->warn->time);
+										  //Serial.printf(" timeout new %u   ",p->warn->time);
 
 			case IS_WARN:
 			case WAIT_SEND:
 				//Serial.printf(" warn_send WAIT_SEND send %s   ",p->warn->str_waring);
-				data_len = data_len + sprintf(udp_send_data + data_len, "%c%u", (char)(p->warn->cmsg), p->warn->id);
+				data_len = data_len + sprintf(udp_send_data + data_len, "%c%llu", (char)(p->warn->cmsg), p->warn->id);
 				//UDP_send_data = UDP_send_data + String((char)(p->warn->cmsg)) + String(p->warn->id);
 				p->warn->status = WAIT_ACK;
 				//Serial.printf(" warn_send WAIT_SEND send end");
@@ -155,14 +153,14 @@ extern "C"
 		} while (p != NULL);
 		if (data_len > 0)
 		{
-			Serial.printf(" UDP SNED DATA %s   ",udp_send_data);
+			Serial.printf(" UDP SNED DATA %s   ", udp_send_data);
 			UDP_Send(MYHOST, UDP_PORT, UDP_head_data + String(udp_send_data));
 		}
 		//Serial.printf(" warn_send end  ");
 		return;
 	}
 
-	int warn_ack(unsigned int id, char *tcp_send_data)
+	int warn_ack(unsigned long long id, enum UdpMessageClass class1, char *tcp_send_data)
 	{
 		struct WarnLink *p;	  //储存要操作的节点
 		struct WarnLink *tmp; //储存上一个节点
@@ -182,12 +180,12 @@ extern "C"
 				p = tmp->next;
 				continue;
 			}
-			if (p->warn->id == id)
+			if (p->warn->id == id && class1 == p->warn->cmsg)
 			{
 				p->warn->status = WARN_ACK;
 				len = len + sprintf(tcp_send_data + len, "%s#", p->warn->str_waring);
 				//strcpy(tcp_send_data,p->warn->str_waring);
-				Serial.printf(" warn_ack ACK %d  %s   ", id, p->warn->str_waring);
+				Serial.printf(" warn_ack ACK %llu  %s   ", id, p->warn->str_waring);
 			}
 			tmp = p;
 			p = p->next;
