@@ -67,10 +67,9 @@ extern "C"
 		//tmp = sscanf(tcp_data, "A%llu#%50[^#]#%1[<>=]#%30s%c", &(jt.sql_id), strd[0], &(jt.fuhao), strd[1], &jt.fuhao);
 		//解锁成就：发现一个电脑端gcc支持但是arduino支持不完善的函数
 
-
 		jt.sql_id = str_to_u64(tcp_data, data_len, &statu);
-		Serial.printf("sql_id %llu  %d\r\n", jt.sql_id,statu);
-		if(statu!=1)
+		Serial.printf("sql_id %llu  %d\r\n", jt.sql_id, statu);
+		if (statu != 1)
 		{
 			return -10;
 		}
@@ -134,7 +133,7 @@ extern "C"
 			return -8;
 		}
 
-		if(jt.sql_id==0llu)
+		if (jt.sql_id == 0llu)
 		{
 			//sql_id==0 的时候，是服务器在测试数据是否合法，到这里就可以了，后面都是数据存储
 			return 0;
@@ -155,8 +154,8 @@ extern "C"
 
 		link[link_len] = jt1;
 		link_len = link_len + 1;
-		
-		return jt.name_id+1;
+
+		return jt.name_id + 1;
 	}
 
 	void jiantin_print()
@@ -165,8 +164,60 @@ extern "C"
 		for (int i = 0; i < link_len; i++)
 		{
 			get_data_str(link[i]->data, link[i]->data_len, data_list[link[i]->name_id].ID, tmp, link[i]->data_len);
-			Serial.printf("jiantin_print  %d	%llu	%s %c %s\r\n", i, link[i]->sql_id, link[i]->name,link[i]->fuhao,tmp);
-
+			Serial.printf("jiantin_print  %d	%llu	%s %c %s\r\n", i, link[i]->sql_id, link[i]->name, link[i]->fuhao, tmp);
 		}
+	}
+
+	int jiantin_loop()
+	{
+		int end = 0;
+		char tmp[30];
+		int str_len;
+		char * tmp2;
+		for (int i = 0; i < link_len; i++)
+		{
+			if (1 == is_true(data_list[link[i]->name_id].ID, data_list[link[i]->name_id].data, link[i]->fuhao, link[i]->data))
+			{
+				//符合此监听项的条件，需要向服务发送警告
+				//检查是否已经有警告触发
+				if (link[i]->warn == NULL)
+				{
+					link[i]->warn = (struct Udpwarn *)malloc(sizeof(struct Udpwarn));
+					if (link[i]->warn == NULL)
+					{
+						end = end - 1;
+						continue;
+					}
+					str_len = sprintf(tmp, "%llu", link[i]->sql_id);
+					tmp2=(char *)malloc(str_len + 1);
+					if (tmp2 == NULL)
+					{
+						end = end - 1;
+						continue;
+					}
+					strcpy(tmp2, tmp);		//电脑上复制'\0'了，希望这里也复制了吧?
+					*(tmp2 + str_len) = 0; //末尾设置成0,手动 0
+					link[i]->warn->str_waring = tmp2;
+					set_warn(link[i]->warn);
+				}
+			}
+			else
+			{
+				//此监听不符合条件，消除警告，回收内存
+				if(link[i]->warn != NULL)
+				{
+					//更改警告状态
+					link[i]->warn->status=NOT_WARN;
+					//回收内存
+					if(warn_exist(link[i]->warn)==-1)
+					{
+						free((void *)(link[i]->warn->str_waring));
+						free(link[i]->warn);
+						link[i]->warn=NULL;
+					}
+				}
+			}
+		}
+		return end;
 	}
 }

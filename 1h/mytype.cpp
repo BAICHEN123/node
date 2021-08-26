@@ -48,8 +48,8 @@ extern "C"
 			return sprintf(data, "%.2lf", *(double *)(mytype_data));
 		//case TYPE_CHAR_N:
 		//	return sprintf(data, "%s", (char *)(mytype_data));
-		case TYPE_STR_N:
-			return mystrcpy(data, (char *)(mytype_data), len_data, len);
+		// case TYPE_STR_N:
+		// 	return mystrcpy(data, (char *)(mytype_data), len_data, len);
 		}
 		return -1;
 	}
@@ -388,7 +388,7 @@ extern "C"
 				return NULL;
 			}
 			*(long long *)(end_data) = value1;
-
+			return end_data;
 		case TYPE_U64:
 			value2 = str_to_u64(data, len_data, &status);
 			if (status != 1)
@@ -439,5 +439,243 @@ extern "C"
 			//case TYPE_STR_N:
 		}
 		return NULL;
+	}
+
+	/*将数据拿来做比较
+	1 符合 data1  fuhao  data2
+	0 不符合，或者有错误
+	
+	
+	*/
+
+	int is_true(const enum type_id ID, void *data1, char fuhao, void *data2)
+	{
+		switch (ID)
+		{
+		case TYPE_CHAR:
+		case TYPE_INT8:
+			switch (fuhao)
+			{
+			case '>':
+				if (*(char *)data1 > *(char *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '<':
+				if (*(char *)data1 < *(char *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '=':
+				if (*(char *)data1 = *(char *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			}
+		case TYPE_u8:
+			switch (fuhao)
+			{
+			case '>':
+				if (*(unsigned char *)data1 > *(unsigned char *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '<':
+				if (*(unsigned char *)data1 < *(unsigned char *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '=':
+				if (*(unsigned char *)data1 = *(unsigned char *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			}
+		case TYPE_SHORT:
+			switch (fuhao)
+			{
+			case '>':
+				if (*(short *)data1 > *(short *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '<':
+				if (*(short *)data1 < *(short *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '=':
+				if (*(short *)data1 = *(short *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			}
+		case TYPE_USHORT:
+			switch (fuhao)
+			{
+			case '>':
+				if (*(unsigned short *)data1 > *(unsigned short *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '<':
+				if (*(unsigned short *)data1 > *(unsigned short *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '=':
+				if (*(unsigned short *)data1 > *(unsigned short *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			}
+		case TYPE_INT:
+			switch (fuhao)
+			{
+			case '>':
+				if (*(int *)data1 > *(int *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '<':
+				if (*(int *)data1 < *(int *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '=':
+				if (*(int *)data1 = *(int *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			}
+		case TYPE_UINT:
+			switch (fuhao)
+			{
+			case '>':
+				if (*(unsigned int *)data1 > *(unsigned int *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '<':
+				if (*(unsigned int *)data1 < *(unsigned int *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '=':
+				if (*(unsigned int *)data1 = *(unsigned int *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			}
+		case TYPE_INT64:
+			switch (fuhao)
+			{
+			case '>':
+				if (*(long long *)data1 > *(long long *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '<':
+				if (*(long long *)data1 < *(long long *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '=':
+				if (*(long long *)data1 = *(long long *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			}
+		case TYPE_U64:
+			switch (fuhao)
+			{
+			case '>':
+				if (*(unsigned long long *)data1 > *(unsigned long long *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '<':
+				if (*(unsigned long long *)data1 < *(unsigned long long *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '=':
+				if (*(unsigned long long *)data1 = *(unsigned long long *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			}
+		case TYPE_FLOAT:
+			switch (fuhao)
+			{
+			case '>':
+				if (*(float *)data1 > *(float *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '<':
+				if (*(float *)data1 < *(float *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '=':
+				if (*(float *)data1 = *(float *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			}
+		case TYPE_DOUBLE:
+			switch (fuhao)
+			{
+			case '>':
+				if (*(double *)data1 > *(double *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '<':
+				if (*(double *)data1 < *(double *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case '=':
+				if (*(double *)data1 = *(double *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			}
+			//case TYPE_CHAR_N:
+			//case TYPE_STR_N:
+		}
+		return 0;
 	}
 }

@@ -8,6 +8,12 @@ extern "C"
 		struct Udpwarn *warn;
 		struct WarnLink *next;
 	};
+
+
+	//关于此链表，会在警告状态为 NOT_WARN 时将链结删除，但是不会释放内存，因为有点地方是静态内存，不可以释放
+	//为了方便管理，请管理好自己申请的内存，自己释放
+	//可以调用 warn_exist 检查自己申请的内存是否处于被这里占用
+
 	static struct WarnLink head = {NULL, NULL};
 	static struct WarnLink *tail = &head;
 
@@ -28,6 +34,10 @@ extern "C"
 		free(del);
 	}
 
+
+	/*检查 警告 是否已经在内存中出现了，根据警告的内存地址来判定警告是否相同。
+	返回-1为没有占用，其他值为处在链结中的位置
+	*/
 	int warn_exist(struct Udpwarn *warn)
 	{
 		struct WarnLink *p = head.next;

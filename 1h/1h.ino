@@ -303,8 +303,14 @@ void loop()
 		//声音的采样间隔，查看 ruan_time_old_ms 时间间隔内的高电平数量，作为声控的判定标准
 		if (millis() - ruan_time_old_ms > RUAN_TIMEer_ms)
 		{
-
+			//验证监听数据
+			if(jiantin_loop()<0)
+			{
+				Serial.printf("   jiantin_loop error\r\n");
+			}
+			//发送警告
 			warn_send();
+			//调用软定时器
 			ruan_timer_ms();			 //每隔 RUAN_TIMEer_ms
 			ruan_time_old_ms = millis(); //更新时间
 										 // if (UDP_send_data == NULL)
@@ -341,6 +347,7 @@ void loop()
 			switch (*(my_tcp_cache.data + len_old))
 			{
 			case 'A':
+				//尝试使用 '\t' 作为分割符号，一次接收多个监听指令
 				tmp1 = add_jiantin(my_tcp_cache.data + len_old, my_tcp_cache.len);
 				if (tmp1 >= 0)
 				{
