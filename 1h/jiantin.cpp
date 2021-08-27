@@ -43,6 +43,23 @@ extern "C"
 
 		return -1;
 	}
+
+	/*查看此id是否已经被监听
+	找到就返回索引号，找不到返回-1
+	*/
+	int jiantin_sql_id_exist(unsigned long long sql_id)
+	{
+		int i;
+		for (i = 0; i < link_len; i++)
+		{
+			if (link[i]->sql_id == sql_id)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
+
 	/*
 	
 	return 	测试时返回0
@@ -50,7 +67,6 @@ extern "C"
 			-1 数据错误
 			-2 内存申请失败
 			-3 监听到达上限
-	
 	*/
 	int add_jiantin(char *tcp_data, int data_len)
 	{
@@ -64,10 +80,13 @@ extern "C"
 		struct JianTin jt = {0, -1, NULL, NULL, 0, 0, '?'};
 		//int tmp = 1;
 		short statu = 0;
+
 		//tmp = sscanf(tcp_data, "A%llu#%50[^#]#%1[<>=]#%30s%c", &(jt.sql_id), strd[0], &(jt.fuhao), strd[1], &jt.fuhao);
 		//解锁成就：发现一个电脑端gcc支持但是arduino支持不完善的函数
 
 		jt.sql_id = str_to_u64(tcp_data, data_len, &statu);
+		//分析出来id之后在已经有的监听里查找一下，防止重复添加
+		//id相同就不用新建监听了，把数据内容修改了就可以了，字符串内容需要修改
 		Serial.printf("sql_id %llu  %d\r\n", jt.sql_id, statu);
 		if (statu != 1)
 		{
@@ -141,19 +160,31 @@ extern "C"
 
 		//验证所有的数据都合法之后，申请多块内存，储存前面的数据
 		struct JianTin *jt1;
-
-		jt1 = (struct JianTin *)malloc(sizeof(struct JianTin));
-		if (jt1 == NULL)
+		//查看id是否已经存在，已经存在的话，就不用新申请内存了，将之前的数据替换掉就可以了
+		//name 里的值在之后用不到了，我拿来临时存储
+		name = jiantin_sql_id_exist(jt.sql_id);
+		if (name >= 0)
 		{
-			free_JianTin(&jt);
-			return -9;
+			//id已经存在，修改即可。
+			//先释放掉原来的储存名字和数据的内存
+			free_JianTin(link[name]);
+			jt1 = link[name];
+		}
+		else
+		{
+			//不存在，需要创建
+			jt1 = (struct JianTin *)malloc(sizeof(struct JianTin));
+			if (jt1 == NULL)
+			{
+				free_JianTin(&jt);
+				return -9;
+			}
+			link[link_len] = jt1;
+			link_len = link_len + 1;
 		}
 
 		//复制之前的数值，到申请号的内存里去
 		memcpy(jt1, &jt, sizeof(struct JianTin));
-
-		link[link_len] = jt1;
-		link_len = link_len + 1;
 
 		return jt.name_id + 1;
 	}
@@ -173,7 +204,7 @@ extern "C"
 		int end = 0;
 		char tmp[30];
 		int str_len;
-		char * tmp2;
+		char *tmp2;
 		for (int i = 0; i < link_len; i++)
 		{
 			if (1 == is_true(data_list[link[i]->name_id].ID, data_list[link[i]->name_id].data, link[i]->fuhao, link[i]->data))
@@ -189,18 +220,18 @@ extern "C"
 						continue;
 					}
 					str_len = sprintf(tmp, "%llu", link[i]->sql_id);
-					tmp2=(char *)malloc(str_len + 1);
+					tmp2 = (char *)malloc(str_len + 1);
 					if (tmp2 == NULL)
 					{
 						free(link[i]->warn);
-						link[i]->warn=NULL;
+						link[i]->warn = NULL;
 						end = end - 1;
 						continue;
 					}
 
-					link[i]->warn->id=link[i]->sql_id;
-					link[i]->warn->cmsg=MESSAGE;
-					strcpy(tmp2, tmp);		//电脑上复制'\0'了，希望这里也复制了吧?
+					link[i]->warn->id = link[i]->sql_id;
+					link[i]->warn->cmsg = MESSAGE;
+					strcpy(tmp2, tmp);	   //电脑上复制'\0'了，希望这里也复制了吧?
 					*(tmp2 + str_len) = 0; //末尾设置成0,手动 0
 					link[i]->warn->str_waring = tmp2;
 					set_warn(link[i]->warn);
@@ -209,16 +240,16 @@ extern "C"
 			else
 			{
 				//此监听不符合条件，消除警告，回收内存
-				if(link[i]->warn != NULL)
+				if (link[i]->warn != NULL)
 				{
 					//更改警告状态
-					link[i]->warn->status=NOT_WARN;
+					link[i]->warn->status = NOT_WARN;
 					//回收内存
-					if(warn_exist(link[i]->warn)==-1)
+					if (warn_exist(link[i]->warn) == -1)
 					{
 						free((void *)(link[i]->warn->str_waring));
 						free(link[i]->warn);
-						link[i]->warn=NULL;
+						link[i]->warn = NULL;
 					}
 				}
 			}
