@@ -20,6 +20,42 @@ extern "C"
 		}
 	}
 
+	/*删除一个监听的要求，释放内存，移动位置，
+	释放 warn 指向的内存，释放 warn 的内存，释放只想 warn 的内存，释放 JianTin 内存
+	*/
+	void jiantin_del(unsigned long long sql_id)
+	{
+		int j;
+		for(j=0;j<link_len;j++)
+		{
+			if(link[j]->sql_id==sql_id)
+			{
+				if(link[j]->warn!=NULL)
+				{
+					//移除对 warn 的指向
+					warn_del_warn(link[j]->warn);
+
+					//释放 warm 指向的内存
+					free((void *)(link[j]->warn->str_waring));
+					//因为不同的位置，这里的字符串不一定是申请来的内存，所以不封装
+					
+					//释放 warm
+					free(link[j]->warn);
+				}
+				//释放 jiantin 指向的内存
+				free_JianTin(link[j]);
+				//释放 jianting 的内存
+				free(link[j]);
+				//将最后一个监听移动过来，防止出现空缺//移除对 jiantin 的指向
+				link_len=link_len-1;
+				link[j]=link[link_len];
+				//设为空，方式被其他地方误读已经释放的位置
+				link[link_len]=NULL;
+				//其实这里就可以return了
+			}
+		}
+	}
+
 	int get_name_id(char *name, int data_len)
 	{
 		for (int i = 0; i < MAX_NAME; i++)

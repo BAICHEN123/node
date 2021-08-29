@@ -77,6 +77,8 @@ int warn_ack(unsigned long long id, enum UdpMessageClass class1, char *tcp_send_
 */
 int warn_exist(struct Udpwarn *warn);
 
+/*这个函数是为了 停止对 warn 的指向*/
+void warn_del_warn(struct Udpwarn *warn);
 
 }
 #endif

@@ -42,5 +42,9 @@ extern "C"
 	int add_jiantin(char *tcp_data, int data_len);
 	int jiantin_loop();
 	void jiantin_print();
+	/*删除一个监听的要求，释放内存，移动位置，
+	释放 warn 指向的内存，释放 warn 的内存，释放只想 warn 的内存，释放 JianTin 内存
+	*/
+	void jiantin_del(unsigned long long sql_id);
 }
 #endif

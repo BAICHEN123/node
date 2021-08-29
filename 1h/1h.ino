@@ -316,15 +316,6 @@ void loop()
 			//调用软定时器
 			ruan_timer_ms();			 //每隔 RUAN_TIMEer_ms
 			ruan_time_old_ms = millis(); //更新时间
-										 // if (UDP_send_data == NULL)
-										 // {
-										 // 	UDP_send_data = "";
-										 // }
-										 // else if (!UDP_send_data.equals(""))
-										 // {
-										 // 	UDP_Send(MYHOST, UDP_PORT, UDP_send_data);
-										 // 	UDP_send_data = "";
-										 // }
 		}
 		//如果回复重要，就多等一下，把 timeout_ms_max 改大一点
 		stat = timeout_back_us(&client, RUAN_TIMEer_us); //等待100us tcp是否有数据返回
@@ -364,21 +355,32 @@ void loop()
 				}
 				jiantin_print();
 				back_send_tcp_(&client, tcp_send_data, tcp_senddata_len);
+				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
+				break;
+			case 'D':
+				tmpL = str_to_u64(my_tcp_cache.data, my_tcp_cache.len, &stat);
+				if(stat!=1)
+				{
+					Serial.printf(" D   str_to_u64 error	%d", stat);
+					break;
+				}
+				jiantin_del(tmpL);
+				tcp_senddata_len=sprintf(tcp_send_data,"%s",my_tcp_cache.data);
+				if (back_send_tcp_(&client, tcp_send_data, tcp_senddata_len) == -1)
+				{
+					return;
+				}
+				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
+			
 				break;
 			case 'm':
-				//do_message()
-				// if (back_send_tcp_(&client, "udp message test", strlen("udp message test")) == -1)
-				// {return;}
-
-				// break;
-
 			case 'w':
 			case 'e':
 				//这里是服务器收到udp消息之后的回复
 				tmpL = str_to_u64(my_tcp_cache.data, my_tcp_cache.len, &stat);
 				if (stat < 0)
 				{
-					Serial.printf("   loop str_to_u32 error	%d", stat);
+					Serial.printf("  mwe  str_to_u64 error	%d", stat);
 					break;
 				}
 				tcp_senddata_len = warn_ack(tmpL, (enum UdpMessageClass) * (my_tcp_cache.data + len_old), tcp_send_data); //tmp原来存错误id现在存长度
@@ -447,17 +449,6 @@ void loop()
 								Serial.printf("set_value error %d %s\n", i, my_tcp_cache.data + value);
 							}
 							break;
-
-							// value = str_to_u16(my_tcp_cache.data + value, my_tcp_cache.len - value); //将赋值的分隔符之后，my_tcp_cache.len之前范围内第一个数据转换成u16
-							// if (value < 0)
-							// {
-							// 	Serial.printf("get u16 error\n");
-							// 	break;
-							// }
-							// //这里作为调试用，串口发送很占时间
-							// Serial.printf("\r\nset id = %d	value= %d ", i, (u16)value);
-							// set_data_(i, (u16)value);
-							// break;
 						}
 					}
 					my_tcp_cache.data[len_old] = 0; //清楚标志位的数据
