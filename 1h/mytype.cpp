@@ -469,7 +469,7 @@ extern "C"
 				}
 				return 0;
 			case '=':
-				if (*(char *)data1 = *(char *)data2)
+				if (*(char *)data1 == *(char *)data2)
 				{
 					return 1;
 				}
@@ -491,7 +491,7 @@ extern "C"
 				}
 				return 0;
 			case '=':
-				if (*(unsigned char *)data1 = *(unsigned char *)data2)
+				if (*(unsigned char *)data1 == *(unsigned char *)data2)
 				{
 					return 1;
 				}
@@ -513,7 +513,7 @@ extern "C"
 				}
 				return 0;
 			case '=':
-				if (*(short *)data1 = *(short *)data2)
+				if (*(short *)data1 == *(short *)data2)
 				{
 					return 1;
 				}
@@ -529,13 +529,13 @@ extern "C"
 				}
 				return 0;
 			case '<':
-				if (*(unsigned short *)data1 > *(unsigned short *)data2)
+				if (*(unsigned short *)data1 < *(unsigned short *)data2)
 				{
 					return 1;
 				}
 				return 0;
 			case '=':
-				if (*(unsigned short *)data1 > *(unsigned short *)data2)
+				if (*(unsigned short *)data1 == *(unsigned short *)data2)
 				{
 					return 1;
 				}
@@ -557,7 +557,7 @@ extern "C"
 				}
 				return 0;
 			case '=':
-				if (*(int *)data1 = *(int *)data2)
+				if (*(int *)data1 == *(int *)data2)
 				{
 					return 1;
 				}
@@ -579,7 +579,7 @@ extern "C"
 				}
 				return 0;
 			case '=':
-				if (*(unsigned int *)data1 = *(unsigned int *)data2)
+				if (*(unsigned int *)data1 == *(unsigned int *)data2)
 				{
 					return 1;
 				}
@@ -601,7 +601,7 @@ extern "C"
 				}
 				return 0;
 			case '=':
-				if (*(long long *)data1 = *(long long *)data2)
+				if (*(long long *)data1 == *(long long *)data2)
 				{
 					return 1;
 				}
@@ -623,7 +623,7 @@ extern "C"
 				}
 				return 0;
 			case '=':
-				if (*(unsigned long long *)data1 = *(unsigned long long *)data2)
+				if (*(unsigned long long *)data1 == *(unsigned long long *)data2)
 				{
 					return 1;
 				}
@@ -645,7 +645,7 @@ extern "C"
 				}
 				return 0;
 			case '=':
-				if (*(float *)data1 = *(float *)data2)
+				if (*(float *)data1 == *(float *)data2)
 				{
 					return 1;
 				}
@@ -667,7 +667,7 @@ extern "C"
 				}
 				return 0;
 			case '=':
-				if (*(double *)data1 = *(double *)data2)
+				if (*(double *)data1 == *(double *)data2)
 				{
 					return 1;
 				}
