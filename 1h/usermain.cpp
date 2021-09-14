@@ -20,14 +20,14 @@ extern "C"
 
 	};
 	*/
-	const char *MODE_INFO = "@开关1模式[0-3]:手动，声控，光控，光声混控@开关2模式[0-3]:手动，声控，光控，光声混控@断电记忆[0-2]:关闭，仅本次，所有";
+	const char *MODE_INFO = "@开关模式[0-3]:手动，声控，光控，光声混控@断电记忆[0-2]:关闭，仅本次，所有";
 	uint8_t power_save = 0; //断电记忆
 
 	struct DHT11_data dht11_data = {666, 666};
 	double liangdu = 0;
 	//两个开关，当他为2时，是自动模式，其他时候读取12 和14号脚的电平
 	uint8_t LED1 = 0;
-	uint8_t switch_1 = 2;
+	//uint8_t switch_1 = 2;
 	uint8_t LED2 = 0;
 	uint8_t switch_2 = 2;
 	short switch_light_up_TIME_s = 30;	//重新加载的值//声控灯开启时长
@@ -55,10 +55,10 @@ extern "C"
 		{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature), NULL, NULL},
 		{"湿度", "%", TYPE_FLOAT, sizeof(dht11_data.humidity), &(dht11_data.humidity), NULL, NULL},
 		{"亮度", "%", TYPE_DOUBLE, sizeof(liangdu), &liangdu, NULL, NULL},
-		{"@开关1", NULL, TYPE_u8, sizeof(LED1), &LED1, CONST1, CONST1 + 1},
-		{"@开关1模式", NULL, TYPE_u8, sizeof(switch_1), &switch_1, CONST1, CONST1 + 3},
-		{"@开关2", NULL, TYPE_u8, sizeof(LED2), &LED2, CONST1, CONST1 + 1},
-		{"@开关2模式", NULL, TYPE_u8, sizeof(switch_2), &switch_2, CONST1, CONST1 + 3},
+		{"@水泵", NULL, TYPE_u8, sizeof(LED1), &LED1, CONST1, CONST1 + 1},
+		//{"@开关1模式", NULL, TYPE_u8, sizeof(switch_1), &switch_1, CONST1, CONST1 + 3},
+		{"@开关", NULL, TYPE_u8, sizeof(LED2), &LED2, CONST1, CONST1 + 1},
+		{"@开关模式", NULL, TYPE_u8, sizeof(switch_2), &switch_2, CONST1, CONST1 + 3},
 		{"@声控灯时长/S", "S", TYPE_SHORT, sizeof(switch_light_up_TIME_s), &switch_light_up_TIME_s, CONST2, CONST2 + 2},
 		{"声控灯剩余时长/S", "S", TYPE_SHORT, sizeof(switch_light_up_time_x_s), &switch_light_up_time_x_s, NULL, NULL},
 		{"@高温警告/°C", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_HIGH), &TEMPERATURE_ERROR_HIGH, &TEMPERATURE_ERROR_LOW, CONST2 + 1},
@@ -216,7 +216,8 @@ extern "C"
 	/*根据模式更新继电器开关的状态*/
 	void refresh_work()
 	{
-		set_jdq(jd1, switch_1, &LED1);
+		//set_jdq(jd1, switch_1, &LED1);
+		digitalWrite(jd1, !LED1);//默认高电平，不初始化的时候也是高电平，进行取反操作，这样的话手机app上就会显示正常。
 		set_jdq(jd2, switch_2, &LED2);
 	}
 
@@ -298,174 +299,10 @@ extern "C"
 		DHT11_read_and_send();
 	}
 
-	/*将数据放在一个数组里发送。 返回数据的长度*/
-	/*
-	int set_databack(const char fig, char *tcp_send_data)
-	{
-		int i, k, count_char;
-		tcp_send_data[0] = fig; //在这里插入开始符号
-		tcp_send_data[1] = '#'; //在这里插入开始符号
-		count_char = 2;
-		for (i = 0; i < MAX_NAME; i++)
-		{
-			k = 0;
-			while (str_data_names[i][k] != 0) //把数据的名字填充到数组里
-			{
-				tcp_send_data[count_char] = str_data_names[i][k];
-				k++;
-				count_char++;
-			}
-			tcp_send_data[count_char++] = ':'; //在这里插入分隔符
-			//char** str_data_names = { "温度" ,"湿度","灯0" ,"灯1" };
-			switch (i) //把数据填充到数组里
-			{
-			case 0:
-				count_char = count_char + sprintf(tcp_send_data + count_char, "%.1f°C", dht11_data.temperature);
-				break;
-			case 1:
-				count_char = count_char + sprintf(tcp_send_data + count_char, "%.1f%%", dht11_data.humidity);
-				break;
-			case 2:
-				count_char = count_char + sprintf(tcp_send_data + count_char, "%d%%", system_adc_read() * 100 / 1024);
-				break;
-			case 3:
-				count_char = count_char + sprintf(tcp_send_data + count_char, "%d", LED1);
-				break;
-			case 4:
-				count_char = count_char + sprintf(tcp_send_data + count_char, "%d", switch_1);
-				break;
-			case 5:
-				count_char = count_char + sprintf(tcp_send_data + count_char, "%d", LED2);
-				break;
-			case 6:
-				count_char = count_char + sprintf(tcp_send_data + count_char, "%d", switch_2);
-				break;
-			case 7:
-				count_char = count_char + sprintf(tcp_send_data + count_char, "%dS", switch_light_up_TIME_s);
-				break;
-			case 8:
-				count_char = count_char + sprintf(tcp_send_data + count_char, "%dS", switch_light_up_time_x_s);
-				break;
-			case 9:
-				count_char = count_char + sprintf(tcp_send_data + count_char, "%d", TEMPERATURE_ERROR_HIGH);
-				break;
-			case 10:
-				count_char = count_char + sprintf(tcp_send_data + count_char, "%d", TEMPERATURE_ERROR_LOW);
-				break;
-			case 11:
-				count_char = count_char + sprintf(tcp_send_data + count_char, "%d", light_qu_yu);
-				break;
-			case 12:
-				count_char = count_char + sprintf(tcp_send_data + count_char, "%d", power_save);
-				break;
-			case 13:
-				count_char = count_char + sprintf(tcp_send_data + count_char, "%u", test);
-				break;
-			}
-			tcp_send_data[count_char++] = '#'; //在这里插入单个数据结束符
-		}
-		//Serial.printf("  count_char :%d  ", count_char);
-		return count_char;
-	}
-
-	*/
-
-	/*在这里修改控件的状态 i是名称对应的数组索引，value是用户赋值*/
-	// void set_data_(short i, short value)
-	// {
-	// 	switch (i)
-	// 	{ //在这里修改控件的状态
-	// 	case 3:
-	// 		if (value > -1 && value < 2)
-	// 		{
-	// 			LED1 = value; //1号继电器
-	// 		}
-	// 		break;
-
-	// 	case 4:
-	// 		if (value > -1 && value < 4)
-	// 		{
-	// 			switch_1 = value; //1号继电器 工作模式
-	// 		}
-	// 		break;
-
-	// 	case 5:
-	// 		if (value > -1 && value < 2)
-	// 		{
-	// 			LED2 = value; //2号继电器
-	// 		}
-	// 		break;
-
-	// 	case 6:
-	// 		if (value > -1 && value < 4)
-	// 		{
-	// 			switch_2 = value; //2号继电器 工作模式
-	// 		}
-	// 		break;
-
-	// 	case 7:
-	// 		if (value > 0 && value < 301)
-	// 		{
-	// 			switch_light_up_TIME_s = value;
-	// 		}
-	// 		break;
-	// 	case 9:
-	// 		if (value >= 0 && value <= 40)
-	// 		{
-	// 			TEMPERATURE_ERROR_HIGH = value;
-	// 		}
-	// 		break;
-	// 	case 10:
-	// 		if (value >= 0 && value <= 40)
-	// 		{
-	// 			TEMPERATURE_ERROR_LOW = value;
-	// 		}
-	// 		break;
-	// 	case 11:
-	// 		if (value >= 0 && value <= 10)
-	// 		{
-	// 			light_qu_yu = value;
-	// 		}
-	// 		break;
-	// 	case 12:
-	// 		if (value >= 0 && value <= 2)
-	// 		{
-	// 			power_save = value;
-	// 		}
-	// 		break;
-	// 	case 13:
-	// 		if (value == 1)
-	// 		{
-	// 			static struct Udpwarn test111 = {WARN, NOT_WARN, 0, 3, "test111111"};
-	// 			static struct Udpwarn test222 = {WARN, NOT_WARN, 0, 4, "test2222222"};
-	// 			if (test111.status == WARN_ACK)
-	// 			{
-	// 				test111.status = NOT_WARN;
-	// 			}
-	// 			else
-	// 			{
-	// 				test111.status = IS_WARN;
-	// 				set_warn(&test111);
-	// 			}
-
-	// 			if (test222.status == WARN_ACK)
-	// 			{
-	// 				test222.status = NOT_WARN;
-	// 			}
-	// 			else
-	// 			{
-	// 				test222.status = IS_WARN;
-	// 				set_warn(&test222);
-	// 			}
-	// 		}
-	// 		break;
-	// 	}
-	// }
-
 	/*添加需要保存到flash的变量，上限为 list_values_len_max */
 	void add_values()
 	{
-		add_value(&switch_1, sizeof(switch_1));
+		//add_value(&switch_1, sizeof(switch_1));
 		add_value(&switch_2, sizeof(switch_2));
 		add_value(&LED1, sizeof(LED1));
 		add_value(&LED2, sizeof(LED2));

@@ -38,7 +38,7 @@ extern "C"
 	void warn_del_warn(struct Udpwarn *warn)
 	{
 		struct WarnLink *p = head.next;
-		struct WarnLink *tmp=&head;
+		struct WarnLink *tmp = &head;
 		for (int i = 0; i < WARN_LEN; i++)
 		{
 			if (p == NULL)
@@ -49,11 +49,10 @@ extern "C"
 			{
 				del_next_link(tmp);
 			}
-			tmp=p;
+			tmp = p;
 			p = p->next;
 		}
 	}
-
 
 	/*检查 警告 是否已经在内存中出现了，根据警告的内存地址来判定警告是否相同。
 	返回-1为没有占用，其他值为处在链结中的位置
@@ -88,6 +87,7 @@ extern "C"
 				if (tail->next == NULL)
 				{
 					Serial.printf(" set_warn error malloc NULL %d", len_warn);
+					return -1;
 				}
 				//修改状态
 				warn->status = IS_WARN;

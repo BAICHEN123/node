@@ -217,14 +217,6 @@ void loop()
 			Serial.print("WiFi.mode(WIFI_OFF);\r\n");
 			WiFi.mode(WIFI_OFF); //重新连接wifi
 		}
-		// else if (error_tcp_sum == 6)
-		// {
-		// 	//超过6次链接失败，复位程序，重启
-		// 	Serial.print("\r\nnet error,deepSleep\r\n");
-		// 	ESP.deepSleep(20000000, WAKE_RFCAL);
-		// 	//Serial.print("\r\nresetFunc\r\n");
-		// 	//ESP.restart(); //resetFunc();
-		// }
 		return;
 	}
 	Serial.print("tcp ok");
@@ -271,6 +263,7 @@ void loop()
 	short len_old;
 	//用户初始化
 	my_init();
+	refresh_work(); //更新一下光控灯的状态
 
 	while (client.connected())
 	{
@@ -487,6 +480,6 @@ void loop()
 		}
 	}
 
-	client.stop();
 	Serial.printf(" 4 error_tcp_sum=%d \r\n", error_tcp_sum++);
+	//client.stop();
 }
