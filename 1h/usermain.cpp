@@ -36,6 +36,8 @@ extern "C"
 	short TEMPERATURE_ERROR_LOW = 10;
 	double light_qu_yu = 5; //补光区间
 	uint8_t test = 0;
+	uint8_t duoji_need = 5; //舵机的期望值
+	uint8_t duoji_now = 0;	//舵机的期望值
 	static int beeeeee = 0;
 
 	//下面定义几个引脚的功能
@@ -44,10 +46,11 @@ extern "C"
 	const uint8_t light = 13;	//光敏逻辑输入
 	const uint8_t shengyin = 4; //声音逻辑输入
 	const uint8_t anjian1 = 0;	//按键1输入
-	const uint8_t dht11 = 5;	//按键1输入
+	const uint8_t dht11 = 5;	//dht11
+	const uint8_t duoji = 15;	//舵机
 
 	//关于这里和后面的使用时的警告，将其定义为const完全不影响使用，但是会出现警告，只要自己不要在后面的使用过程中对其赋值就没有问题
-	uint8_t CONST1[5] = {0, 1, 2, 3, 10};
+	uint8_t CONST1[6] = {0, 1, 2, 3, 10, 5};
 	short CONST2[3] = {0, 45, 300};
 	double CONST3[2] = {10, 100};
 
@@ -56,7 +59,7 @@ extern "C"
 		{"湿度", "%", TYPE_FLOAT, sizeof(dht11_data.humidity), &(dht11_data.humidity), NULL, NULL},
 		{"亮度", "%", TYPE_DOUBLE, sizeof(liangdu), &liangdu, NULL, NULL},
 		{"@水泵", NULL, TYPE_u8, sizeof(LED1), &LED1, CONST1, CONST1 + 1},
-		//{"@开关1模式", NULL, TYPE_u8, sizeof(switch_1), &switch_1, CONST1, CONST1 + 3},
+		{"@舵机", NULL, TYPE_u8, sizeof(duoji_need), &duoji_need, CONST1 + 1, CONST1 + 5},
 		{"@开关", NULL, TYPE_u8, sizeof(LED2), &LED2, CONST1, CONST1 + 1},
 		{"@开关模式", NULL, TYPE_u8, sizeof(switch_2), &switch_2, CONST1, CONST1 + 3},
 		{"@声控灯时长/S", "S", TYPE_SHORT, sizeof(switch_light_up_TIME_s), &switch_light_up_TIME_s, CONST2, CONST2 + 2},
@@ -81,6 +84,7 @@ extern "C"
 		pinMode(jd2, OUTPUT);
 		pinMode(jd1, OUTPUT);
 
+		dj_init();
 		set_timer1_ms(timer1_worker, TIMER1_timeout_ms); //强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
 		//（仅在程序复位的时候可以成功，原因：timer2_count 没有复位就不会被初始化，自然调用不到定时器的初始化函数），
 		dht11_get(); //读取dht11的数据，顺便启动定时器//这里有问题，当断网重连之后，定时器函数有可能不会被重新填充
@@ -118,7 +122,7 @@ extern "C"
 				test222.status = IS_WARN;
 				set_warn(&test222);
 			}
-			test=0;
+			test = 0;
 		}
 	}
 
@@ -217,7 +221,7 @@ extern "C"
 	void refresh_work()
 	{
 		//set_jdq(jd1, switch_1, &LED1);
-		digitalWrite(jd1, !LED1);//默认高电平，不初始化的时候也是高电平，进行取反操作，这样的话手机app上就会显示正常。
+		digitalWrite(jd1, !LED1); //默认高电平，不初始化的时候也是高电平，进行取反操作，这样的话手机app上就会显示正常。
 		set_jdq(jd2, switch_2, &LED2);
 	}
 
@@ -267,7 +271,7 @@ extern "C"
 	}
 
 	/*每隔 DHT11_SPACE_OF_TIME_ms 读取DHT11*/
-	void dht11_get()
+	int dht11_get()
 	{
 		static short timer2_count = TIMER2_COUNT; //
 		timer2_count++;
@@ -276,8 +280,9 @@ extern "C"
 			//先拉低，LOW_PIN_ms 之后调用读取函数
 			set_timer1_ms(read_dht11, (unsigned int)dht11_read_ready());
 			timer2_count = 0;
-			return;
+			return 0;
 		}
+		return 1;
 	}
 
 	/*	定时器工作内容	*/
@@ -287,7 +292,11 @@ extern "C"
 		clear_wifi_data(wifi_ssid_pw_file); //长按按键1清除wifi账号密码记录
 		refresh_work();						//更新继电器状态
 		shengyin_timeout_out();				//更新声控灯倒计时
-		dht11_get();						//调用DHT11的读取函数
+		//调用DHT11的读取函数
+		if (dht11_get())
+		{
+			dj_set();
+		}
 		liangdu = system_adc_read() * 100 / 1024.00;
 	}
 
@@ -302,7 +311,7 @@ extern "C"
 	/*添加需要保存到flash的变量，上限为 list_values_len_max */
 	void add_values()
 	{
-		//add_value(&switch_1, sizeof(switch_1));
+		add_value(&duoji_need, sizeof(duoji_need));
 		add_value(&switch_2, sizeof(switch_2));
 		add_value(&LED1, sizeof(LED1));
 		add_value(&LED2, sizeof(LED2));
@@ -311,4 +320,54 @@ extern "C"
 		add_value(&TEMPERATURE_ERROR_LOW, sizeof(TEMPERATURE_ERROR_LOW));
 		add_value(&light_qu_yu, sizeof(light_qu_yu));
 	}
+
+	//初始化舵机的位置
+	void dj_init()
+	{
+		if (duoji_now != 0)
+		{
+			return;
+		}
+		char i = 0;
+		duoji_now = 5;
+		for (i = 0; i < 5; i++)
+		{
+			digitalWrite(duoji, HIGH);
+			unsigned long timeold = micros();
+			while (micros() - timeold < duoji_need * 500)
+			{
+				_NOP();
+			}
+			digitalWrite(duoji, LOW);
+			timeold = micros();
+			while (micros() - timeold < (6 - duoji_need) * 500)
+			{
+				_NOP();
+			}
+			delay(17);
+		}
+	}
+
+	void dj_set_end()
+	{
+		set_timer1_us(timer1_worker, TIMER1_timeout_ms * 1000 - duoji_now * 500); //正常时间之后恢复 timer1_worker 的工作
+		digitalWrite(duoji, LOW);
+	}
+	
+	void dj_set()
+	{
+		if (duoji_now > duoji_need)
+		{
+			duoji_now = duoji_now - 1;
+			digitalWrite(duoji, HIGH);
+			set_timer1_us(dj_set_end, duoji_now * 500);
+		}
+		else if (duoji_now < duoji_need)
+		{
+			duoji_now = duoji_now + 1;
+			digitalWrite(duoji, HIGH);
+			set_timer1_us(dj_set_end, duoji_now * 500);
+		}
+	}
+
 }
