@@ -26,7 +26,7 @@ extern "C"
 	struct DHT11_data dht11_data = {666, 666};
 	double liangdu = 0;
 	//两个开关，当他为2时，是自动模式，其他时候读取12 和14号脚的电平
-	uint8_t LED1 = 0;
+	//uint8_t LED1 = 0;
 	//uint8_t switch_1 = 2;
 	uint8_t LED2 = 0;
 	uint8_t switch_2 = 2;
@@ -58,7 +58,7 @@ extern "C"
 		{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature), NULL, NULL},
 		{"湿度", "%", TYPE_FLOAT, sizeof(dht11_data.humidity), &(dht11_data.humidity), NULL, NULL},
 		{"亮度", "%", TYPE_DOUBLE, sizeof(liangdu), &liangdu, NULL, NULL},
-		{"@水泵", NULL, TYPE_u8, sizeof(LED1), &LED1, CONST1, CONST1 + 1},
+	//	{"@水泵", NULL, TYPE_u8, sizeof(LED1), &LED1, CONST1, CONST1 + 1},
 		{"@舵机", NULL, TYPE_u8, sizeof(duoji_need), &duoji_need, CONST1 + 1, CONST1 + 5},
 		{"@开关", NULL, TYPE_u8, sizeof(LED2), &LED2, CONST1, CONST1 + 1},
 		{"@开关模式", NULL, TYPE_u8, sizeof(switch_2), &switch_2, CONST1, CONST1 + 3},
@@ -82,7 +82,7 @@ extern "C"
 		pinMode(anjian1, INPUT);  //按键1
 		pinMode(shengyin, INPUT); //d2 声音
 		pinMode(jd2, OUTPUT);
-		pinMode(jd1, OUTPUT);
+		//pinMode(jd1, OUTPUT);
 
 		dj_init();
 		set_timer1_ms(timer1_worker, TIMER1_timeout_ms); //强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
@@ -221,7 +221,7 @@ extern "C"
 	void refresh_work()
 	{
 		//set_jdq(jd1, switch_1, &LED1);
-		digitalWrite(jd1, !LED1); //默认高电平，不初始化的时候也是高电平，进行取反操作，这样的话手机app上就会显示正常。
+		//digitalWrite(jd1, !LED1); //默认高电平，不初始化的时候也是高电平，进行取反操作，这样的话手机app上就会显示正常。
 		set_jdq(jd2, switch_2, &LED2);
 	}
 
@@ -313,7 +313,7 @@ extern "C"
 	{
 		add_value(&duoji_need, sizeof(duoji_need));
 		add_value(&switch_2, sizeof(switch_2));
-		add_value(&LED1, sizeof(LED1));
+		//add_value(&LED1, sizeof(LED1));
 		add_value(&LED2, sizeof(LED2));
 		add_value(&switch_light_up_TIME_s, sizeof(switch_light_up_TIME_s));
 		add_value(&TEMPERATURE_ERROR_HIGH, sizeof(TEMPERATURE_ERROR_HIGH));
