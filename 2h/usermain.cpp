@@ -36,7 +36,7 @@ const char *str_data_names[MAX_NAME] = {
 		{"烟雾逻辑", NULL, TYPE_u8, sizeof(yanwu), &yanwu,NULL,NULL},
 		{"烟雾模拟", "%", TYPE_DOUBLE, sizeof(yanwu_my), &yanwu_my,NULL,NULL},
 		{"@开关1", NULL, TYPE_u8, sizeof(LED1), &LED1,CONST1,CONST1+1},
-		{"@开关2", NULL, TYPE_u8, sizeof(LED2), &LED2,CONST1,CONST1+1},
+		{"@水泵", NULL, TYPE_u8, sizeof(LED2), &LED2,CONST1,CONST1+1},
 		{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save,CONST1,CONST1+2}
 
 	};
@@ -78,82 +78,26 @@ const char *str_data_names[MAX_NAME] = {
 	//刷新状态
 	void refresh_work()
 	{
-		digitalWrite(jd1, LED1);
-		digitalWrite(jd2, LED2);
-	}
-
-	/*
-int set_databack(const char fig,char *tcp_send_data)
-{
-	int i, k, count_char;
-	tcp_send_data[0] = fig; //在这里插入开始符号
-	tcp_send_data[1] = '#'; //在这里插入开始符号
-	count_char = 2;
-	for (i = 0; i < MAX_NAME; i++)
-	{
-		k = 0;
-		while (str_data_names[i][k] != 0) //把数据的名字填充到数组里
+		// digitalWrite(jd1, LED1);
+		// digitalWrite(jd2, LED2);
+		if(LED1==1)
 		{
-			tcp_send_data[count_char] = str_data_names[i][k];
-			k++;
-			count_char++;
+			digitalWrite(jd1, LOW);
 		}
-		tcp_send_data[count_char++] = ':'; //在这里插入分隔符
-		//char** str_data_names = { "温度" ,"湿度","灯0" ,"灯1" };
-		switch (i) //把数据填充到数组里
+		else
 		{
-		case 0:
-			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", digitalRead(hongwai_renti));
-			break;
-		case 1:
-			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", digitalRead(yan_wu));
-			break;
-		case 2:
-			count_char = count_char + sprintf(tcp_send_data + count_char, "%d%%", system_adc_read() * 100 / 1024);
-			break;
-		case 3:
-			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", LED1);
-			break;
-		case 4:
-			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", LED2);
-			break;
-		case 5:
-			count_char = count_char + sprintf(tcp_send_data + count_char, "%d", power_save);
-			break;
+			digitalWrite(jd1, HIGH);
+
 		}
-		tcp_send_data[count_char++] = '#'; //在这里插入单个数据结束符
+
+		if(LED2==1)
+		{
+			digitalWrite(jd2, LOW);
+		}
+		else
+		{
+			digitalWrite(jd2, HIGH);
+
+		}
 	}
-	//Serial.printf("  count_char :%d  ", count_char);
-	return count_char;
-}
-*/
-
-	// void set_data_(short i, short value)
-	// {
-	// 	switch (i)
-	// 	{ //在这里修改控件的状态
-	// 	case 3:
-	// 		if (value > -1 && value < 2)
-	// 		{
-	// 			LED1 = value;
-	// 			digitalWrite(jd1, LED1);
-	// 		}
-	// 		break;
-
-	// 	case 4:
-	// 		if (value > -1 && value < 2)
-	// 		{
-	// 			LED2 = value;
-	// 			digitalWrite(jd2, LED2);
-	// 		}
-	// 		break;
-
-	// 	case 5:
-	// 		if (value >= 0 && value <= 2)
-	// 		{
-	// 			power_save = value;
-	// 		}
-	// 		break;
-	// 	}
-	// }
 }
