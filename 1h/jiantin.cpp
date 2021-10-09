@@ -278,15 +278,19 @@ extern "C"
 				//此监听不符合条件，消除警告，回收内存
 				if (link[i]->warn != NULL)
 				{
-					//更改警告状态
-					link[i]->warn->status = NOT_WARN;
-					//回收内存
-					if (warn_exist(link[i]->warn) == -1)
-					{
-						free((void *)(link[i]->warn->str_waring));
-						free(link[i]->warn);
-						link[i]->warn = NULL;
-					}
+					//移除对 warn 的指向
+					warn_del_warn(link[i]->warn);
+
+					//释放 warm 指向的内存
+					free((void *)(link[i]->warn->str_waring));
+					//因为不同的位置，这里的字符串不一定是申请来的内存，所以不封装
+					
+					//释放 warm
+					free(link[i]->warn);
+
+					//清除指向
+					link[i]->warn = NULL;
+
 				}
 			}
 		}

@@ -9,7 +9,7 @@ extern "C"
 		struct WarnLink *next;
 	};
 
-	//关于此链表，会在警告状态为 NOT_WARN 时将链结删除，但是不会释放内存，因为有点地方是静态内存，不可以释放
+	//关于此链表，会在警告状态为 NOT_WARN 时将链结删除?，但是不会释放内存，因为有点地方是静态内存，不可以释放
 	//为了方便管理，请管理好自己申请的内存，自己释放
 	//可以调用 warn_exist 检查自己申请的内存是否处于被这里占用
 	//head 节点里不存实际数据
@@ -19,6 +19,28 @@ extern "C"
 
 //定义零时数组的长度，仅储存 "([mwe])(\d+)"
 #define UDP_TMP_MAX 200
+
+	void warn_printf()
+	{
+		struct WarnLink *p = head.next;
+		Serial.print("\r\n");
+		for (int i = 0; i < WARN_LEN; i++)
+		{
+			if (p == NULL)
+			{
+				Serial.printf(" warn_printf error 1 NULL ");
+				return;
+			}
+			// enum UdpMessageClass cmsg;//记录此条内容的警告级别
+			// enum WarnType status;//记录和服务器的交互状态
+			// unsigned long time;//记录时间
+			// unsigned long long  id;//记录报错的 id 号
+			// const char* str_waring;//要告知用户的话
+			Serial.printf("%d	%d %d	%lu	%llu	%s\r\n",i,p->warn->cmsg,p->warn->status,p->warn->time,p->warn->id,p->warn->str_waring);
+			p = p->next;
+		}
+	}
+
 
 	//删掉p->next节点
 	void del_next_link(struct WarnLink *p)
@@ -48,6 +70,8 @@ extern "C"
 			if (p->warn == warn)
 			{
 				del_next_link(tmp);
+				p=p->next;
+				continue;
 			}
 			tmp = p;
 			p = p->next;
@@ -66,7 +90,7 @@ extern "C"
 			{
 				return -1;
 			}
-			if (p->warn == warn)
+			if (p->warn == warn||(p->warn->cmsg==warn->cmsg&&p->warn->id==warn->id))
 			{
 				return i;
 			}
@@ -110,6 +134,8 @@ extern "C"
 		else
 		{
 			Serial.printf(" set_warn error len_warn %d", len_warn);
+			//在这后面把所有的warn输出一下
+			warn_printf();
 			return -1;
 		}
 	}
