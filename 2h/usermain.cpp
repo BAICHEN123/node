@@ -11,7 +11,7 @@ const char *str_data_names[MAX_NAME] = {
 	"@断电记忆[0-2]"
 	};
 	*/
-	const char *MODE_INFO = "@断电记忆[0-2]:关闭，仅本次，所有";
+	const char *MODE_INFO = "@断电记忆[0-2]:关闭，仅本次，所有@红外人体检测[0-1]:无，有@烟雾逻辑[0-1]:有，无";
 
 	uint8_t power_save = 0; //断电记忆
 
@@ -32,8 +32,8 @@ const char *str_data_names[MAX_NAME] = {
 	unsigned char CONST1[3]={0,1,2};
 
 	struct MyType data_list[MAX_NAME] = {
-		{"红外人体检测", NULL, TYPE_u8, sizeof(hongwai), &hongwai,NULL,NULL},
-		{"烟雾逻辑", NULL, TYPE_u8, sizeof(yanwu), &yanwu,NULL,NULL},
+		{"红外人体检测", NULL, TYPE_u8, sizeof(hongwai), &hongwai,CONST1,CONST1+1},
+		{"烟雾逻辑", NULL, TYPE_u8, sizeof(yanwu), &yanwu,CONST1,CONST1+1},
 		{"烟雾模拟", "%", TYPE_DOUBLE, sizeof(yanwu_my), &yanwu_my,NULL,NULL},
 		{"@开关1", NULL, TYPE_u8, sizeof(LED1), &LED1,CONST1,CONST1+1},
 		{"@水泵", NULL, TYPE_u8, sizeof(LED2), &LED2,CONST1,CONST1+1},
