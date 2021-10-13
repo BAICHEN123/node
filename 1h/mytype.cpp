@@ -46,10 +46,10 @@ extern "C"
 			return sprintf(data, "%.2f", *(float *)(mytype_data));
 		case TYPE_DOUBLE:
 			return sprintf(data, "%.2lf", *(double *)(mytype_data));
-		//case TYPE_CHAR_N:
-		//	return sprintf(data, "%s", (char *)(mytype_data));
-		// case TYPE_STR_N:
-		// 	return mystrcpy(data, (char *)(mytype_data), len_data, len);
+			//case TYPE_CHAR_N:
+			//	return sprintf(data, "%s", (char *)(mytype_data));
+			// case TYPE_STR_N:
+			// 	return mystrcpy(data, (char *)(mytype_data), len_data, len);
 		}
 		return -1;
 	}
@@ -62,7 +62,8 @@ extern "C"
 	int get_name_str(struct MyType *mytype, char *data, int len_data)
 	{
 		int len = 0;
-		if (mytype->name[0] == '@')
+		//if (mytype->name[0] == '@')
+		if (mytype->min != NULL && mytype->max != NULL)
 		{
 			switch (mytype->ID)
 			{
