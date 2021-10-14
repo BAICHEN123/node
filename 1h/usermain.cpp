@@ -82,6 +82,7 @@ extern "C"
 		pinMode(anjian1, INPUT);  //按键1
 		pinMode(shengyin, INPUT); //d2 声音
 		pinMode(jd2, OUTPUT);
+		pinMode(duoji, OUTPUT);
 		//pinMode(jd1, OUTPUT);
 
 		dj_init();
@@ -329,7 +330,7 @@ extern "C"
 			return;
 		}
 		char i = 0;
-		duoji_now = 5;
+		duoji_now = duoji_need;
 		for (i = 0; i < 5; i++)
 		{
 			digitalWrite(duoji, HIGH);
