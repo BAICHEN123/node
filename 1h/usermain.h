@@ -32,7 +32,7 @@ extern "C"
     
     void refresh_work();
     //str_data_names 的长度
-    #define MAX_NAME 13
+    #define MAX_NAME 12
     //extern const char *str_data_names[MAX_NAME];
     extern struct MyType data_list[MAX_NAME];
     //可选变量描述
@@ -57,8 +57,5 @@ extern "C"
     void DHT11_read_and_send();
     int dht11_get();
     void read_dht11();
-	void dj_init();
-	void dj_set_end();
-	void dj_set();
 }
 #endif

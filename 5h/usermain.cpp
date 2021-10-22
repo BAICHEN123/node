@@ -12,7 +12,7 @@ extern "C"
 	uint8_t duoji_now = 0;	//舵机的当前值
 
 	//定义几个引脚的功能
-	const uint8_t tongfeng = 13; //继电器
+	const uint8_t tongfeng = 14; //继电器
 	const uint8_t duoji = 5;   //舵机
 	const uint8_t anjian1 = 0; //按键1输入
 

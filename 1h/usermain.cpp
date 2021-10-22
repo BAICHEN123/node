@@ -1,25 +1,6 @@
 #include "usermain.h"
 extern "C"
 {
-	/*
-	const char *str_data_names[MAX_NAME] = {
-		"温度",
-		"湿度",
-		"亮度",
-		"@开关1[0-1]",
-		"@开关1模式[0-3]",
-		"@开关2[0-1]",
-		"@开关2模式[0-3]",
-		"@声控灯时长/S[1-300]",
-		"声控灯剩余时长/S",
-		"@高温警告/°C[0-40]",
-		"@低温警告/°C[0-40]",
-		"@补光区间[0-10]",
-		"@断电记忆[0-2]",
-		"@test1[0-1]" //测试错误并发用
-
-	};
-	*/
 	const char *MODE_INFO = "@开关模式[0-3]:手动，声控，光控，光声混控@断电记忆[0-2]:关闭，仅本次，所有";
 	uint8_t power_save = 0; //断电记忆
 
@@ -34,7 +15,7 @@ extern "C"
 	short switch_light_up_time_x_s = 0; //计数器用
 	short TEMPERATURE_ERROR_HIGH = 40;
 	short TEMPERATURE_ERROR_LOW = 10;
-	double light_qu_yu = 5; //补光区间
+	uint8_t light_io = 0; //补光区间
 	uint8_t test = 0;
 	uint8_t duoji_need = 5; //舵机的期望值
 	uint8_t duoji_now = 0;	//舵机的期望值
@@ -50,23 +31,24 @@ extern "C"
 	const uint8_t duoji = 15;	//舵机
 
 	//关于这里和后面的使用时的警告，将其定义为const完全不影响使用，但是会出现警告，只要自己不要在后面的使用过程中对其赋值就没有问题
-	uint8_t CONST1[6] = {0, 1, 2, 3, 10, 5};
+	uint8_t CONST1[6] = {0, 1, 2, 3};
 	short CONST2[3] = {0, 45, 300};
 	double CONST3[2] = {10, 100};
 
 	struct MyType data_list[MAX_NAME] = {
 		{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature), NULL, NULL},
 		{"湿度", "%", TYPE_FLOAT, sizeof(dht11_data.humidity), &(dht11_data.humidity), NULL, NULL},
-		{"亮度", "%", TYPE_DOUBLE, sizeof(liangdu), &liangdu, NULL, NULL},
-	//	{"@水泵", NULL, TYPE_u8, sizeof(LED1), &LED1, CONST1, CONST1 + 1},
-		{"@舵机", NULL, TYPE_u8, sizeof(duoji_need), &duoji_need, CONST1 + 1, CONST1 + 5},
+		{"烟雾浓度", "%", TYPE_DOUBLE, sizeof(liangdu), &liangdu, NULL, NULL},
+
 		{"@开关", NULL, TYPE_u8, sizeof(LED2), &LED2, CONST1, CONST1 + 1},
 		{"@开关模式", NULL, TYPE_u8, sizeof(switch_2), &switch_2, CONST1, CONST1 + 3},
-		{"@声控灯时长/S", "S", TYPE_SHORT, sizeof(switch_light_up_TIME_s), &switch_light_up_TIME_s, CONST2, CONST2 + 2},
+		{"@亮度输入", NULL, TYPE_u8, sizeof(light_io), &light_io, CONST1, CONST1 + 1},
+
 		{"声控灯剩余时长/S", "S", TYPE_SHORT, sizeof(switch_light_up_time_x_s), &switch_light_up_time_x_s, NULL, NULL},
+		{"@声控灯时长/S", "S", TYPE_SHORT, sizeof(switch_light_up_TIME_s), &switch_light_up_TIME_s, CONST2, CONST2 + 2},
 		{"@高温警告/°C", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_HIGH), &TEMPERATURE_ERROR_HIGH, &TEMPERATURE_ERROR_LOW, CONST2 + 1},
+
 		{"@低温警告/°C", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_LOW), &TEMPERATURE_ERROR_LOW, CONST2, &TEMPERATURE_ERROR_HIGH},
-		{"@补光区间", "%", TYPE_DOUBLE, sizeof(light_qu_yu), &light_qu_yu, CONST3, CONST3 + 1},
 		{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save, CONST1, CONST1 + 2},
 		{"@test1", NULL, TYPE_u8, sizeof(test), &test, CONST1, CONST1 + 1} //测试错误并发用
 
@@ -82,10 +64,7 @@ extern "C"
 		pinMode(anjian1, INPUT);  //按键1
 		pinMode(shengyin, INPUT); //d2 声音
 		pinMode(jd2, OUTPUT);
-		pinMode(duoji, OUTPUT);
 		//pinMode(jd1, OUTPUT);
-
-		dj_init();
 		set_timer1_ms(timer1_worker, TIMER1_timeout_ms); //强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
 		//（仅在程序复位的时候可以成功，原因：timer2_count 没有复位就不会被初始化，自然调用不到定时器的初始化函数），
 		dht11_get(); //读取dht11的数据，顺便启动定时器//这里有问题，当断网重连之后，定时器函数有可能不会被重新填充
@@ -139,22 +118,7 @@ extern "C"
 	*/
 	uint8_t light_high()
 	{
-		static unsigned long last_time = millis();
-		static uint16 brightness = system_adc_read();
-		//liangdu = brightness * 100 / 1024;
-		if (last_time - millis() > 10) //限制adc读取频率
-		{
-			brightness = system_adc_read(); //值越大约黑暗 最高1024
-			last_time = millis();
-		}
-		if (brightness > light_qu_yu * 10)
-		{
-			return 1;
-		}
-		else
-		{
-			return 0;
-		}
+		return light_io;
 	}
 
 	/*
@@ -215,7 +179,15 @@ extern "C"
 			*LEDx = shengyin_and_light_high();
 			break;
 		}
-		digitalWrite(pin_x, *LEDx);
+
+		if (*LEDx == 1)
+		{
+			digitalWrite(pin_x, LOW);//继电器低电平的时候导通
+		}
+		else
+		{
+			digitalWrite(pin_x, HIGH);
+		}
 	}
 
 	/*根据模式更新继电器开关的状态*/
@@ -296,7 +268,7 @@ extern "C"
 		//调用DHT11的读取函数
 		if (dht11_get())
 		{
-			dj_set();
+			//dj_set();
 		}
 		liangdu = system_adc_read() * 100 / 1024.00;
 	}
@@ -312,63 +284,12 @@ extern "C"
 	/*添加需要保存到flash的变量，上限为 list_values_len_max */
 	void add_values()
 	{
-		add_value(&duoji_need, sizeof(duoji_need));
 		add_value(&switch_2, sizeof(switch_2));
 		//add_value(&LED1, sizeof(LED1));
 		add_value(&LED2, sizeof(LED2));
 		add_value(&switch_light_up_TIME_s, sizeof(switch_light_up_TIME_s));
 		add_value(&TEMPERATURE_ERROR_HIGH, sizeof(TEMPERATURE_ERROR_HIGH));
 		add_value(&TEMPERATURE_ERROR_LOW, sizeof(TEMPERATURE_ERROR_LOW));
-		add_value(&light_qu_yu, sizeof(light_qu_yu));
+		add_value(&light_io, sizeof(light_io));
 	}
-
-	//初始化舵机的位置
-	void dj_init()
-	{
-		if (duoji_now != 0)
-		{
-			return;
-		}
-		char i = 0;
-		duoji_now = duoji_need;
-		for (i = 0; i < 5; i++)
-		{
-			digitalWrite(duoji, HIGH);
-			unsigned long timeold = micros();
-			while (micros() - timeold < duoji_need * 500)
-			{
-				_NOP();
-			}
-			digitalWrite(duoji, LOW);
-			timeold = micros();
-			while (micros() - timeold < (6 - duoji_need) * 500)
-			{
-				_NOP();
-			}
-			delay(17);
-		}
-	}
-
-	void dj_set_end()
-	{
-		set_timer1_us(timer1_worker, TIMER1_timeout_ms * 1000 - duoji_now * 500); //正常时间之后恢复 timer1_worker 的工作
-		digitalWrite(duoji, LOW);
-	}
-	
-	void dj_set()
-	{
-		if (duoji_now > duoji_need)
-		{
-			duoji_now = duoji_now - 1;
-			digitalWrite(duoji, HIGH);
-			set_timer1_us(dj_set_end, duoji_now * 500);
-		}
-		else if (duoji_now < duoji_need)
-		{
-			duoji_now = duoji_now + 1;
-			digitalWrite(duoji, HIGH);
-			set_timer1_us(dj_set_end, duoji_now * 500);
-		}
-	}
-
 }

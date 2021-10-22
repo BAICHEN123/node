@@ -9,6 +9,8 @@ extern "C"
 {
 #include "mytimer.h"
 #include "mytype.h"
+#include "DHT11.h"
+
 //必须实现的
 	/*初始化函数，初始化此项目需要使用的引脚*/
 	void my_init();
@@ -35,7 +37,7 @@ extern "C"
 	void refresh_work();
 		
 	//str_data_names 的长度
-	#define MAX_NAME 4
+	#define MAX_NAME 9
 	//extern const char *str_data_names[MAX_NAME];
 	extern struct MyType data_list[MAX_NAME];
 	//可选变量描述
@@ -51,6 +53,9 @@ extern "C"
 
 //选择实现的
 
+    void DHT11_read_and_send();
+    int dht11_get();
+    void read_dht11();
 
 
 }
