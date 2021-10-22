@@ -5,7 +5,7 @@ extern "C"
 
 	uint8_t power_save = 0; //断电记忆
 
-	//两个开关，当他为2时，是自动模式，其他时候读取12 和14号脚的电平
+	//定义传感器储存变量
 	uint8_t shi_du1 = 0;
 	uint8_t shi_du2 = 0;
 	uint8_t shi_du3 = 0;

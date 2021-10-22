@@ -15,7 +15,6 @@
 #include "jiantin.h"
 extern "C"
 {
-//#include "DHT11.h"
 #include "mystr.h"
 #include "mytimer.h"
 }
@@ -401,6 +400,10 @@ void loop()
 				break;						 // 跳出 switch
 			case 'I':						 //获取一些模式id的详细描述
 			case 'i':
+				if (MODE_INFO == NULL)
+				{
+					break;
+				}
 				if (back_send_tcp(&client, MODE_INFO) == -1)
 					return;
 				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
