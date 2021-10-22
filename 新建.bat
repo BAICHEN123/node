@@ -1,5 +1,5 @@
 @echo off
-set name=fh
+set name=新工程名
 mkdir %name% && goto X
 echo 文件已存在，请换个名字
 pause
