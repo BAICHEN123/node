@@ -1,6 +1,12 @@
 @echo off
-set name=5h
+set name=fh
+mkdir %name% && goto X
+echo 文件已存在，请换个名字
+pause
 
+:X
+copy .\0h\usermain.cpp .\%name%
+copy .\0h\usermain.h .\%name%
 mklink /H  .\%name%\test.cpp   .\1h\test.cpp
 mklink /H  .\%name%\test.h   .\1h\test.h
 mklink /H  .\%name%\myconstant.cpp   .\1h\myconstant.cpp
@@ -25,6 +31,7 @@ mklink /H  .\%name%\savevalues.cpp   .\1h\savevalues.cpp
 mklink /H  .\%name%\savevalues.h   .\1h\savevalues.h
 mklink /H  .\%name%\%name%.ino   .\1h\1h.ino
 
+echo 创建成功
 pause
 pause
 pause
