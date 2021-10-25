@@ -18,6 +18,25 @@ extern "C"
 
 			free(jt->data);
 		}
+
+		
+		//此监听不符合条件，消除警告，回收内存
+		if (jt->warn != NULL)
+		{
+			//移除对 warn 的指向
+			warn_del_warn(jt->warn);
+
+			//释放 warm 指向的内存
+			free((void *)(jt->warn->str_waring));
+			//因为不同的位置，这里的字符串不一定是申请来的内存，所以不封装
+			
+			//释放 warm
+			free(jt->warn);
+
+			//清除指向
+			jt->warn = NULL;
+
+		}
 	}
 
 	/*删除一个监听的要求，释放内存，移动位置，
