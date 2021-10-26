@@ -239,6 +239,7 @@ extern "C"
 		}
 
 		//复制之前的数值，到申请号的内存里去
+		jt.warn=NULL;//赋初值
 		memcpy(jt1, &jt, sizeof(struct JianTin));
 
 		return jt.name_id + 1;
