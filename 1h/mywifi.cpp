@@ -333,6 +333,7 @@ extern "C"
                 //删除之前记住的WiFi账号和密码，然后重新启动系统
                 Serial.println("delete & restart");
                 file_delete(wifi_ssid_pw_file);
+				file_delete(stut_data_file);
                 ESP.restart();
             }
         }

@@ -64,6 +64,10 @@ int set_databack(const char fig, char *tcp_send_data, int max_len)
 	for (i = 0; i < MAX_NAME; i++)
 	{
 		k = 0;
+		if (data_list[i].name == NULL)
+		{
+			break;
+		}
 		tmp = get_name_str(data_list + i, tcp_send_data + count_char, max_len - count_char);
 		if (tmp == -1)
 		{
@@ -104,7 +108,7 @@ void setup()
 	add_values();			//挂载读取信息。//这里可以优化，仅在读取写入的时候使用数组，建立//但是也没多大用，一个不超过50字节的数组
 	set_anjian1(0);			//配置wifi的清除数据按键
 
-	//LittleFS.format();//第一次使用flash需要将flash格式化
+	//LittleFS.format();//第一次使用flash需要将flash格式化,可以不显式调用，会自己初始化
 
 	Serial.begin(115200);
 	//CHIP_ID = ESP.getFlashChipId();
@@ -127,7 +131,7 @@ void setup()
 	else if (stat == -2)
 	{
 		Serial.print("flash error ,file open error -2,deepSleep");
-		ESP.deepSleep(300 * 1000); //us
+		ESP.deepSleep(20000000, WAKE_RFCAL);
 	}
 	//连接wifi
 	if (WIFI_password[0] == '\0' || WIFI_ssid[0] == '\0')
@@ -149,6 +153,7 @@ void setup()
 	Serial.printf(" read_values %d \n", stat);
 	if (stat == -1)
 	{
+		//文件储存的内容过期
 		file_delete(stut_data_file);
 		ESP.restart();
 	}
@@ -197,7 +202,6 @@ void loop()
 	short stat;
 	if (client.connect(MYHOST, TCP_PORT))
 	{
-		//client.printf("hello from ESP8266 %d", ESP.getFlashChipId());
 		if (UID != 0)
 		{
 			client.printf("+UID:%llu", UID);
@@ -236,6 +240,11 @@ void loop()
 				Serial.print("\r\nnot found eid,deepSleep\r\n");
 				ESP.deepSleep(20000000, WAKE_RFCAL);
 			}
+			//从 my_tcp_cache.data 剩下的数据里提取出时间，校准单片机的时间
+			beeeeee = str1_find_char_(my_tcp_cache.data, my_tcp_cache.len, 'T');
+			Serial.println(my_tcp_cache.data + beeeeee);
+			str_get_time(&Now, my_tcp_cache.data + beeeeee);
+
 			char str_EID[22] = {0};
 			sprintf(str_EID, "%llu", EID); //垃圾string(),居然不能装换long long类型的数据，还要我自己动手
 			UDP_head_data = "+EID=" + String(str_EID) + ",chip_id=" + String(CHIP_ID);
@@ -253,6 +262,7 @@ void loop()
 	unsigned long get_time_old_ms = millis();
 	unsigned long send_time_old_ms = millis();
 	unsigned long ruan_time_old_ms = millis();
+	unsigned long ruan_time_old_1s = millis();
 	int tcp_senddata_len = 0;
 	int tmp_status;
 	long long tmp;
@@ -276,28 +286,37 @@ void loop()
 		实现情况	无
 		*/
 		//tcp链接发送数据时候过将近20min才会被系统感知发现，然后 client.connected() 判定才为假
-		//隔一段时间就发送一次本机数据，怕tcp失效
-		if (millis() - send_time_old_ms > HEART_BEAT_ms) //无符号整型的加减运算，就算溢出了，也不影响差的计算，windows gcc 0-0xfffffffe=2;
-		{
-			if (millis() - get_time_old_ms > HEART_BEAT_TIMEOUT_ms)
-			{
-				Serial.printf(" %d not get tcp data ,return\r\n", HEART_BEAT_TIMEOUT_ms);
-				return;
-			}
-			Serial.print('#');
-			//TCP发送心跳包
-			if (back_send_tcp_(&client, tcp_send_data, set_databack(HEART_BEAT_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
-			{
-				Serial.printf(" 4 error_tcp_sum=%d \r\n", error_tcp_sum++);
-				return;
-			}
-			//在这里插入心跳包的返回值检测，超时未回复，就认定链接失效，重新建立tcp的链接
-			/*实现方式：添加两个标志？记录发送状态和接收状态，判断发送和接受状态的情况*/
-			send_time_old_ms = millis();
-		}
+
 		//声音的采样间隔，查看 ruan_time_old_ms 时间间隔内的高电平数量，作为声控的判定标准
 		if (millis() - ruan_time_old_ms > RUAN_TIMEer_ms)
 		{
+			if (millis() - ruan_time_old_1s > 1000)
+			{
+				ruan_time_old_1s = millis();
+				next_sec(&Now);
+				ruan_timer_1s();
+
+				//隔一段时间就发送一次本机数据，心跳包
+				if (millis() - send_time_old_ms > HEART_BEAT_ms) //无符号整型的加减运算，就算溢出了，也不影响差的计算，windows gcc 0-0xfffffffe=2;
+				{
+					if (millis() - get_time_old_ms > HEART_BEAT_TIMEOUT_ms)
+					{
+						//太久没有收到服务器发来的数据，重新连接服务器
+						Serial.printf(" %d not get tcp data ,return\r\n", HEART_BEAT_TIMEOUT_ms);
+						return;
+					}
+					Serial.print('#');
+					//TCP发送心跳包
+					if (back_send_tcp_(&client, tcp_send_data, set_databack(HEART_BEAT_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
+					{
+						return;
+					}
+					//在这里插入心跳包的返回值检测，超时未回复，就认定链接失效，重新建立tcp的链接
+					/*实现方式：添加两个标志？记录发送状态和接收状态，判断发送和接受状态的情况*/
+					send_time_old_ms = millis();
+				}
+			}
+
 			//验证监听数据
 			if (jiantin_loop() < 0)
 			{
@@ -309,16 +328,15 @@ void loop()
 			ruan_timer_ms();			 //每隔 RUAN_TIMEer_ms
 			ruan_time_old_ms = millis(); //更新时间
 		}
-		//如果回复重要，就多等一下，把 timeout_ms_max 改大一点
-		stat = timeout_back_us(&client, RUAN_TIMEer_us); //等待100us tcp是否有数据返回
 		ruan_timer_us();								 //每隔 RUAN_TIMEer_us
+		stat = timeout_back_us(&client, RUAN_TIMEer_us); //等待100us tcp是否有数据返回
 
 		if (stat == 1) //有收到TCP数据
 		{
 			//Serial.printf("回复响应时间：%d \n", micros() - time_old);
-			len_old = my_tcp_cache.len;
+			len_old = my_tcp_cache.len; //my_tcp_cache.len=0
 			stat = get_tcp_data(&client, &my_tcp_cache);
-			if (my_tcp_cache.len - len_old > 0) //收到有效字节
+			if (my_tcp_cache.len > 0) //收到有效字节
 			{
 				get_time_old_ms = millis(); //最后一次接收到数据的时间戳
 			}
@@ -328,9 +346,9 @@ void loop()
 			}
 			//如果需要对TCP链接返回的数据进行处理，请在这后面写，-----------------------------------------------------------------------
 			//示例//将TCP返回的数据当作字符串输出
-			Serial.print(my_tcp_cache.data + len_old);
+			Serial.print(my_tcp_cache.data);
 
-			switch (*(my_tcp_cache.data + len_old))
+			switch (*(my_tcp_cache.data))
 			{
 			case 'A':
 				//尝试使用 '\t' 作为分割符号，一次接收多个监听指令
@@ -346,24 +364,27 @@ void loop()
 					tmp1 = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, '\t');
 				}
 				jiantin_print();
-				back_send_tcp_(&client, tcp_send_data, tcp_senddata_len);
-				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
-				break;
-			case 'D':
-				tmpL = str_to_u64(my_tcp_cache.data, my_tcp_cache.len, &stat);
-				if(stat!=1)
-				{
-					Serial.printf(" D   str_to_u64 error	%d", stat);
-					break;
-				}
-				jiantin_del(tmpL);
-				tcp_senddata_len=sprintf(tcp_send_data,"%s",my_tcp_cache.data);
 				if (back_send_tcp_(&client, tcp_send_data, tcp_senddata_len) == -1)
 				{
 					return;
 				}
 				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
-			
+				break;
+			case 'D':
+				tmpL = str_to_u64(my_tcp_cache.data, my_tcp_cache.len, &stat);
+				if (stat != 1)
+				{
+					Serial.printf(" D   str_to_u64 error	%d", stat);
+					break;
+				}
+				jiantin_del(tmpL);
+				tcp_senddata_len = sprintf(tcp_send_data, "%s", my_tcp_cache.data);
+				if (back_send_tcp_(&client, tcp_send_data, tcp_senddata_len) == -1)
+				{
+					return;
+				}
+				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
+
 				break;
 			case 'm':
 			case 'w':
@@ -387,15 +408,17 @@ void loop()
 				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
 				break;
 			case 'T':
-			case 't':
+				//case 't':
 				//这里处理心跳包返回的时间戳，无需返回任何数据
-
+				str_get_time(&Now, my_tcp_cache.data);
 				break;
 			case '+': //获取传感器和模式的信息
 			case 'G':
 			case 'g':
 				if (back_send_tcp_(&client, tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
+				{
 					return;
+				}
 				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
 				break;						 // 跳出 switch
 			case 'I':						 //获取一些模式id的详细描述
@@ -432,6 +455,10 @@ void loop()
 
 					for (short i = 0; i < MAX_NAME; i++)
 					{
+						if (data_list[i].name == NULL)
+						{
+							break;
+						}
 						if (1 == str1_eq_str2(my_tcp_cache.data, len_old, value, data_list[i].name))
 						{
 							value = str1_find_char_1(my_tcp_cache.data, value, my_tcp_cache.len, ':') + 1; //找到的是 ':' 真正的数据从下一位开始
@@ -456,7 +483,6 @@ void loop()
 				//TCP 打包返还自己的状态
 				if (back_send_tcp_(&client, tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
 				{
-					Serial.printf(" 2 error_tcp_sum=%d \r\n", error_tcp_sum++);
 					return;
 				}
 				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
@@ -483,6 +509,6 @@ void loop()
 		}
 	}
 
-	Serial.printf(" 4 error_tcp_sum=%d \r\n", error_tcp_sum++);
+	Serial.printf(" never  error\r\n");
 	//client.stop();
 }

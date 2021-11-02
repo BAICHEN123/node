@@ -36,6 +36,9 @@ extern "C"
 	double CONST3[2] = {10, 100};
 
 	struct MyType data_list[MAX_NAME] = {
+		{"秒", "s", TYPE_u8, sizeof(Now.sec), &(Now.sec), NULL, NULL},
+		{"分", "m", TYPE_u8, sizeof(Now.minute), &(Now.minute), NULL, NULL},
+		{"时", "h", TYPE_u8, sizeof(Now.hour), &(Now.hour), NULL, NULL},
 		{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature), NULL, NULL},
 		{"湿度", "%", TYPE_FLOAT, sizeof(dht11_data.humidity), &(dht11_data.humidity), NULL, NULL},
 		{"烟雾浓度", "%", TYPE_DOUBLE, sizeof(liangdu), &liangdu, NULL, NULL},
@@ -50,7 +53,8 @@ extern "C"
 
 		{"@低温警告/°C", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_LOW), &TEMPERATURE_ERROR_LOW, CONST2, &TEMPERATURE_ERROR_HIGH},
 		{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save, CONST1, CONST1 + 2},
-		{"@test1", NULL, TYPE_u8, sizeof(test), &test, CONST1, CONST1 + 1} //测试错误并发用
+		{"@test1", NULL, TYPE_u8, sizeof(test), &test, CONST1, CONST1 + 1}, //测试错误并发用
+		{NULL}																//到这里结束
 
 	};
 
@@ -68,6 +72,11 @@ extern "C"
 		set_timer1_ms(timer1_worker, TIMER1_timeout_ms); //强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
 		//（仅在程序复位的时候可以成功，原因：timer2_count 没有复位就不会被初始化，自然调用不到定时器的初始化函数），
 		dht11_get(); //读取dht11的数据，顺便启动定时器//这里有问题，当断网重连之后，定时器函数有可能不会被重新填充
+	}
+
+	void ruan_timer_1s()
+	{
+
 	}
 
 	void ruan_timer_ms()
@@ -182,7 +191,7 @@ extern "C"
 
 		if (*LEDx == 1)
 		{
-			digitalWrite(pin_x, LOW);//继电器低电平的时候导通
+			digitalWrite(pin_x, LOW); //继电器低电平的时候导通
 		}
 		else
 		{
