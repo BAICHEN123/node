@@ -244,7 +244,7 @@ void loop()
 
 			//从 my_tcp_cache.data 剩下的数据里提取出时间，校准单片机的时间
 			beeeeee = str1_find_char_(my_tcp_cache.data, my_tcp_cache.len, 'T');
-			Serial.println(my_tcp_cache.data + beeeeee);
+			//Serial.println(my_tcp_cache.data + beeeeee);
 			str_get_time(&Now, my_tcp_cache.data + beeeeee);
 
 			char str_EID[22] = {0};
@@ -469,7 +469,7 @@ void loop()
 
 							if (set_value(data_list + i, my_tcp_cache.data + value, my_tcp_cache.len - value) == 1)
 							{
-								Serial.printf("set_value ok %d\r\n", i);
+								Serial.printf("set_value ok %d	", i);
 							}
 							else
 							{
