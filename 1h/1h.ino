@@ -71,7 +71,7 @@ int set_databack(const char fig, char *tcp_send_data, int max_len)
 		tmp = get_name_str(data_list + i, tcp_send_data + count_char, max_len - count_char);
 		if (tmp == -1)
 		{
-			Serial.printf("get_name_str error -1  i=%d  \n", i);
+			Serial.printf("get_name_str error -1  i=%d  \r\n", i);
 			tcp_send_data[count_char++] = '#'; //在这里插入单个数据结束符
 			continue;
 		}
@@ -87,7 +87,7 @@ int set_databack(const char fig, char *tcp_send_data, int max_len)
 		tmp = get_data_unit_str(data_list + i, tcp_send_data + count_char, max_len - count_char);
 		if (tmp == -1)
 		{
-			Serial.printf("get_data_unit_str error -1  i=%d  \n", i);
+			Serial.printf("get_data_unit_str error -1  i=%d  \r\n", i);
 			tcp_send_data[count_char++] = '#'; //在这里插入单个数据结束符
 			continue;
 		}
@@ -115,8 +115,8 @@ void setup()
 	//Serial.printf("unsigned long %d \n", sizeof(unsigned long)); //这个id是假的，不知道为啥，两个esp的一样
 	//Serial.printf("long long %d  \n", sizeof(long long));
 	CHIP_ID = ESP.getChipId();
-	Serial.printf("getFlashChipId %d \n", ESP.getFlashChipId()); //这个id是假的，不知道为啥，两个esp的一样
-	Serial.printf("getChipId %d  \n", ESP.getChipId());
+	Serial.printf("getFlashChipId %d \r\n", ESP.getFlashChipId()); //这个id是假的，不知道为啥，两个esp的一样
+	Serial.printf("getChipId %d  \r\n", ESP.getChipId());
 
 	pinMode(LED_BUILTIN, OUTPUT);
 	digitalWrite(LED_BUILTIN, HIGH);
@@ -141,7 +141,7 @@ void setup()
 	}
 	Serial.printf("#WIFI_ssid:%s  WIFI_password:%s  UID:%ld ", WIFI_ssid, WIFI_password, UID);
 
-	Serial.printf("CHIP_ID %x \n", CHIP_ID);
+	Serial.printf("CHIP_ID %x \r\n", CHIP_ID);
 	if (get_wifi(WIFI_ssid, WIFI_password, wifi_ssid_pw_file) == 0)
 	{
 		Serial.print("wifi error 0,deepSleep");
@@ -150,7 +150,7 @@ void setup()
 
 	//Serial.printf(" file_read_stut %d ", file_read_stut());
 	stat = read_values(stut_data_file);
-	Serial.printf(" read_values %d \n", stat);
+	Serial.printf(" read_values %d \r\n", stat);
 	if (stat == -1)
 	{
 		//文件储存的内容过期
@@ -180,16 +180,17 @@ void loop()
 			}
 			else if (error_wifi_count == 3)
 			{
-				//超过6次链接失败，复位程序，重启
-				Serial.print("\r\ndeepSleep 20S\r\n");
+				//超过3次链接失败，复位程序，重启
 				if (error_tcp_sum > 0)
 				{
 					//曾经连上过，但是tcp重新连接时候失败了，wifi可能没问题，尝试重启单片机
-					ESP.restart();
+					Serial.print("\r\nrestart 20S\r\n");
+					ESP.restart();//这个函数在串口打印的开机信息里是看门狗复位
 				}
 				else
 				{
 					//一次都没连上过，可能wifi有问题，休眠单片机
+					Serial.print("\r\ndeepSleep 20S\r\n");
 					ESP.deepSleep(20000000, WAKE_RFCAL);
 				}
 			}
@@ -214,7 +215,7 @@ void loop()
 	else
 	{
 		Serial.printf(" 1 error_tcp_sum=%d \r\n", error_tcp_sum++);
-		delay(3000);		   //等待3S再重连
+		delay(1000);		   //等待3S再重连
 		if (error_tcp_sum > 3) // && error_tcp_sum < 6)
 		{
 			Serial.print("WiFi.mode(WIFI_OFF);\r\n");
@@ -240,6 +241,7 @@ void loop()
 				Serial.print("\r\nnot found eid,deepSleep\r\n");
 				ESP.deepSleep(20000000, WAKE_RFCAL);
 			}
+
 			//从 my_tcp_cache.data 剩下的数据里提取出时间，校准单片机的时间
 			beeeeee = str1_find_char_(my_tcp_cache.data, my_tcp_cache.len, 'T');
 			Serial.println(my_tcp_cache.data + beeeeee);
@@ -348,7 +350,7 @@ void loop()
 			//示例//将TCP返回的数据当作字符串输出
 			Serial.print(my_tcp_cache.data);
 
-			switch (*(my_tcp_cache.data))
+			switch (*my_tcp_cache.data)
 			{
 			case 'A':
 				//尝试使用 '\t' 作为分割符号，一次接收多个监听指令
@@ -397,9 +399,11 @@ void loop()
 					break;
 				}
 				tcp_senddata_len = warn_ack(tmpL, (enum UdpMessageClass) * (my_tcp_cache.data + len_old), tcp_send_data); //tmp原来存错误id现在存长度
-				if (tcp_senddata_len < 1)
+				if (tcp_senddata_len < 2)//基础长度两个#号
 				{
+					//请求的错误已经消除
 					Serial.printf("   loop warn_ack return 0 ");
+					break;
 				}
 				if (back_send_tcp_(&client, tcp_send_data, tcp_senddata_len) == -1)
 				{
@@ -465,11 +469,11 @@ void loop()
 
 							if (set_value(data_list + i, my_tcp_cache.data + value, my_tcp_cache.len - value) == 1)
 							{
-								Serial.printf("set_value ok %d\n", i);
+								Serial.printf("set_value ok %d\r\n", i);
 							}
 							else
 							{
-								Serial.printf("set_value error %d %s\n", i, my_tcp_cache.data + value);
+								Serial.printf("set_value error %d %s\r\n", i, my_tcp_cache.data + value);
 							}
 							break;
 						}
@@ -489,7 +493,7 @@ void loop()
 				if (power_save != 0)		 //实时更新断电记忆的东西
 				{
 					//file_save_stut();
-					Serial.printf(" save_values %d \n", save_values(stut_data_file));
+					Serial.printf(" save_values %d \r\n", save_values(stut_data_file));
 					if (power_save == 1)
 					{
 						power_save = 0; //如果不清零，则每次更改设置都会被flash记忆，flash擦写能力有限，我调试程序的就不每次擦写了

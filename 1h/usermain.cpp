@@ -21,6 +21,8 @@ extern "C"
 	uint8_t duoji_now = 0;	//舵机的期望值
 	static int beeeeee = 0;
 
+	uint8_t yu_men[3 * 2] = {0, 0, 0, 0, 0, 0}; //与门寄存器
+
 	//下面定义几个引脚的功能
 	const uint8_t jd1 = 14;		//1号继电器
 	const uint8_t jd2 = 12;		//2号继电器
@@ -36,27 +38,37 @@ extern "C"
 	double CONST3[2] = {10, 100};
 
 	struct MyType data_list[MAX_NAME] = {
-		{"秒", "s", TYPE_u8, sizeof(Now.sec), &(Now.sec), NULL, NULL},
-		{"分", "m", TYPE_u8, sizeof(Now.minute), &(Now.minute), NULL, NULL},
 		{"时", "h", TYPE_u8, sizeof(Now.hour), &(Now.hour), NULL, NULL},
+		{"分", "m", TYPE_u8, sizeof(Now.minute), &(Now.minute), NULL, NULL},
+		{"秒", "s", TYPE_u8, sizeof(Now.sec), &(Now.sec), NULL, NULL},
 		{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature), NULL, NULL},
 		{"湿度", "%", TYPE_FLOAT, sizeof(dht11_data.humidity), &(dht11_data.humidity), NULL, NULL},
 		{"烟雾浓度", "%", TYPE_DOUBLE, sizeof(liangdu), &liangdu, NULL, NULL},
-
 		{"@开关", NULL, TYPE_u8, sizeof(LED2), &LED2, CONST1, CONST1 + 1},
 		{"@开关模式", NULL, TYPE_u8, sizeof(switch_2), &switch_2, CONST1, CONST1 + 3},
 		{"@亮度输入", NULL, TYPE_u8, sizeof(light_io), &light_io, CONST1, CONST1 + 1},
-
 		{"声控灯剩余时长/S", "S", TYPE_SHORT, sizeof(switch_light_up_time_x_s), &switch_light_up_time_x_s, NULL, NULL},
 		{"@声控灯时长/S", "S", TYPE_SHORT, sizeof(switch_light_up_TIME_s), &switch_light_up_TIME_s, CONST2, CONST2 + 2},
 		{"@高温警告/°C", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_HIGH), &TEMPERATURE_ERROR_HIGH, &TEMPERATURE_ERROR_LOW, CONST2 + 1},
-
 		{"@低温警告/°C", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_LOW), &TEMPERATURE_ERROR_LOW, CONST2, &TEMPERATURE_ERROR_HIGH},
 		{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save, CONST1, CONST1 + 2},
-		{"@test1", NULL, TYPE_u8, sizeof(test), &test, CONST1, CONST1 + 1}, //测试错误并发用
-		{NULL}																//到这里结束
+		{"@test1", NULL, TYPE_u8, sizeof(test), &test, CONST1, CONST1 + 1},			   //测试错误并发用
+		{"@1与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men, CONST1, CONST1 + 1},	   //1号与门1号入口
+		{"@1与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 1, CONST1, CONST1 + 1}, //1号与门2号入口
+		{"1与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 2, CONST1, CONST1 + 1},   //1号与门输出
+		{"@2与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 3, CONST1, CONST1 + 1}, //2号与门1号入口
+		{"@2与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 4, CONST1, CONST1 + 1}, //2号与门2号入口
+		{"2与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 5, CONST1, CONST1 + 1},   //2号与门输出
+		{NULL}																		   //到这里结束
 
 	};
+
+	//更新与门的状态
+	void yu_men_re()
+	{
+		yu_men[2] = yu_men[0] & yu_men[1];
+		yu_men[5] = yu_men[3] & yu_men[4];
+	}
 
 	void my_init()
 	{
@@ -76,7 +88,6 @@ extern "C"
 
 	void ruan_timer_1s()
 	{
-
 	}
 
 	void ruan_timer_ms()
@@ -205,6 +216,7 @@ extern "C"
 		//set_jdq(jd1, switch_1, &LED1);
 		//digitalWrite(jd1, !LED1); //默认高电平，不初始化的时候也是高电平，进行取反操作，这样的话手机app上就会显示正常。
 		set_jdq(jd2, switch_2, &LED2);
+		yu_men_re();
 	}
 
 	/*此函数在定时中断中调用，处理温湿度传感器的40bit读取*/
@@ -300,5 +312,6 @@ extern "C"
 		add_value(&TEMPERATURE_ERROR_HIGH, sizeof(TEMPERATURE_ERROR_HIGH));
 		add_value(&TEMPERATURE_ERROR_LOW, sizeof(TEMPERATURE_ERROR_LOW));
 		add_value(&light_io, sizeof(light_io));
+		add_value(yu_men, sizeof(yu_men));
 	}
 }

@@ -33,10 +33,13 @@ extern "C"
 		unsigned char data_len;
 		char fuhao; //储存此条目比较时用到的符号
 	};
-//%30s
+
+//数值的字节长度	%30s
 #define CANZHI_MAX_LEN 30
-//%50s
+//名字的字节长度	%50s
 #define NAME_MAX_LEN 50
+//warn 内存的暂存时间 单位 ms
+#define WARN_DELETE_OUTTIME_MS 30*1000
 
 	//从字符串内读取数据，添加一个监听事件
 	int add_jiantin(char *tcp_data, int data_len);

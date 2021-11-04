@@ -19,7 +19,6 @@ extern "C"
 			free(jt->data);
 		}
 
-		
 		//此监听不符合条件，消除警告，回收内存
 		if (jt->warn != NULL)
 		{
@@ -29,13 +28,12 @@ extern "C"
 			//释放 warm 指向的内存
 			free((void *)(jt->warn->str_waring));
 			//因为不同的位置，这里的字符串不一定是申请来的内存，所以不封装
-			
+
 			//释放 warm
 			free(jt->warn);
 
 			//清除指向
 			jt->warn = NULL;
-
 		}
 	}
 
@@ -45,11 +43,11 @@ extern "C"
 	void jiantin_del(unsigned long long sql_id)
 	{
 		int j;
-		for(j=0;j<link_len;j++)
+		for (j = 0; j < link_len; j++)
 		{
-			if(link[j]->sql_id==sql_id)
+			if (link[j]->sql_id == sql_id)
 			{
-				if(link[j]->warn!=NULL)
+				if (link[j]->warn != NULL)
 				{
 					//移除对 warn 的指向
 					warn_del_warn(link[j]->warn);
@@ -57,7 +55,7 @@ extern "C"
 					//释放 warm 指向的内存
 					free((void *)(link[j]->warn->str_waring));
 					//因为不同的位置，这里的字符串不一定是申请来的内存，所以不封装
-					
+
 					//释放 warm
 					free(link[j]->warn);
 				}
@@ -66,10 +64,10 @@ extern "C"
 				//释放 jianting 的内存
 				free(link[j]);
 				//将最后一个监听移动过来，防止出现空缺//移除对 jiantin 的指向
-				link_len=link_len-1;
-				link[j]=link[link_len];
+				link_len = link_len - 1;
+				link[j] = link[link_len];
 				//设为空，方式被其他地方误读已经释放的位置
-				link[link_len]=NULL;
+				link[link_len] = NULL;
 				//其实这里就可以return了
 			}
 		}
@@ -239,7 +237,7 @@ extern "C"
 		}
 
 		//复制之前的数值，到申请号的内存里去
-		jt.warn=NULL;//赋初值
+		jt.warn = NULL; //赋初值
 		memcpy(jt1, &jt, sizeof(struct JianTin));
 
 		return jt.name_id + 1;
@@ -292,25 +290,41 @@ extern "C"
 					link[i]->warn->str_waring = tmp2;
 					set_warn(link[i]->warn);
 				}
+				else if (link[i]->warn->status == NOT_WARN)
+				{
+					set_warn(link[i]->warn);
+				}
 			}
 			else
 			{
-				//此监听不符合条件，消除警告，回收内存
-				if (link[i]->warn != NULL)
+				//短时间内将警告设置为没有警告，超出一定时间之后将警告清除
+				//减少相同事件在短时间内频繁触发
+				if (link[i]->warn == NULL)
 				{
+					continue;
+				}
+				if (link[i]->warn->status != NOT_WARN)
+				{
+					warn_del_warn(link[i]->warn);
+					link[i]->warn->status = NOT_WARN;
+					link[i]->warn->time = millis(); //记录一个时间戳，超过多长时间都没有触发之后再回收内存
+				}
+				else if (millis() - link[i]->warn->time > WARN_DELETE_OUTTIME_MS)
+				{
+					//到达指定时间，回收内存
+
 					//移除对 warn 的指向
 					warn_del_warn(link[i]->warn);
 
 					//释放 warm 指向的内存
 					free((void *)(link[i]->warn->str_waring));
 					//因为不同的位置，这里的字符串不一定是申请来的内存，所以不封装
-					
+
 					//释放 warm
 					free(link[i]->warn);
 
 					//清除指向
 					link[i]->warn = NULL;
-
 				}
 			}
 		}

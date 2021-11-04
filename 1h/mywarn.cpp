@@ -70,7 +70,7 @@ extern "C"
 			if (p->warn == warn)
 			{
 				del_next_link(tmp);
-				p=p->next;
+				p=tmp->next;
 				continue;
 			}
 			tmp = p;
