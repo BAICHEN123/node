@@ -442,13 +442,13 @@ extern "C"
 		return NULL;
 	}
 
+#define UNEQUAL_FUHAO '~'
 	/*将数据拿来做比较
 	1 符合 data1  fuhao  data2
 	0 不符合，或者有错误
 	
 	
 	*/
-
 	int is_true(const enum type_id ID, void *data1, char fuhao, void *data2)
 	{
 		switch (ID)
@@ -475,6 +475,12 @@ extern "C"
 					return 1;
 				}
 				return 0;
+			case UNEQUAL_FUHAO:
+				if (*(char *)data1 != *(char *)data2)
+				{
+					return 1;
+				}
+				return 0;
 			}
 		case TYPE_u8:
 			switch (fuhao)
@@ -493,6 +499,12 @@ extern "C"
 				return 0;
 			case '=':
 				if (*(unsigned char *)data1 == *(unsigned char *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case UNEQUAL_FUHAO:
+				if (*(unsigned char *)data1 != *(unsigned char *)data2)
 				{
 					return 1;
 				}
@@ -519,6 +531,12 @@ extern "C"
 					return 1;
 				}
 				return 0;
+			case UNEQUAL_FUHAO:
+				if (*(short *)data1 != *(short *)data2)
+				{
+					return 1;
+				}
+				return 0;
 			}
 		case TYPE_USHORT:
 			switch (fuhao)
@@ -537,6 +555,12 @@ extern "C"
 				return 0;
 			case '=':
 				if (*(unsigned short *)data1 == *(unsigned short *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case UNEQUAL_FUHAO:
+				if (*(unsigned short *)data1 != *(unsigned short *)data2)
 				{
 					return 1;
 				}
@@ -563,6 +587,12 @@ extern "C"
 					return 1;
 				}
 				return 0;
+			case UNEQUAL_FUHAO:
+				if (*(int *)data1 != *(int *)data2)
+				{
+					return 1;
+				}
+				return 0;
 			}
 		case TYPE_UINT:
 			switch (fuhao)
@@ -581,6 +611,12 @@ extern "C"
 				return 0;
 			case '=':
 				if (*(unsigned int *)data1 == *(unsigned int *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case UNEQUAL_FUHAO:
+				if (*(unsigned int *)data1 != *(unsigned int *)data2)
 				{
 					return 1;
 				}
@@ -607,6 +643,12 @@ extern "C"
 					return 1;
 				}
 				return 0;
+			case UNEQUAL_FUHAO:
+				if (*(long long *)data1 != *(long long *)data2)
+				{
+					return 1;
+				}
+				return 0;
 			}
 		case TYPE_U64:
 			switch (fuhao)
@@ -625,6 +667,12 @@ extern "C"
 				return 0;
 			case '=':
 				if (*(unsigned long long *)data1 == *(unsigned long long *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case UNEQUAL_FUHAO:
+				if (*(unsigned long long *)data1 != *(unsigned long long *)data2)
 				{
 					return 1;
 				}
@@ -651,6 +699,12 @@ extern "C"
 					return 1;
 				}
 				return 0;
+			case UNEQUAL_FUHAO:
+				if (*(float *)data1 != *(float *)data2)
+				{
+					return 1;
+				}
+				return 0;
 			}
 		case TYPE_DOUBLE:
 			switch (fuhao)
@@ -669,6 +723,12 @@ extern "C"
 				return 0;
 			case '=':
 				if (*(double *)data1 == *(double *)data2)
+				{
+					return 1;
+				}
+				return 0;
+			case UNEQUAL_FUHAO:
+				if (*(double *)data1 != *(double *)data2)
 				{
 					return 1;
 				}
