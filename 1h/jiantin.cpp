@@ -47,18 +47,6 @@ extern "C"
 		{
 			if (link[j]->sql_id == sql_id)
 			{
-				if (link[j]->warn != NULL)
-				{
-					//移除对 warn 的指向
-					warn_del_warn(link[j]->warn);
-
-					//释放 warm 指向的内存
-					free((void *)(link[j]->warn->str_waring));
-					//因为不同的位置，这里的字符串不一定是申请来的内存，所以不封装
-
-					//释放 warm
-					free(link[j]->warn);
-				}
 				//释放 jiantin 指向的内存
 				free_JianTin(link[j]);
 				//释放 jianting 的内存
@@ -68,7 +56,7 @@ extern "C"
 				link[j] = link[link_len];
 				//设为空，方式被其他地方误读已经释放的位置
 				link[link_len] = NULL;
-				//其实这里就可以return了
+				return;
 			}
 		}
 	}
@@ -329,5 +317,24 @@ extern "C"
 			}
 		}
 		return end;
+	}
+
+	void set_not_warn(unsigned long long sql_id)
+	{
+		for (int i = 0; i < link_len; i++)
+		{
+			if (link[i]->sql_id == sql_id)
+			{
+				if (link[i]->warn == NULL)
+				{
+					return;
+				}
+				warn_del_warn(link[i]->warn);
+				link[i]->warn->status = NOT_WARN;
+				link[i]->warn->time = millis(); //记录一个时间戳，超过多长时间都没有触发之后再回收内存
+				return;
+
+			}
+		}
 	}
 }

@@ -185,7 +185,7 @@ void loop()
 				{
 					//曾经连上过，但是tcp重新连接时候失败了，wifi可能没问题，尝试重启单片机
 					Serial.print("\r\nrestart 20S\r\n");
-					ESP.restart();//这个函数在串口打印的开机信息里是看门狗复位
+					ESP.restart(); //这个函数在串口打印的开机信息里是看门狗复位
 				}
 				else
 				{
@@ -372,6 +372,28 @@ void loop()
 				}
 				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
 				break;
+			case 'C':
+				//重新出发一些监听的事件
+				//len_old=0
+				tmp1 = 0;
+				do
+				{
+					tmpL = str_to_u64(my_tcp_cache.data + len_old, my_tcp_cache.len - len_old, &stat);
+					len_old = str1_find_char_1(my_tcp_cache.data, len_old + 1, my_tcp_cache.len, 'C');
+					if (stat != 1)
+					{
+						break;
+					}
+					set_not_warn(tmpL);
+					tmp1 = tmp1 + 1;
+				} while (len_old > 0);
+				tcp_senddata_len = sprintf(tcp_send_data, "#%d", tmp1);
+				if (back_send_tcp_(&client, tcp_send_data, tcp_senddata_len) == -1)
+				{
+					return;
+				}
+				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
+				break;
 			case 'D':
 				tmpL = str_to_u64(my_tcp_cache.data, my_tcp_cache.len, &stat);
 				if (stat != 1)
@@ -399,7 +421,7 @@ void loop()
 					break;
 				}
 				tcp_senddata_len = warn_ack(tmpL, (enum UdpMessageClass) * (my_tcp_cache.data + len_old), tcp_send_data); //tmp原来存错误id现在存长度
-				if (tcp_senddata_len < 2)//基础长度两个#号
+				if (tcp_senddata_len < 2)																				  //基础长度两个#号
 				{
 					//请求的错误已经消除
 					Serial.printf("   loop warn_ack return 0 ");

@@ -49,5 +49,10 @@ extern "C"
 	释放 warn 指向的内存，释放 warn 的内存，释放只想 warn 的内存，释放 JianTin 内存
 	*/
 	void jiantin_del(unsigned long long sql_id);
+
+	/*
+	为了将一个已经触发并收到回应的监听重新触发，将指定 fid 对应的监听，设置为未触发
+	*/
+	void set_not_warn(unsigned long long sql_id);
 }
 #endif
