@@ -15,6 +15,8 @@ extern "C"
 	short TEMPERATURE_ERROR_HIGH = 40;
 	short TEMPERATURE_ERROR_LOW = 10;
 
+	uint8_t yu_men[4 * 2 + 3] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; //与门寄存器
+
 	//下面定义几个引脚的功能
 	const uint8_t shudu1 = 13; //1号继电器
 	const uint8_t shudu2 = 12; //1号继电器
@@ -34,8 +36,26 @@ extern "C"
 		{"湿度", "%", TYPE_FLOAT, sizeof(dht11_data.humidity), &(dht11_data.humidity), NULL, NULL},
 		{"@高温警告/°C", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_HIGH), &TEMPERATURE_ERROR_HIGH, &TEMPERATURE_ERROR_LOW, CONST2 + 1},
 		{"@低温警告/°C", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_LOW), &TEMPERATURE_ERROR_LOW, CONST2, &TEMPERATURE_ERROR_HIGH},
-		{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save, CONST1, CONST1 + 2}
-		//{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save,CONST1,CONST1+2}
+		{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save, CONST1, CONST1 + 2},
+		{"@1与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men, CONST1, CONST1 + 1},	   //1号与门1号入口
+		{"@1与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 1, CONST1, CONST1 + 1}, //1号与门2号入口
+		{"@1与3入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 2, CONST1, CONST1 + 1}, //1号与门3号入口
+		{"1与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 3, CONST1, CONST1 + 1},   //1号与门输出
+		{"@2与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 4, CONST1, CONST1 + 1}, //2号与门1号入口
+		{"@2与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 5, CONST1, CONST1 + 1}, //2号与门2号入口
+		{"@2与3入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 6, CONST1, CONST1 + 1}, //2号与门3号入口
+		{"2与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 7, CONST1, CONST1 + 1},   //2号与门输出
+		{"@3与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 8, CONST1, CONST1 + 1}, //3号与门1号入口
+		{"@3与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 9, CONST1, CONST1 + 1}, //3号与门2号入口
+		{"3与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 10, CONST1, CONST1 + 1},  //3号与门输出
+		{"时", NULL, TYPE_u8, sizeof(Now.hour), &(Now.hour), NULL, NULL},
+		{"分", NULL, TYPE_u8, sizeof(Now.minute), &(Now.minute), NULL, NULL},
+		{"秒", NULL, TYPE_u8, sizeof(Now.sec), &(Now.sec), NULL, NULL},
+		{"星期", NULL, TYPE_u8, sizeof(Now.week), &(Now.week), NULL, NULL},
+		{"日", NULL, TYPE_u8, sizeof(Now.day), &(Now.day), NULL, NULL},
+		{"月", NULL, TYPE_u8, sizeof(Now.month), &(Now.month), NULL, NULL},
+		{"年", NULL, TYPE_USHORT, sizeof(Now.year), &(Now.year), NULL, NULL},
+		{NULL} //到这里结束
 
 	};
 
@@ -72,6 +92,10 @@ extern "C"
 		add_value(&TEMPERATURE_ERROR_HIGH, sizeof(TEMPERATURE_ERROR_HIGH));
 	}
 
+	void ruan_timer_1s()
+	{
+	}
+
 	//每隔 RUAN_TIMEer_ms
 	void ruan_timer_ms()
 	{
@@ -85,6 +109,9 @@ extern "C"
 	//刷新状态
 	void refresh_work()
 	{
+		yu_men[3] = yu_men[0] & yu_men[1] & yu_men[2];
+		yu_men[7] = yu_men[4] & yu_men[5] & yu_men[6];
+		yu_men[10] = yu_men[8] & yu_men[9];
 	}
 
 	/*此函数在定时中断中调用，处理温湿度传感器的40bit读取*/
@@ -97,12 +124,12 @@ extern "C"
 		static struct Udpwarn temperature_high_error = {WARN, NOT_WARN, 0, 2, "温度高于设定值"};
 		if (t == 0)
 		{
-			Serial.print("DHT11 error :timeout 超时未回复\n");
+			Serial.print("DHT11 error :timeout 超时未回复\r\n");
 			//UDP_Send(MYHOST, UDP_PORT, "error:DHT11 timeout_back");//---------------------这里还要统一通讯协议，当设备的驱动报错的时候需要的信号是什么样子的，当传感器的数据异常的的时候的信号是什么样子的
 		}
 		else if (t == -1)
 		{
-			Serial.print("DHT11 error :sum error 数据校验错误\n");
+			Serial.print("DHT11 error :sum error 数据校验错误\r\n");
 			//UDP_Send(MYHOST, UDP_PORT, "error:DHT11 sum_erroe");
 		}
 		else if (EID > 0)

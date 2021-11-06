@@ -32,12 +32,13 @@ extern "C"
 	//下面2个函数禁止执行长时间任务
 	void ruan_timer_ms();//每隔 RUAN_TIMEer_ms
 	void ruan_timer_us();//每隔 RUAN_TIMEer_us
+    void ruan_timer_1s();//每隔 1s
 	
 	//刷新数据状态，默认会在用户请求数据之前调用一次
 	void refresh_work();
 		
 	//str_data_names 的长度
-	#define MAX_NAME 9
+	#define MAX_NAME 30
 	//extern const char *str_data_names[MAX_NAME];
 	extern struct MyType data_list[MAX_NAME];
 	//可选变量描述

@@ -38,9 +38,6 @@ extern "C"
 	double CONST3[2] = {10, 100};
 
 	struct MyType data_list[MAX_NAME] = {
-		{"时", "h", TYPE_u8, sizeof(Now.hour), &(Now.hour), NULL, NULL},
-		{"分", "m", TYPE_u8, sizeof(Now.minute), &(Now.minute), NULL, NULL},
-		{"秒", "s", TYPE_u8, sizeof(Now.sec), &(Now.sec), NULL, NULL},
 		{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature), NULL, NULL},
 		{"湿度", "%", TYPE_FLOAT, sizeof(dht11_data.humidity), &(dht11_data.humidity), NULL, NULL},
 		{"烟雾浓度", "%", TYPE_DOUBLE, sizeof(liangdu), &liangdu, NULL, NULL},
@@ -59,6 +56,9 @@ extern "C"
 		{"@2与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 3, CONST1, CONST1 + 1}, //2号与门1号入口
 		{"@2与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 4, CONST1, CONST1 + 1}, //2号与门2号入口
 		{"2与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 5, CONST1, CONST1 + 1},   //2号与门输出
+		{"时", "h", TYPE_u8, sizeof(Now.hour), &(Now.hour), NULL, NULL},
+		{"分", "m", TYPE_u8, sizeof(Now.minute), &(Now.minute), NULL, NULL},
+		{"秒", "s", TYPE_u8, sizeof(Now.sec), &(Now.sec), NULL, NULL},
 		{NULL}																		   //到这里结束
 
 	};

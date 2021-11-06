@@ -19,10 +19,6 @@ extern "C"
 	unsigned char CONST1[4] = {0, 1, 2, 5};
 
 	struct MyType data_list[MAX_NAME] = {
-		//{"红外人体检测", NULL, TYPE_u8, sizeof(hongwai), &hongwai,CONST1,CONST1+1},
-		//{"烟雾逻辑", NULL, TYPE_u8, sizeof(yanwu), &yanwu,CONST1,CONST1+1},
-		//{"烟雾模拟", "%", TYPE_DOUBLE, sizeof(yanwu_my), &yanwu_my,NULL,NULL},
-		//{"@开关1", NULL, TYPE_u8, sizeof(LED1), &LED1,CONST1,CONST1+1},
 		{"光强", "%", TYPE_DOUBLE, sizeof(guang_qiang), &guang_qiang, NULL, NULL},
 		{"@舵机", NULL, TYPE_u8, sizeof(duoji_need), &duoji_need, CONST1 + 1, CONST1 + 3},
 		{"@通风扇", NULL, TYPE_u8, sizeof(tong_feng), &tong_feng, CONST1, CONST1 + 1},
