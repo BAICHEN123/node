@@ -20,12 +20,13 @@ extern "C"
 
 	void ruan_timer_ms();//每隔 RUAN_TIMEer_ms 调用一次
 	void ruan_timer_us();//每隔 RUAN_TIMEer_us 调用一次
+    void ruan_timer_1s();//每隔 1s
 	
 	//刷新数据状态。my_init 初始化之后调用一次，用户每次对数据修改之后调用
 	void refresh_work();
 		
 	//str_data_names 的长度
-	#define MAX_NAME 4
+	#define MAX_NAME 20
 	//extern const char *str_data_names[MAX_NAME];
 	extern struct MyType data_list[MAX_NAME];
 	//可选变量描述
