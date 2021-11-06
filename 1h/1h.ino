@@ -163,7 +163,7 @@ void loop()
 {
 	static short error_wifi_count = 0;
 	static int error_tcp_sum = 0; //tcp链接失败计次
-	int beeeeee = 0;
+	int tmp1;
 	timer1_disable();
 
 	if (WiFi.status() != WL_CONNECTED)
@@ -230,11 +230,11 @@ void loop()
 	{
 		//这里收到的信息可能是服务器返回的第一条信息
 		Serial.println(my_tcp_cache.data + get_tcp_data(&client, &my_tcp_cache));
-		//beeeeee 临时储存一下+EID的开始位置
-		beeeeee = str1_find_str2_(my_tcp_cache.data, my_tcp_cache.len, "+EID");
-		if (beeeeee >= 0)
+		//tmp1 临时储存一下+EID的开始位置
+		tmp1 = str1_find_str2_(my_tcp_cache.data, my_tcp_cache.len, "+EID");
+		if (tmp1 >= 0)
 		{
-			EID = str_to_u64(my_tcp_cache.data + beeeeee, my_tcp_cache.len, &stat);
+			EID = str_to_u64(my_tcp_cache.data + tmp1, my_tcp_cache.len, &stat);
 			if (stat != 1)
 			{
 				//值转换出错，溢出或未找到有效值
@@ -243,9 +243,9 @@ void loop()
 			}
 
 			//从 my_tcp_cache.data 剩下的数据里提取出时间，校准单片机的时间
-			beeeeee = str1_find_char_(my_tcp_cache.data, my_tcp_cache.len, 'T');
-			//Serial.println(my_tcp_cache.data + beeeeee);
-			str_get_time(&Now, my_tcp_cache.data + beeeeee);
+			tmp1 = str1_find_char_(my_tcp_cache.data, my_tcp_cache.len, 'T');
+			//Serial.println(my_tcp_cache.data + tmp1);
+			str_get_time(&Now, my_tcp_cache.data + tmp1);
 
 			char str_EID[22] = {0};
 			sprintf(str_EID, "%llu", EID); //垃圾string(),居然不能装换long long类型的数据，还要我自己动手
@@ -268,13 +268,12 @@ void loop()
 	int tcp_senddata_len = 0;
 	int tmp_status;
 	long long tmp;
-	unsigned long long tmpL = 0;
-	int tmp1;
+	unsigned long long tmpuL = 0;
 	//micros();//us
 	short len_old;
 	//用户初始化
 	my_init();
-	refresh_work(); //更新一下光控灯的状态
+	refresh_work(); //更新一下状态
 
 	while (client.connected())
 	{
@@ -378,13 +377,13 @@ void loop()
 				tmp1 = 0;
 				do
 				{
-					tmpL = str_to_u64(my_tcp_cache.data + len_old, my_tcp_cache.len - len_old, &stat);
+					tmpuL = str_to_u64(my_tcp_cache.data + len_old, my_tcp_cache.len - len_old, &stat);
 					len_old = str1_find_char_1(my_tcp_cache.data, len_old + 1, my_tcp_cache.len, 'C');
 					if (stat != 1)
 					{
 						break;
 					}
-					set_not_warn(tmpL);
+					set_not_warn(tmpuL);
 					tmp1 = tmp1 + 1;
 				} while (len_old > 0);
 				tcp_senddata_len = sprintf(tcp_send_data, "#%d", tmp1);
@@ -395,13 +394,13 @@ void loop()
 				send_time_old_ms = millis(); //这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
 				break;
 			case 'D':
-				tmpL = str_to_u64(my_tcp_cache.data, my_tcp_cache.len, &stat);
+				tmpuL = str_to_u64(my_tcp_cache.data, my_tcp_cache.len, &stat);
 				if (stat != 1)
 				{
 					Serial.printf(" D   str_to_u64 error	%d", stat);
 					break;
 				}
-				jiantin_del(tmpL);
+				jiantin_del(tmpuL);
 				tcp_senddata_len = sprintf(tcp_send_data, "%s", my_tcp_cache.data);
 				if (back_send_tcp_(&client, tcp_send_data, tcp_senddata_len) == -1)
 				{
@@ -414,13 +413,13 @@ void loop()
 			case 'w':
 			case 'e':
 				//这里是服务器收到udp消息之后的回复
-				tmpL = str_to_u64(my_tcp_cache.data, my_tcp_cache.len, &stat);
+				tmpuL = str_to_u64(my_tcp_cache.data, my_tcp_cache.len, &stat);
 				if (stat < 0)
 				{
 					Serial.printf("  mwe  str_to_u64 error	%d", stat);
 					break;
 				}
-				tcp_senddata_len = warn_ack(tmpL, (enum UdpMessageClass) * (my_tcp_cache.data + len_old), tcp_send_data); //tmp原来存错误id现在存长度
+				tcp_senddata_len = warn_ack(tmpuL, (enum UdpMessageClass) * (my_tcp_cache.data + len_old), tcp_send_data); //tmp原来存错误id现在存长度
 				if (tcp_senddata_len < 2)																				  //基础长度两个#号
 				{
 					//请求的错误已经消除
