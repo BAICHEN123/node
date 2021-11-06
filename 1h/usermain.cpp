@@ -15,11 +15,11 @@ extern "C"
 	short switch_light_up_time_x_s = 0; //计数器用
 	short TEMPERATURE_ERROR_HIGH = 40;
 	short TEMPERATURE_ERROR_LOW = 10;
-	uint8_t light_io = 0; //补光区间
+	uint8_t light_io = 0; //外部光传感器输入
 	uint8_t test = 0;
-	uint8_t duoji_need = 5; //舵机的期望值
-	uint8_t duoji_now = 0;	//舵机的期望值
-	static int beeeeee = 0;
+	//uint8_t duoji_need = 5; //舵机的期望值
+	//uint8_t duoji_now = 0;	//舵机的期望值
+	static int beeeeee = 0;//
 
 	uint8_t yu_men[3 * 2] = {0, 0, 0, 0, 0, 0}; //与门寄存器
 
@@ -56,9 +56,9 @@ extern "C"
 		{"@2与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 3, CONST1, CONST1 + 1}, //2号与门1号入口
 		{"@2与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 4, CONST1, CONST1 + 1}, //2号与门2号入口
 		{"2与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 5, CONST1, CONST1 + 1},   //2号与门输出
-		{"时", "h", TYPE_u8, sizeof(Now.hour), &(Now.hour), NULL, NULL},
-		{"分", "m", TYPE_u8, sizeof(Now.minute), &(Now.minute), NULL, NULL},
-		{"秒", "s", TYPE_u8, sizeof(Now.sec), &(Now.sec), NULL, NULL},
+		{"时", NULL, TYPE_u8, sizeof(Now.hour), &(Now.hour), NULL, NULL},
+		{"分", NULL, TYPE_u8, sizeof(Now.minute), &(Now.minute), NULL, NULL},
+		{"秒", NULL, TYPE_u8, sizeof(Now.sec), &(Now.sec), NULL, NULL},
 		{NULL}																		   //到这里结束
 
 	};
@@ -311,7 +311,7 @@ extern "C"
 		add_value(&switch_light_up_TIME_s, sizeof(switch_light_up_TIME_s));
 		add_value(&TEMPERATURE_ERROR_HIGH, sizeof(TEMPERATURE_ERROR_HIGH));
 		add_value(&TEMPERATURE_ERROR_LOW, sizeof(TEMPERATURE_ERROR_LOW));
-		add_value(&light_io, sizeof(light_io));
-		add_value(yu_men, sizeof(yu_men));
+		//add_value(&light_io, sizeof(light_io));
+		//add_value(yu_men, sizeof(yu_men));
 	}
 }
