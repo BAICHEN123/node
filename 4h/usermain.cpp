@@ -6,7 +6,7 @@ extern "C"
 	uint8_t power_save = 0; //断电记忆
 
 	//定义传感器储存变量
-	uint8_t shi_du1 = 0;
+	//uint8_t shi_du1 = 0;
 	uint8_t shi_du2 = 0;
 	uint8_t shi_du3 = 0;
 	double shi_du_a = 0;
@@ -18,9 +18,9 @@ extern "C"
 	uint8_t yu_men[4 * 2 + 3] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; //与门寄存器
 
 	//下面定义几个引脚的功能
-	const uint8_t shudu1 = 13; //1号继电器
-	const uint8_t shudu2 = 12; //1号继电器
-	const uint8_t shudu3 = 14; //1号继电器
+	const uint8_t shudu1 = 13; //1号土壤湿度逻辑输入
+	const uint8_t shudu2 = 12; //2号
+	const uint8_t shudu3 = 14; //3号
 	const uint8_t dht11 = 5;   //DHT11输入
 	const uint8_t anjian1 = 0; //按键1输入
 
@@ -28,8 +28,7 @@ extern "C"
 	short CONST2[2] = {0, 45};
 
 	struct MyType data_list[MAX_NAME] = {
-		{"1号详细土壤湿度", "%", TYPE_DOUBLE, sizeof(shi_du_a), &shi_du_a, NULL, NULL},
-		{"1号土壤湿度", NULL, TYPE_u8, sizeof(shi_du1), &shi_du1, CONST1, CONST1 + 1},
+		{"1号土壤湿度", "%", TYPE_DOUBLE, sizeof(shi_du_a), &shi_du_a, NULL, NULL},
 		{"2号土壤湿度", NULL, TYPE_u8, sizeof(shi_du2), &shi_du2, CONST1, CONST1 + 1},
 		{"3号土壤湿度", NULL, TYPE_u8, sizeof(shi_du3), &shi_du3, CONST1, CONST1 + 1},
 		{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature), NULL, NULL},
@@ -62,7 +61,7 @@ extern "C"
 	void timer1_worker()
 	{
 		clear_wifi_data(wifi_ssid_pw_file); //长按按键1清除wifi账号密码记录
-		shi_du1 = digitalRead(shudu1);
+		//shi_du1 = digitalRead(shudu1);
 		shi_du2 = digitalRead(shudu2);
 		shi_du3 = digitalRead(shudu3);
 		shi_du_a = system_adc_read() * 100 / 1024.00;
