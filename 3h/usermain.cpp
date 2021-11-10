@@ -103,7 +103,7 @@ extern "C"
 			}
 			else
 			{
-				shui_beng = 1;
+				shui_beng = 0;
 				digitalWrite(jd2, HIGH);
 			}
 		}
