@@ -36,7 +36,7 @@ extern "C"
 	void refresh_work();
 		
 	//str_data_names 的长度
-	#define MAX_NAME 20
+	#define MAX_NAME 25
 	//extern const char *str_data_names[MAX_NAME];
 	extern struct MyType data_list[MAX_NAME];
 	//可选变量描述
