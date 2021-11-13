@@ -1,8 +1,6 @@
 #include "jiantin.h"
 extern "C"
 {
-
-#define JianTin_MAX_LEN 5
 	struct JianTin *link[JianTin_MAX_LEN];
 	int link_len = 0;
 
@@ -333,7 +331,6 @@ extern "C"
 				link[i]->warn->status = NOT_WARN;
 				link[i]->warn->time = millis(); //记录一个时间戳，超过多长时间都没有触发之后再回收内存
 				return;
-
 			}
 		}
 	}

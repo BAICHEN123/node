@@ -41,45 +41,46 @@
 #include "myudp.h"
 extern "C"
 {
-enum UdpMessageClass
-{
-	MESSAGE='m',WARN='w',ERROR='e'
-};
-enum WarnType
-{
-	NOT_WARN=0,//未触发
-	IS_WARN,//刚刚触发
-	WAIT_SEND,//等待发送
-	WAIT_ACK,//等待响应
-	WARN_ACK,//已响应
-	TIMEOUT//超时未响应
-};
-struct Udpwarn
-{
-	enum UdpMessageClass cmsg;//记录此条内容的警告级别
-	enum WarnType status;//记录和服务器的交互状态
-	unsigned long time;//记录时间
-	unsigned long long  id;//记录报错的 id 号
-	const char* str_waring;//要告知用户的话
-};
+	enum UdpMessageClass
+	{
+		MESSAGE = 'm',
+		WARN = 'w',
+		ERROR = 'e'
+	};
+	enum WarnType
+	{
+		NOT_WARN = 0, //未触发
+		IS_WARN,	  //刚刚触发
+		WAIT_SEND,	  //等待发送
+		WAIT_ACK,	  //等待响应
+		WARN_ACK,	  //已响应
+		TIMEOUT		  //超时未响应
+	};
+	struct Udpwarn
+	{
+		enum UdpMessageClass cmsg; //记录此条内容的警告级别
+		enum WarnType status;	   //记录和服务器的交互状态
+		unsigned long time;		   //记录时间
+		unsigned long long id;	   //记录报错的 id 号
+		const char *str_waring;	   //要告知用户的话
+	};
 
+#ifndef WARN_LEN
+#define WARN_LEN 20
+#endif
+#define UDP_TIME_OUT_MS 3000
+	//extern int len_warn_id=0;
 
-#define WARN_LEN 5
-#define UDP_TIME_OUT_MS 3000 
-//extern int len_warn_id=0;
+	int set_warn(struct Udpwarn *warn);
+	void warn_send();
+	int warn_ack(unsigned long long id, enum UdpMessageClass class1, char *tcp_send_data);
 
-int set_warn(struct Udpwarn *warn);
-void warn_send();
-int warn_ack(unsigned long long id, enum UdpMessageClass class1, char *tcp_send_data);
-
-/*检查 警告 是否已经在内存中出现了，根据警告的内存地址来判定警告是否相同。
+	/*检查 警告 是否已经在内存中出现了，根据警告的内存地址来判定警告是否相同。
 返回-1为没有占用，其他值为处在链结中的位置
 */
-int warn_exist(struct Udpwarn *warn);
+	int warn_exist(struct Udpwarn *warn);
 
-/*这个函数是为了 停止对 warn 的指向*/
-void warn_del_warn(struct Udpwarn *warn);
-
+	/*这个函数是为了 停止对 warn 的指向*/
+	void warn_del_warn(struct Udpwarn *warn);
 }
 #endif
-

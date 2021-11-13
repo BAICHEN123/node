@@ -49,6 +49,14 @@
 #define HEART_BEAT_FIG '\t'
 #define COMMAND_FIG '#'
 
+/*一个时刻内，错误的最大长度
+节点错误中会缓存监听量和手动设置的错误，这里设定的值应该大于两者之和最合适，但是内存可能会说不
+*/
+#define WARN_LEN 35
+//一个时刻内，监听的最大数量
+#define JianTin_MAX_LEN 30
+
+
 extern u64 EID;
 extern String UDP_head_data;
 extern String UDP_send_data;

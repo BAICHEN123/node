@@ -1,12 +1,9 @@
 #ifndef __JIANTIN_H
 #define __JIANTIN_H
-//#include <stdlib.h>
-//#include <stdio.h>
-//#include <string.h>
 #include "Arduino.h"
+#include "mywarn.h"
 #include "mytype.h"
 #include "usermain.h"
-#include "mywarn.h"
 
 /*
 处理流程
@@ -40,6 +37,10 @@ extern "C"
 #define NAME_MAX_LEN 50
 //warn 内存的暂存时间 单位 ms
 #define WARN_DELETE_OUTTIME_MS 30*1000
+
+#ifndef JianTin_MAX_LEN
+#define JianTin_MAX_LEN 20
+#endif
 
 	//从字符串内读取数据，添加一个监听事件
 	int add_jiantin(char *tcp_data, int data_len);

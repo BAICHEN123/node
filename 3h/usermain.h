@@ -13,19 +13,10 @@ extern "C"
 	/*初始化函数，初始化此项目需要使用的引脚*/
 	void my_init();
 
-	/*当节点收到指令，解析指令之后调用
-	i	   str_data_names 对应的索引
-	value   需要设置的值
-	*/
-	//void set_data_(short i, short value);
-
 	/*在函数内设置需要在断电保存的变量
 	变量会在 power_save > 0 && 发生变动 的时候保存到 flash 
 	一个变量变动，所有的变量都会保存一次*/
 	void add_values();
-
-	/*打包数据，将状态值和名称按协议打包好，存放在 tcp_send_data 里，主函数会在需要发送的时候调用这个函数*/
-	//int set_databack(const char fig,char *tcp_send_data);
 
 	//下面2个函数禁止执行长时间任务
 	void ruan_timer_ms();//每隔 RUAN_TIMEer_ms
