@@ -1,7 +1,7 @@
 #include "usermain.h"
 extern "C"
 {
-	const char *MODE_INFO = "@1号土壤湿度[0-1]:湿润，干燥@2号土壤湿度[0-1]:湿润，干燥@3号土壤湿度[0-1]:湿润，干燥";
+	const char *MODE_INFO = "@1号土壤湿度[0-1]:湿润，干燥@2号土壤湿度[0-1]:湿润，干燥@3号土壤湿度[0-1]:湿润，干燥@星期[0-6]:日，一，二，三，四，五，六";
 
 	uint8_t power_save = 0; //断电记忆
 
@@ -24,7 +24,7 @@ extern "C"
 	const uint8_t dht11 = 5;   //DHT11输入
 	const uint8_t anjian1 = 0; //按键1输入
 
-	unsigned char CONST1[3] = {0, 1, 2};
+	unsigned char CONST1[4] = {0, 1, 2, 6};
 	short CONST2[2] = {0, 45};
 
 	struct MyType data_list[MAX_NAME] = {
@@ -50,7 +50,7 @@ extern "C"
 		{"时", NULL, TYPE_u8, sizeof(Now.hour), &(Now.hour), NULL, NULL},
 		{"分", NULL, TYPE_u8, sizeof(Now.minute), &(Now.minute), NULL, NULL},
 		{"秒", NULL, TYPE_u8, sizeof(Now.sec), &(Now.sec), NULL, NULL},
-		{"星期", NULL, TYPE_u8, sizeof(Now.week), &(Now.week), NULL, NULL},
+		{"星期", NULL, TYPE_u8, sizeof(Now.week), &(Now.week), CONST1, CONST1 + 3},
 		{"日", NULL, TYPE_u8, sizeof(Now.day), &(Now.day), NULL, NULL},
 		{"月", NULL, TYPE_u8, sizeof(Now.month), &(Now.month), NULL, NULL},
 		{"年", NULL, TYPE_USHORT, sizeof(Now.year), &(Now.year), NULL, NULL},
