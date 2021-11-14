@@ -2,6 +2,12 @@
 #define _MYTIMER_H
 //#include <ESP8266WiFi.h>
 #include <Arduino.h>
+#ifndef uint8_t
+#define uint8_t unsigned char
+#endif
+#ifndef uint16_t
+#define uint16_t unsigned short
+#endif
 struct MyTime{
 	uint8_t run_fig;//计算闰年的
 	uint16_t year;

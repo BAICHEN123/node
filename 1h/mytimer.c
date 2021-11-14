@@ -20,9 +20,9 @@ void next_sec(struct MyTime *now)
 				now->day = now->day + 1;
 				now->week = now->week + 1;
 				//星期轮换
-				if (now->week > 7)
+				if (now->week > 6)
 				{
-					now->week = 1;
+					now->week = 0;
 				}
 				//月份轮换
 				if ((now->run_fig == 1 && now->month == 2 && now->day > 29) || (now->day > month_days[now->month - 1])) //二月计算闰
