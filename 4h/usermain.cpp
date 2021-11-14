@@ -24,7 +24,7 @@ extern "C"
 	const uint8_t dht11 = 5;   //DHT11输入
 	const uint8_t anjian1 = 0; //按键1输入
 
-	unsigned char CONST1[2] = {0, 1};
+	unsigned char CONST1[3] = {0, 1, 2};
 	short CONST2[2] = {0, 45};
 
 	struct MyType data_list[MAX_NAME] = {
