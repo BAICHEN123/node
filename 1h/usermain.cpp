@@ -5,7 +5,7 @@ extern "C"
 	uint8_t power_save = 0; //断电记忆
 
 	struct DHT11_data dht11_data = {666, 666};
-	double liangdu = 0;
+	double yan_wu_A = 0;
 	//两个开关，当他为2时，是自动模式，其他时候读取12 和14号脚的电平
 	//uint8_t LED1 = 0;
 	//uint8_t switch_1 = 2;
@@ -24,7 +24,7 @@ extern "C"
 	uint8_t yu_men[3 * 2] = {0, 0, 0, 0, 0, 0}; //与门寄存器
 
 	//下面定义几个引脚的功能
-	const uint8_t jd1 = 14;		//1号继电器
+	//const uint8_t jd1 = 14;		//1号继电器
 	const uint8_t jd2 = 12;		//2号继电器
 	const uint8_t light = 13;	//光敏逻辑输入
 	const uint8_t shengyin = 4; //声音逻辑输入
@@ -40,7 +40,7 @@ extern "C"
 	struct MyType data_list[MAX_NAME] = {
 		{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature), NULL, NULL},
 		{"湿度", "%", TYPE_FLOAT, sizeof(dht11_data.humidity), &(dht11_data.humidity), NULL, NULL},
-		{"烟雾浓度", "%", TYPE_DOUBLE, sizeof(liangdu), &liangdu, NULL, NULL},
+		{"烟雾浓度", "%", TYPE_DOUBLE, sizeof(yan_wu_A), &yan_wu_A, NULL, NULL},
 		{"@开关", NULL, TYPE_u8, sizeof(LED2), &LED2, CONST1, CONST1 + 1},
 		{"@开关模式", NULL, TYPE_u8, sizeof(switch_2), &switch_2, CONST1, CONST1 + 3},
 		{"@亮度输入", NULL, TYPE_u8, sizeof(light_io), &light_io, CONST1, CONST1 + 1},
@@ -291,7 +291,7 @@ extern "C"
 		{
 			//dj_set();
 		}
-		liangdu = system_adc_read() * 100 / 1024.00;
+		yan_wu_A = system_adc_read() * 100 / 1024.00;
 	}
 
 	/*	此函数在定时中断中调用，处理温湿度传感器通讯协议中18ms下拉	*/

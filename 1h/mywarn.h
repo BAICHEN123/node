@@ -62,7 +62,7 @@ extern "C"
 		enum WarnType status;	   //记录和服务器的交互状态
 		unsigned long time;		   //记录时间
 		unsigned long long id;	   //记录报错的 id 号
-		const char *str_waring;	   //要告知用户的话
+		const char *str_waring;	   //要告知的内容
 	};
 
 #ifndef WARN_LEN

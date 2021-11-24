@@ -532,6 +532,6 @@ void loop()
 		}
 	}
 
-	Serial.printf(" never  error\r\n");
+	//Serial.printf(" never  error\r\n");//TCP 刚好失效的时候就触发了
 	//client.stop();
 }
