@@ -1,6 +1,8 @@
 #include "usermain.h"
 extern "C"
 {
+	static struct Udpwarn user_error1 = {WARN, NOT_WARN, 0, 5, "1 号自定义警告被触发"};
+	static struct Udpwarn user_error2 = {WARN, NOT_WARN, 0, 6, "2 号自定义警告被触发"};
 	const char *MODE_INFO = "@开关模式[0-3]:手动，声控，光控，光声混控@断电记忆[0-2]:关闭，仅本次，所有";
 	uint8_t power_save = 0; //断电记忆
 
@@ -16,10 +18,12 @@ extern "C"
 	short TEMPERATURE_ERROR_HIGH = 40;
 	short TEMPERATURE_ERROR_LOW = 10;
 	uint8_t light_io = 0; //外部光传感器输入
-	uint8_t test = 0;
+	//uint8_t test = 0;
+	uint8_t user_error_1 = 0;
+	uint8_t user_error_2 = 0;
 	//uint8_t duoji_need = 5; //舵机的期望值
 	//uint8_t duoji_now = 0;	//舵机的期望值
-	static int beeeeee = 0;//
+	static int beeeeee = 0; //
 
 	uint8_t yu_men[3 * 2] = {0, 0, 0, 0, 0, 0}; //与门寄存器
 
@@ -49,17 +53,19 @@ extern "C"
 		{"@高温警告/°C", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_HIGH), &TEMPERATURE_ERROR_HIGH, &TEMPERATURE_ERROR_LOW, CONST2 + 1},
 		{"@低温警告/°C", "°C", TYPE_SHORT, sizeof(TEMPERATURE_ERROR_LOW), &TEMPERATURE_ERROR_LOW, CONST2, &TEMPERATURE_ERROR_HIGH},
 		{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save, CONST1, CONST1 + 2},
-		{"@test1", NULL, TYPE_u8, sizeof(test), &test, CONST1, CONST1 + 1},			   //测试错误并发用
-		{"@1与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men, CONST1, CONST1 + 1},	   //1号与门1号入口
-		{"@1与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 1, CONST1, CONST1 + 1}, //1号与门2号入口
-		{"1与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 2, CONST1, CONST1 + 1},   //1号与门输出
-		{"@2与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 3, CONST1, CONST1 + 1}, //2号与门1号入口
-		{"@2与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 4, CONST1, CONST1 + 1}, //2号与门2号入口
-		{"2与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 5, CONST1, CONST1 + 1},   //2号与门输出
+		//{"@test1", NULL, TYPE_u8, sizeof(test), &test, CONST1, CONST1 + 1},							//测试错误并发用
+		{"@1与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men, CONST1, CONST1 + 1},					//1号与门1号入口
+		{"@1与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 1, CONST1, CONST1 + 1},				//1号与门2号入口
+		{"1与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 2, CONST1, CONST1 + 1},				//1号与门输出
+		{"@2与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 3, CONST1, CONST1 + 1},				//2号与门1号入口
+		{"@2与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 4, CONST1, CONST1 + 1},				//2号与门2号入口
+		{"2与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 5, CONST1, CONST1 + 1},				//2号与门输出
+		{"@1号自定义警告", NULL, TYPE_u8, sizeof(user_error_1), &user_error_1, CONST1, CONST1 + 1}, //用户自定义警告
+		{"@2号自定义警告", NULL, TYPE_u8, sizeof(user_error_2), &user_error_2, CONST1, CONST1 + 1}, //用户自定义警告
 		{"时", NULL, TYPE_u8, sizeof(Now.hour), &(Now.hour), NULL, NULL},
 		{"分", NULL, TYPE_u8, sizeof(Now.minute), &(Now.minute), NULL, NULL},
 		{"秒", NULL, TYPE_u8, sizeof(Now.sec), &(Now.sec), NULL, NULL},
-		{NULL}																		   //到这里结束
+		{NULL} //到这里结束
 
 	};
 
@@ -99,30 +105,27 @@ extern "C"
 		}
 		beeeeee = 0;
 
-		if (test == 1)
+		if (user_error_1 == 1)
 		{
-			static struct Udpwarn test111 = {WARN, NOT_WARN, 0, 3, "test111111"};
-			static struct Udpwarn test222 = {WARN, NOT_WARN, 0, 4, "test2222222"};
-			if (test111.status == WARN_ACK)
+			if (user_error1.status == NOT_WARN)
 			{
-				test111.status = NOT_WARN;
+				set_warn(&user_error1);
 			}
-			else
+		}
+		else
+		{
+			user_error1.status = NOT_WARN;
+		}
+		if (user_error_2 == 1)
+		{
+			if (user_error2.status == NOT_WARN)
 			{
-				test111.status = IS_WARN;
-				set_warn(&test111);
+				set_warn(&user_error2);
 			}
-
-			if (test222.status == WARN_ACK)
-			{
-				test222.status = NOT_WARN;
-			}
-			else
-			{
-				test222.status = IS_WARN;
-				set_warn(&test222);
-			}
-			test = 0;
+		}
+		else
+		{
+			user_error2.status = NOT_WARN;
 		}
 	}
 
