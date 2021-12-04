@@ -128,20 +128,25 @@ void setup()
 	}
 	else if (stat == -2)
 	{
+		//文件系统错误，基本不会发生，程序调试或者产品验证的时候就能发现并排除错误
 		Serial.print("flash error ,file open error -2,deepSleep");
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 	}
-	//连接wifi
+
+	//简单验证下是否读取到有效的wifi数据
 	if (WIFI_password[0] == '\0' || WIFI_ssid[0] == '\0')
 	{
 		Serial.println("delete & restart");
 		file_delete(wifi_ssid_pw_file);
+		ESP.restart(); //这个函数在串口打印的开机信息里是看门狗复位
 	}
-	Serial.printf("#WIFI_ssid:%s  WIFI_password:%s  UID:%ld ", WIFI_ssid, WIFI_password, UID);
+	Serial.printf("#WIFI_ssid:%s  WIFI_password:%s  UID:%ld \r\n", WIFI_ssid, WIFI_password, UID);
 
+	//连接wifi
 	Serial.printf("CHIP_ID %x \r\n", CHIP_ID);
 	if (get_wifi(WIFI_ssid, WIFI_password, wifi_ssid_pw_file) == 0)
 	{
+		//无法连接WiFi，休眠一会儿。//WiFi修复是很慢的事情，也有可能是密码改了，可以通过复位键立刻唤醒
 		Serial.print("wifi error 0,deepSleep");
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 	}
@@ -178,19 +183,8 @@ void loop()
 			}
 			else if (error_wifi_count == 3)
 			{
-				//超过3次链接失败，复位程序，重启
-				if (error_tcp_sum > 0)
-				{
-					//曾经连上过，但是tcp重新连接时候失败了，wifi可能没问题，尝试重启单片机
-					Serial.print("\r\nrestart 20S\r\n");
-					ESP.restart(); //这个函数在串口打印的开机信息里是看门狗复位
-				}
-				else
-				{
-					//一次都没连上过，可能wifi有问题，休眠单片机
-					Serial.print("\r\ndeepSleep 20S\r\n");
-					ESP.deepSleep(20000000, WAKE_RFCAL);
-				}
+				Serial.print("\r\nrestart\r\n");
+				ESP.restart(); //这个函数在串口打印的开机信息里是看门狗复位
 			}
 			error_wifi_count++;
 			return;
@@ -235,7 +229,7 @@ void loop()
 			EID = str_to_u64(my_tcp_cache.data + tmp1, my_tcp_cache.len, &stat);
 			if (stat != 1)
 			{
-				//值转换出错，溢出或未找到有效值
+				//值转换出错，溢出或未找到有效值//这种可能是服务器数据错误，休眠一会儿等服务器修复
 				Serial.print("\r\nnot found eid,deepSleep\r\n");
 				ESP.deepSleep(20000000, WAKE_RFCAL);
 			}
@@ -254,6 +248,7 @@ void loop()
 	}
 	else if (stat == 0)
 	{
+		//这种可能是服务器数据错误，休眠一会儿等服务器修复
 		Serial.print("\r\nservier error,deepSleep\r\n");
 		ESP.deepSleep(20000000, WAKE_RFCAL);
 		//return;
