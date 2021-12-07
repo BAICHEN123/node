@@ -11,6 +11,9 @@ extern "C"
 	uint8_t duoji_need = 5; //舵机的期望值
 	uint8_t duoji_now = 0;	//舵机的当前值
 
+	uint8_t ji_shi1 = 0; //倒计时
+	uint8_t ji_shi2 = 0; //倒计时
+
 	uint8_t yu_men[4 * 2 + 3 * 2] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; //与门寄存器
 
 	//定义几个引脚的功能
@@ -18,13 +21,17 @@ extern "C"
 	const uint8_t duoji = 5;	 //舵机
 	const uint8_t anjian1 = 0;	 //按键1输入
 
-	unsigned char CONST1[4] = {0, 1, 2, 5};
+	unsigned char CONST1[5] = {0, 1, 2, 5, 120};
 
 	struct MyType data_list[MAX_NAME] = {
 		{"光强", "%", TYPE_DOUBLE, sizeof(guang_qiang), &guang_qiang, NULL, NULL},
 		{"@五叶窗", NULL, TYPE_u8, sizeof(duoji_need), &duoji_need, CONST1 + 1, CONST1 + 3},
 		{"@通风扇", NULL, TYPE_u8, sizeof(tong_feng), &tong_feng, CONST1, CONST1 + 1},
 		{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save, CONST1, CONST1 + 2},
+
+		{"@1号倒计时", NULL, TYPE_u8, sizeof(ji_shi1), &ji_shi1, CONST1, CONST1 + 4}, //1号倒计时
+		{"@2号倒计时", NULL, TYPE_u8, sizeof(ji_shi2), &ji_shi2, CONST1, CONST1 + 4}, //2号倒计时
+
 		{"@1与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men, CONST1, CONST1 + 1},		//1号与门1号入口
 		{"@1与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 1, CONST1, CONST1 + 1},	//1号与门2号入口
 		{"@1与3入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 2, CONST1, CONST1 + 1},	//1号与门3号入口
@@ -72,6 +79,14 @@ extern "C"
 
 	void ruan_timer_1s()
 	{
+		if (ji_shi1 > 0)
+		{
+			ji_shi1 = ji_shi1 - 1;
+		}
+		if (ji_shi2 > 0)
+		{
+			ji_shi2 = ji_shi2 - 1;
+		}
 	}
 
 	//每隔 RUAN_TIMEer_ms
