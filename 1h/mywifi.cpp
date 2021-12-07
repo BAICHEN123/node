@@ -157,7 +157,7 @@ extern "C"
             delay(500);
             Serial.print(".");
 
-            //长按 10*500 ms
+            //长按 i*500 ms
             //删除之前记住的WiFi账号和密码，然后重新启动系统
             if (digitalRead(anjian1) == LOW)
             {
@@ -166,7 +166,7 @@ extern "C"
                 short count_anjian = 0; //对按键按下的时间计数，超过5s就清除wifidata.txt文件，然后重新启动系统
                 while (digitalRead(anjian1) == LOW && count_anjian < 10)
                 {
-                    Serial.printf("-%dS -", 10 - count_anjian);
+                    Serial.printf("-%dS -", 5 - count_anjian/2);
                     count_anjian = count_anjian + 1;
                     delay(500);
                 }

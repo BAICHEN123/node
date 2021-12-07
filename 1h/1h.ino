@@ -175,13 +175,13 @@ void loop()
 		if (get_wifi(WIFI_ssid, WIFI_password, wifi_ssid_pw_file) == 0)
 		{
 			Serial.printf("error_wifi_count==%d\r\n", error_wifi_count);
-			if (error_wifi_count == 2)
+			if (error_wifi_count == 1)
 			{
 				Serial.print("WiFi.mode(WIFI_OFF);\r\n");
 				WiFi.mode(WIFI_OFF); //断开wifi 之后重新连接wifi
 				delay(1000);
 			}
-			else if (error_wifi_count == 3)
+			else if (error_wifi_count == 2)
 			{
 				Serial.print("\r\nrestart\r\n");
 				ESP.restart(); //这个函数在串口打印的开机信息里是看门狗复位
