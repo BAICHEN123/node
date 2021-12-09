@@ -143,6 +143,7 @@ extern "C"
 
 		name = name + 1;
 		tcp_data[strd] = '\0';
+		jt.name_len = strd - name; //计算内存长度获取长度值。之后申请内存前+1是因为要给字符串留一个字节存'\0'，这里不+1是因为名字比对的时候不算'\0'
 		jt.fuhao = tcp_data[strd + 1];
 		strd = strd + 3;
 		Serial.printf("tmp  %s  %s\r\n", tcp_data + name, tcp_data + strd);
@@ -154,8 +155,8 @@ extern "C"
 		其他的都存到 jt 里了
 		*/
 		//验证获取到的名字是否合法
-		jt.name_len = strlen(tcp_data + name);
-		if (jt.name_len < 1)
+		//jt.name_len = strlen(tcp_data + name);
+		if (jt.name_len < 2) //除去'\0'外至少有一个字节的数据
 		{
 			return -4;
 		}
@@ -176,12 +177,13 @@ extern "C"
 		}
 
 		//将名字转存
+		jt.name_len = jt.name_len + 1;//多一个字节储存'\0'
 		jt.name = (char *)malloc(jt.name_len);
 		if (jt.name == NULL)
 		{
 			return -7;
 		}
-		strcpy(jt.name, tcp_data + name);
+		strcpy(jt.name, tcp_data + name); //会复制'\0'
 
 		//将字符串类型的数据转换成和数据条目相同的数据类型，然后储存
 		jt.data = get_value(tcp_data + strd, jt.data_len, data_list[jt.name_id].ID, &jt.data_len);
