@@ -66,6 +66,11 @@ const char *str_data_names[MAX_NAME] = {
 	}
 
 	//每隔 RUAN_TIMEer_ms
+	void ruan_timer_1s()
+	{
+	}
+
+	//每隔 RUAN_TIMEer_ms
 	void ruan_timer_ms()
 	{
 	}
