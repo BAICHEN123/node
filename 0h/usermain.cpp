@@ -25,6 +25,8 @@ extern "C"
 		clear_wifi_data(wifi_ssid_pw_file); 
 	}
 
+	/*请注意引脚初始化和赋值的先后顺序，不然可能导致外接的继电器闪烁
+	*/
 	void my_init()
 	{
 		pinMode(anjian1, INPUT); //按键1

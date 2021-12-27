@@ -264,9 +264,9 @@ void loop()
 	unsigned long long tmpuL = 0;
 	//micros();//us
 	short len_old;
+	refresh_work(); //更新一下状态
 	//用户初始化
 	my_init();
-	refresh_work(); //更新一下状态
 
 	while (client.connected())
 	{
