@@ -61,12 +61,13 @@ extern "C"
 	{
 		//pinMode(yan_wu, INPUT);
 		pinMode(anjian1, INPUT); //按键1
-		pinMode(tongfeng, OUTPUT);
 		pinMode(duoji, OUTPUT);
 
 		//初始化舵机的状态
 		dj_init();
 		set_timer1_ms(timer1_worker, TIMER1_timeout_ms); //强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
+		//舵机初始化需要一定的时间，等舵机初始化之后，再将继电器设为输出状态，不然引脚默认低电平会触发继电器
+		pinMode(tongfeng, OUTPUT);
 	}
 
 	void add_values()
