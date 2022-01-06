@@ -334,7 +334,8 @@ extern "C"
                 Serial.println("delete & restart");
                 file_delete(wifi_ssid_pw_file);
 				file_delete(stut_data_file);
-                ESP.restart();
+                //ESP.restart();//在中断里调用复位会导致二次重启，
+				ESP.deepSleep(10, WAKE_RFCAL);
             }
         }
         else
