@@ -7,6 +7,7 @@
 #include "mywarn.h"
 extern "C"
 {
+#include "DHT11.h"
 #include "mytimer.h"
 #include "mytype.h"
 //必须实现的
