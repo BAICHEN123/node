@@ -250,7 +250,7 @@ str2:需要找到的字符串
 查找失败：返回-1
 
 */
-int str1_find_str2_(char *str1, int str_length, char *str2)
+int str1_find_str2_(char *str1, int str_length, const char *str2)
 {
 	int str1_i = 0;
 	int str2_i = 0;

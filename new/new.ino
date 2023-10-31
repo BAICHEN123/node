@@ -101,17 +101,20 @@ int set_databack(const char fig, char *tcp_send_data, int max_len)
 /*
 处理服务器发送来的数据，一次只能处理一种类型的数据/指令，根据数据的开头符号，判断数据的指令内容
 返回值：0 成功
-		1 成功，但是不刷新发送数据包的时间
 		101 发送返回给服务器的tcp数据包失败
 */
-int do_tcp_data(struct Tcp_cache my_tcp_cache)
+int do_tcp_data(struct Tcp_cache my_tcp_cache,unsigned long *send_time_old_ms,WiFiClient *client)
 {
 	const int kERROR_send_tcp = 101;
+	const int kERROR_no_error = 0;
 	const int kMESSAGE_send_tcp_time_no_flush = 1;
 	short stat;
 	int tcp_senddata_len = 0;
 	unsigned long long tmpuL = 0;
+	int tmp_status = 0;
 	short len_old;
+	long long tmp;
+	int tmp1;
 	// Serial.printf("回复响应时间：%d \n", micros() - time_old);
 	// 如果需要对TCP链接返回的数据进行处理，请在这后面写，-----------------------------------------------------------------------
 	// 示例//将TCP返回的数据当作字符串输出
@@ -122,7 +125,6 @@ int do_tcp_data(struct Tcp_cache my_tcp_cache)
 	case 'A'://新增一个联动监听
 		// 尝试使用 '\t' 作为分割符号，一次接收多个监听指令
 		tcp_senddata_len = 0;
-		int tmp_status = 0;
 		tmp1 = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, '\t');
 		while (tmp1 > 0)
 		{
@@ -133,11 +135,11 @@ int do_tcp_data(struct Tcp_cache my_tcp_cache)
 			tmp1 = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, '\t');
 		}
 		jiantin_print();
-		if (back_send_tcp_(&client, tcp_send_data, tcp_senddata_len) == -1)
+		if (back_send_tcp_(client, tcp_send_data, tcp_senddata_len) == -1)
 		{
 			return kERROR_send_tcp;
 		}
-		send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
+		*send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
 		break;
 	case 'C':
 		// 重新触发一些监听的事件。好像是把错误状态重置成未触发，清除掉旧的已发送的状态。
@@ -155,11 +157,11 @@ int do_tcp_data(struct Tcp_cache my_tcp_cache)
 			tmp1 = tmp1 + 1;
 		} while (len_old > 0);
 		tcp_senddata_len = sprintf(tcp_send_data, "#%d", tmp1);
-		if (back_send_tcp_(&client, tcp_send_data, tcp_senddata_len) == -1)
+		if (back_send_tcp_(client, tcp_send_data, tcp_senddata_len) == -1)
 		{
-			return;
+			return kERROR_send_tcp;
 		}
-		send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
+		*send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
 		break;
 	case 'D'://删除一个联动
 		tmpuL = str_to_u64(my_tcp_cache.data, my_tcp_cache.len, &stat);
@@ -170,11 +172,11 @@ int do_tcp_data(struct Tcp_cache my_tcp_cache)
 		}
 		jiantin_del(tmpuL);
 		tcp_senddata_len = sprintf(tcp_send_data, "%s", my_tcp_cache.data);
-		if (back_send_tcp_(&client, tcp_send_data, tcp_senddata_len) == -1)
+		if (back_send_tcp_(client, tcp_send_data, tcp_senddata_len) == -1)
 		{
 			return kERROR_send_tcp;
 		}
-		send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
+		*send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
 
 		break;
 	case 'm'://message 
@@ -194,26 +196,25 @@ int do_tcp_data(struct Tcp_cache my_tcp_cache)
 			Serial.printf("   loop warn_ack return 0 ");
 			break;
 		}
-		if (back_send_tcp_(&client, tcp_send_data, tcp_senddata_len) == -1)
+		if (back_send_tcp_(client, tcp_send_data, tcp_senddata_len) == -1)
 		{
 			return kERROR_send_tcp;
 		}
-		send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
+		*send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
 		break;
 	case 'T':
 		// case 't':
 		// 这里处理心跳包返回的时间戳，无需返回任何数据
 		str_get_time(&Now, my_tcp_cache.data);
-		kMESSAGE_send_tcp_time_no_flush
 		break;
 	case '+': // 获取传感器和模式的信息
 	case 'G':
 	case 'g':
-		if (back_send_tcp_(&client, tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
+		if (back_send_tcp_(client, tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
 		{
 			return kERROR_send_tcp;
 		}
-		send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
+		*send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
 		break;						 // 跳出 switch
 	case 'I':						 // 获取一些模式id的详细描述
 	case 'i'://发送 可选变量描述 MODE_INFO
@@ -221,11 +222,11 @@ int do_tcp_data(struct Tcp_cache my_tcp_cache)
 		{
 			break;
 		}
-		if (back_send_tcp(&client, MODE_INFO) == -1)
+		if (back_send_tcp(client, MODE_INFO) == -1)
 		{
 			return kERROR_send_tcp;
 		}
-		send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
+		*send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
 		break;						 // 跳出 switch
 	case '@':						 // set
 		while (len_old >= 0 && len_old < my_tcp_cache.len)
@@ -277,11 +278,11 @@ int do_tcp_data(struct Tcp_cache my_tcp_cache)
 		// 所有的指令已经执行完毕
 		refresh_work(); // 更新一下光控灯的状态
 		// TCP 打包返还自己的状态
-		if (back_send_tcp_(&client, tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
+		if (back_send_tcp_(client, tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
 		{
 			return kERROR_send_tcp;
 		}
-		send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
+		*send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
 		if (power_save != 0)		 // 实时更新断电记忆的东西
 		{
 			// file_save_stut();
@@ -295,6 +296,7 @@ int do_tcp_data(struct Tcp_cache my_tcp_cache)
 	}
 	my_tcp_cache.data[0] = 0;
 	my_tcp_cache.len = 0; // 因为我没有在其他位置调用数据接收函数，所以我处理完之后全部清除了
+	return kERROR_no_error;
 }
 
 void setup()
@@ -523,14 +525,13 @@ void loop()
 
 		if (stat == 1) // 有收到TCP数据
 		{
-			len_old = my_tcp_cache.len; // my_tcp_cache.len=0
 			stat = get_tcp_data(&client, &my_tcp_cache);
 			if (my_tcp_cache.len < 1) // 收到有效字节
 			{
 				continue; // 没有收到有效的数据，不用继续往后
 			}
 			get_time_old_ms = millis(); // 更新最后一次接收到数据的时间戳
-			int error = do_tcp_data(my_tcp_cache);
+			int error = do_tcp_data(my_tcp_cache,&send_time_old_ms,&client);
 		}
 		// TCP链接失效
 		else if (stat == 0)

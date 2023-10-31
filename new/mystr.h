@@ -72,7 +72,7 @@ str1
 	  |return
 
 */
-int str1_find_str2_(char *str1, int str_length, char *str2);
+int str1_find_str2_(char *str1, int str_length,const char *str2);
 /*
 字符数组查找字符
 str1:数据
