@@ -10,6 +10,7 @@
 
 extern "C"
 {
+struct TcpLinkData;
 // int set_databack(const char fig, char *tcp_send_data, int max_len);
 int do_tcp_data(struct Tcp_cache my_tcp_cache,unsigned long *send_time_old_ms,WiFiClient *client);
 int send_hart_back(WiFiClient *client);
