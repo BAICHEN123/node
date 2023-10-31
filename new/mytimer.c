@@ -96,7 +96,7 @@ void set_timer1_s(timercallback userFunc, double time_s)
 	timer1_write(312500*2);
 	*/
 	timer1_enable(2, TIM_EDGE, TIM_LOOP);
-	timer1_write((uint32)(312500 * time_s));
+	timer1_write((uint32_t)(312500 * time_s));
 	timer1_enabled();
 	timer1_attachInterrupt(userFunc);
 }
@@ -118,7 +118,7 @@ void set_timer1_ms(timercallback userFunc, uint32_t time_ms)
 	timer1_write(312500*2);
 	*/
 	timer1_enable(1, TIM_EDGE, TIM_LOOP);
-	timer1_write((uint32)(5000 * time_ms));
+	timer1_write((uint32_t)(5000 * time_ms));
 	timer1_enabled();				  //使能中断
 	timer1_attachInterrupt(userFunc); //填充
 }
@@ -139,7 +139,7 @@ void set_timer1_us(timercallback userFunc, uint32_t time_us)
 	timer1_write(312500*2);
 	*/
 	timer1_enable(1, TIM_EDGE, TIM_LOOP);
-	timer1_write((uint32)(5 * time_us));
+	timer1_write((uint32_t)(5 * time_us));
 	timer1_enabled();				  //使能中断
 	timer1_attachInterrupt(userFunc); //填充
 }

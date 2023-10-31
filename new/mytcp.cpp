@@ -1,5 +1,5 @@
 #include "mytcp.h"
-
+struct Tcp_cache my_tcp_cache;	  // TCP缓存数组
 /*
 TCP阻塞，等待 timeout_ms_max ms
 看看有没有TCP包返回回来，不会自动断开链接

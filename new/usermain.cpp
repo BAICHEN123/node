@@ -118,12 +118,10 @@ void DHT11_read_and_send()
 	if (t == 0)
 	{
 		Serial.print("DHT11 error :timeout 超时未回复\r\n");
-		// UDP_Send(MYHOST, UDP_PORT, "error:DHT11 timeout_back");//---------------------这里还要统一通讯协议，当设备的驱动报错的时候需要的信号是什么样子的，当传感器的数据异常的的时候的信号是什么样子的
 	}
 	else if (t == -1)
 	{
 		Serial.print("DHT11 error :sum error 数据校验错误\r\n");
-		// UDP_Send(MYHOST, UDP_PORT, "error:DHT11 sum_erroe");
 	}
 	else if (EID > 0)
 	{
