@@ -314,7 +314,7 @@ int jiantin_loop()
 			}
 		}
 	}
-	return end;
+	return end;//<0 malloc error
 }
 
 void set_not_warn(unsigned long long sql_id)

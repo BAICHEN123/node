@@ -22,6 +22,11 @@ extern "C"
 #ifndef WIFI_password_len
 #define WIFI_password_len 32
 #endif
+
+    
+    extern char WIFI_ssid[WIFI_SSID_LEN];// = {'\0'};
+    extern char WIFI_password[WIFI_PASSWORD_LEN];// = {'\0'};
+
     static const char *WIFI_SERVER_NAME = "HCC_APP";
     static const char *WIFI_SERVER_PASSWORD = "12345678";
 
@@ -30,7 +35,8 @@ extern "C"
     short file_save_wifidata(char *WIFI_ssid, char *WIFI_password, const char *wifi_ssid_pw_file);
     short file_delete(const char *file_name);
     short get_wifi(char *WIFI_ssid, char *WIFI_password, const char *wifi_ssid_pw_file);
-    short tcp_server_get_wifi_data(char *WIFI_ssid, char *WIFI_password, unsigned long long &UID, uint32_t CHIP_ID, const char *wifi_ssid_pw_file);
+    short tcp_server_get_wifi_data(char *WIFI_ssid, char *WIFI_password, uint32_t CHIP_ID, const char *wifi_ssid_pw_file);
     void clear_wifi_data(const char *file_name);
+    uint64_t get_user_id();
 }
 #endif

@@ -65,6 +65,14 @@ extern const char *stut_data_file;    //储存设备各功能配置状态的文�
 extern const char *MYHOST;            //服务器 ip 地址
 
 
+//str_data_names 的长度
+#define MAX_NAME 25
+//extern const char *str_data_names[MAX_NAME];
+extern struct MyType data_list[MAX_NAME];
+//可选变量描述
+extern const char *MODE_INFO;
+//断电记忆的可选参数
+extern uint8_t power_save;
 
 
 #endif

@@ -1,6 +1,14 @@
 #include "mywifi.h"
 uint8_t anjian1 = 0; // 按键1输入
 
+char WIFI_ssid[WIFI_SSID_LEN] = {'\0'};
+char WIFI_password[WIFI_PASSWORD_LEN] = {'\0'};
+static u64 UID = 0;
+
+uint64_t get_user_id()
+{
+    return UID;
+}
 void set_anjian1(const uint8_t pin)
 {
     anjian1 = pin;
@@ -198,7 +206,7 @@ UID通过应用调用的方式返回数据
 函数的返回值仅返回状态，目前不收到足够的数据，绝不返回。while(1);
 
 */
-short tcp_server_get_wifi_data(char *WIFI_ssid, char *WIFI_password, unsigned long long &UID, uint32_t CHIP_ID, const char *wifi_ssid_pw_file)
+short tcp_server_get_wifi_data(char *WIFI_ssid, char *WIFI_password, uint32_t CHIP_ID, const char *wifi_ssid_pw_file)
 {
     // WiFi.mode()
     char data[1024];

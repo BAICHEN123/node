@@ -7,14 +7,20 @@
 或许我可以搞个结构体，储存一个tcp链接所有相关的数据，就不用担心传递变量很麻烦了
 */
 
-
 extern "C"
 {
-struct TcpLinkData;
-// int set_databack(const char fig, char *tcp_send_data, int max_len);
-int do_tcp_data(struct Tcp_cache my_tcp_cache,unsigned long *send_time_old_ms,WiFiClient *client);
-int send_hart_back(WiFiClient *client);
-int wait_and_do_server_message(WiFiClient *client,unsigned long *send_time_old_ms);
+
+	struct TcpLinkData
+	{
+		WiFiClient *client;
+		unsigned long get_time_old_ms;		//= millis();
+		unsigned long send_time_old_ms;		// = millis();
+		unsigned long last_send_jiantin_ms; // = millis();
+		unsigned long ruan_time_old_ms;		// 每隔 RUAN_TIMEer_ms 刷新一次监听的数据用的，储存时间戳
+	};
+	struct TcpLinkData init_server_tcp_link(const char *host, uint16 port, uint64_t uid, uint32_t chipID);
+	int wait_and_do_server_message(struct TcpLinkData *tcp_link_data,void (*callback)());
+	void free_tcp_lick(struct TcpLinkData *tcp_lick_data);
 }
 
 #endif

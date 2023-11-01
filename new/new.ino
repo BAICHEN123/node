@@ -9,7 +9,6 @@
 #include "mytcp.h"
 #include "myconstant.h"
 #include "myudp.h"
-#include "usermain.h"
 #include "mywarn.h"
 #include "mytype.h"
 #include "jiantin.h"
@@ -18,12 +17,162 @@ extern "C"
 {
 #include "mystr.h"
 #include "mytimer.h"
+#include "DHT11.h"
 }
 
-char WIFI_ssid[WIFI_SSID_LEN] = {'\0'};
-char WIFI_password[WIFI_PASSWORD_LEN] = {'\0'};
-static u64 UID = 0;
 uint32_t CHIP_ID = 0;
+
+
+// ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ 旧的usermain移过来的  ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+
+const char *MODE_INFO = "@断电记忆[0-2]:关闭，仅本次，所有";
+static struct Udpwarn user_error1 = {WARN, NOT_WARN, 0, 5, "1 号自定义警告被触发"};
+static struct Udpwarn user_error2 = {WARN, NOT_WARN, 0, 6, "2 号自定义警告被触发"};
+
+// 定义传感器储存变量
+uint8_t power_save = 0; // 断电记忆
+uint8_t user_error_1 = 0;
+uint8_t user_error_2 = 0;
+struct DHT11_data dht11_data = {666, 666};
+double yan_wu_A = 0;
+double yanwu_my = 0;
+
+// 定义几个引脚的功能
+const uint8_t anjian1 = 0; // 按键1输入
+const uint8_t dht11 = 5;   // dht11
+
+// 定义几个范围定义变量
+unsigned char CONST1[3] = {0, 1, 2};
+int dht11_get();
+void read_dht11();
+
+struct MyType data_list[MAX_NAME] = {
+	{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature), NULL, NULL},
+	{"湿度", "%", TYPE_FLOAT, sizeof(dht11_data.humidity), &(dht11_data.humidity), NULL, NULL},
+	{"烟雾模拟", "%", TYPE_DOUBLE, sizeof(yanwu_my), &yanwu_my, NULL, NULL},
+	{"@1号自定义警告", NULL, TYPE_u8, sizeof(user_error_1), &user_error_1, CONST1, CONST1 + 1}, // 用户自定义警告
+	{"@2号自定义警告", NULL, TYPE_u8, sizeof(user_error_2), &user_error_2, CONST1, CONST1 + 1}, // 用户自定义警告
+	{"时", NULL, TYPE_u8, sizeof(Now.hour), &(Now.hour), NULL, NULL},
+	{"分", NULL, TYPE_u8, sizeof(Now.minute), &(Now.minute), NULL, NULL},
+	{"秒", NULL, TYPE_u8, sizeof(Now.sec), &(Now.sec), NULL, NULL},
+	{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save, CONST1, CONST1 + 2},
+	{NULL} // 到这里结束
+
+};
+
+void timer1_worker()
+{
+	// 长按按键1清除wifi账号密码记录
+	clear_wifi_data(wifi_ssid_pw_file);
+
+	yanwu_my = system_adc_read() * 100 / 1024.00;
+
+	if (dht11_get())
+	{
+		// 可以在这里调用其他定时延后执行的任务
+	}
+}
+
+/*请注意引脚初始化和赋值的先后顺序，不然可能导致外接的继电器闪烁
+ */
+void my_init()
+{
+	// refresh_work(); // 初始化引脚之前，先调整高低电平，减少不必要的继电器响声
+
+	dht11_init(dht11);		 // 这个是DHT11.h/DHT11.c里的函数，初始化引脚
+	pinMode(anjian1, INPUT); // 按键1
+	// pinMode(jd1, OUTPUT);
+	set_timer1_ms(timer1_worker, TIMER1_timeout_ms); // 强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
+	// （仅在程序复位的时候可以成功，原因：timer2_count 没有复位就不会被初始化，自然调用不到定时器的初始化函数），
+	dht11_get(); // 读取dht11的数据，顺便启动定时器//这里有问题，当断网重连之后，定时器函数有可能不会被重新填充
+}
+
+// 需要断电记忆的变量在这里添加
+void add_values()
+{
+	// 记录舵机的状态
+	// add_value(&duoji_need,sizeof(duoji_need));
+}
+void refresh_work()
+{
+
+}
+void user_loop_1()
+{
+
+	if (user_error_1 == 1)
+	{
+		if (user_error1.status == NOT_WARN)
+		{
+			set_warn(&user_error1);
+		}
+	}
+	else
+	{
+		user_error1.status = NOT_WARN;
+	}
+	if (user_error_2 == 1)
+	{
+		if (user_error2.status == NOT_WARN)
+		{
+			set_warn(&user_error2);
+		}
+	}
+	else
+	{
+		user_error2.status = NOT_WARN;
+	}
+}
+
+/*此函数在定时中断中调用，处理温湿度传感器的40bit读取*/
+void DHT11_read_and_send()
+{
+	// 读取温湿度，并将异常情况返回
+	short t = dht11_read_data(&dht11_data);
+	if (t == 0)
+	{
+		Serial.print("DHT11 error :timeout 超时未回复\r\n");
+	}
+	else if (t == -1)
+	{
+		Serial.print("DHT11 error :sum error 数据校验错误\r\n");
+	}
+	else if (EID > 0)
+	{
+	}
+}
+
+/*	此函数在定时中断中调用，处理温湿度传感器通讯协议中18ms下拉	*/
+void read_dht11()
+{
+	// 让DHT11的信号引脚拉低，等待20ms，之后调用get_DHT11_DATA() 开始正式调用读取函数
+	set_timer1_ms(timer1_worker, TIMER1_timeout_ms - LOW_PIN_ms); // 正常时间之后恢复 timer1_worker 的工作
+	DHT11_read_and_send();
+}
+/*每隔 DHT11_SPACE_OF_TIME_ms 读取DHT11*/
+int dht11_get()
+{
+	static short timer2_count = TIMER2_COUNT; //
+	timer2_count++;
+	if (timer2_count >= TIMER2_COUNT)
+	{
+		// 先拉低，LOW_PIN_ms 之后调用读取函数
+		set_timer1_ms(read_dht11, (unsigned int)dht11_read_ready());
+		timer2_count = 0;
+		return 0;
+	}
+	return 1;
+}
+
+
+// ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ 旧的usermain移过来的   ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+
+
+
+
+
+
+
 
 void setup()
 {
@@ -50,7 +199,7 @@ void setup()
 	if (stat == -1)
 	{
 		digitalWrite(LED_BUILTIN, LOW);
-		tcp_server_get_wifi_data(WIFI_ssid, WIFI_password, UID, CHIP_ID, wifi_ssid_pw_file);
+		tcp_server_get_wifi_data(WIFI_ssid, WIFI_password, ESP.getChipId(), wifi_ssid_pw_file);
 		digitalWrite(LED_BUILTIN, HIGH);
 	}
 	else if (stat == -2)
@@ -67,7 +216,7 @@ void setup()
 		file_delete(wifi_ssid_pw_file);
 		ESP.restart(); // 这个函数在串口打印的开机信息里是看门狗复位
 	}
-	Serial.printf("#WIFI_ssid:%s  WIFI_password:%s  UID:%ld \r\n", WIFI_ssid, WIFI_password, UID);
+	Serial.printf("#WIFI_ssid:%s  WIFI_password:%s  UID:%ld \r\n", WIFI_ssid, WIFI_password, get_user_id());
 
 	// 连接wifi
 	Serial.printf("CHIP_ID %x \r\n", CHIP_ID);
@@ -118,147 +267,37 @@ void loop()
 		}
 		// set_timer1_s(realy_DHT11, 2);
 	}
-	WiFiClient client;
-	short stat;
-	if (client.connect(MYHOST, TCP_PORT))
-	{
-		if (UID != 0)
-		{
-			client.printf("+UID:%llu", UID);
-		}
 
-		String str1 = "class_id=1,chip_id=" + String(CHIP_ID) + ",ip=" + WiFi.localIP().toString() + ",mac=" + WiFi.macAddress();
-		client.print(str1);
-		error_tcp_sum = 0;
-	}
-	else
+	// WiFi.mode(WIFI_OFF); // 重新连接wifi
+
+	struct TcpLinkData tcp_link_data = init_server_tcp_link(MYHOST,TCP_PORT,get_user_id(),ESP.getChipId());
+	if(!tcp_link_data.client)
 	{
-		Serial.printf(" 1 error_tcp_sum=%d \r\n", error_tcp_sum++);
-		delay(1000);		   // 等待  S 再重连
-		if (error_tcp_sum > 3) // && error_tcp_sum < 6)
-		{
-			Serial.print("WiFi.mode(WIFI_OFF);\r\n");
-			WiFi.mode(WIFI_OFF); // 重新连接wifi
-		}
+		Serial.printf("error: file %s,line %d, error_tcp_sum %d\r\n",__FILE__,__LINE__,error_tcp_sum++);
+		delay(1000);
 		return;
 	}
-	Serial.print("tcp ok");
 
-	stat = timeout_back_ms(&client, 3000);
-	if (stat == 1)
-	{
-		// 这里收到的信息可能是服务器返回的第一条信息
-		Serial.println(my_tcp_cache.data + get_tcp_data(&client, &my_tcp_cache));
-		// tmp1 临时储存一下+EID的开始位置
-		tmp1 = str1_find_str2_(my_tcp_cache.data, my_tcp_cache.len, "+EID");
-		if (tmp1 >= 0)
-		{
-			EID = str_to_u64(my_tcp_cache.data + tmp1, my_tcp_cache.len, &stat);
-			if (stat != 1)
-			{
-				// 值转换出错，溢出或未找到有效值//这种可能是服务器数据错误，休眠一会儿等服务器修复
-				Serial.print("\r\nnot found eid,deepSleep\r\n");
-				ESP.deepSleep(20000000, WAKE_RFCAL);
-			}
 
-			// 从 my_tcp_cache.data 剩下的数据里提取出时间，校准单片机的时间
-			tmp1 = str1_find_char_(my_tcp_cache.data, my_tcp_cache.len, 'T');
-			// Serial.println(my_tcp_cache.data + tmp1);
-			str_get_time(&Now, my_tcp_cache.data + tmp1);
-
-			char str_EID[22] = {0};
-			sprintf(str_EID, "%llu", EID); // 垃圾string(),居然不能装换long long类型的数据，还要我自己动手
-			UDP_head_data = "+EID=" + String(str_EID) + ",chip_id=" + String(CHIP_ID);
-			Serial.print(UDP_head_data);
-			error_wifi_count = 0;//这个wifi是有效的，清除错误数量计数
-		}
-		my_tcp_cache.len = 0;
-	}
-	else if (stat == 0)
-	{
-		// 这种可能是服务器数据错误，休眠一会儿等服务器修复
-		Serial.print("\r\nservier error,deepSleep\r\n");
-		ESP.deepSleep(20000000, WAKE_RFCAL);
-		// return;
-	}
-
-	unsigned long get_time_old_ms = millis();
-	unsigned long send_time_old_ms = millis();
-	unsigned long ruan_time_old_ms = millis();
-	unsigned long ruan_time_old_1s = millis();
-
-	// micros();//us
-	refresh_work(); // 更新一下状态
 	// 用户初始化
 	my_init();
 
-	while (client.connected())
+
+	int stat;
+	stat = wait_and_do_server_message(&tcp_link_data,refresh_work);
+	while (stat!=101)
 	{
-		/*关于00：00断网
-		之前的理解	//tcp断开之后无法重新链接，我只能重新声明试试，但是好像也没什么用处???，只能计次，然后软件复位程序
-		现在的理解	2021年5月22日11点54分	tcp链接由于 校园网日租网络租约结束 而断开，无法完成数据通讯，过20min左右才会被系统感知发现，然后 client.connected() 判定才为假
-					在这之间的20min里，发送的数据均无法到达服务器，链接实际上是断开的状态，似乎是是由于没有收到tcp的挥手，链接判定值为真
-		解决方案	依靠更合理的心跳包。心跳包就是心跳包，没有按时收到消息就是暴毙了。
-			每隔1min发送一次tcp心跳包，发送后2min内收到回复视为正常		//考虑到服务器在以后可能收到很多设备的心跳包，处理起来占用很多时间，将这个搞成动态时间间隔？
-			如果没有收到心跳包的回复就开始重新建立链接	这里直接 return 就可以了
-		实现情况	无
-		*/
-		// tcp链接发送数据时候过将近20min才会被系统感知发现，然后 client.connected() 判定才为假
-
-		// 声音的采样间隔，查看 ruan_time_old_ms 时间间隔内的高电平数量，作为声控的判定标准
-		if (millis() - ruan_time_old_ms > RUAN_TIMEer_ms)
-		{
-			if (millis() - ruan_time_old_1s > 1000)
-			{
-				ruan_time_old_1s = millis();
-				next_sec(&Now);
-				ruan_timer_1s();
-
-				// 隔一段时间就发送一次本机数据，心跳包
-				if (millis() - send_time_old_ms > HEART_BEAT_ms) // 无符号整型的加减运算，就算溢出了，也不影响差的计算，windows gcc 0-0xfffffffe=2;
-				{
-					if (millis() - get_time_old_ms > HEART_BEAT_TIMEOUT_ms)
-					{
-						// 太久没有收到服务器发来的数据，重新连接服务器
-						Serial.printf(" %d not get tcp data ,return\r\n", HEART_BEAT_TIMEOUT_ms);
-						return;
-					}
-					Serial.print('#');
-					// TCP发送心跳包
-					if (send_hart_back(&client) == -1)
-					{
-						return;
-					}
-					// 在这里插入心跳包的返回值检测，超时未回复，就认定链接失效，重新建立tcp的链接
-					/*实现方式：添加两个标志？记录发送状态和接收状态，判断发送和接受状态的情况*/
-					send_time_old_ms = millis();
-				}
-			}
-
-			// 验证监听数据
-			if (jiantin_loop() < 0)
-			{
-				Serial.printf("   jiantin_loop error\r\n");
-			}
-			// 发送警告
-			warn_send();
-			// 调用软定时器
-			ruan_timer_ms();			 // 每隔 RUAN_TIMEer_ms
-			ruan_time_old_ms = millis(); // 更新时间
-		}
-		ruan_timer_us();								 // 每隔 RUAN_TIMEer_us
-
-
-		stat = wait_and_do_server_message(&client,&send_time_old_ms);
-		if(stat == 101){
-			Serial.printf("error: file %s,line %d, error_tcp_sum %d\r\n",__FILE__,__LINE__,error_tcp_sum++);
-			delay(1000);
-			return;
-		}else if(stat == 1){
-			get_time_old_ms = millis(); // 更新最后一次接收到数据的时间戳
-		}
+		stat = wait_and_do_server_message(&tcp_link_data,refresh_work);
+		/* code */
+		user_loop_1();
 	}
+
+	Serial.printf("error: file %s,line %d, error_tcp_sum %d\r\n",__FILE__,__LINE__,error_tcp_sum++);
+	free_tcp_lick(&tcp_link_data);
+	delay(1000);
+	return;
 
 	// Serial.printf(" never  error\r\n");//TCP 刚好失效的时候就触发了
 	// client.stop();
 }
+
