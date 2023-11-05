@@ -92,7 +92,7 @@ int set_databack(const char fig, char *tcp_send_data, int max_len)
 返回值：0 成功
 		101 发送返回给服务器的tcp数据包失败
 */
-int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cache,void (*callback)())
+int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cache, void (*callback)())
 {
 	const int kERROR_send_tcp = 101;
 	const int kERROR_no_error = 0;
@@ -179,7 +179,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 			break;
 		}
 		tcp_senddata_len = warn_ack(tmpuL, (enum UdpMessageClass) * (my_tcp_cache->data + len_old), tcp_send_data); // tmp原来存错误id现在存长度
-		if (tcp_senddata_len < 2)																				   // 基础长度两个#号
+		if (tcp_senddata_len < 2)																					// 基础长度两个#号
 		{
 			// 请求的错误已经消除
 			Serial.printf("   loop warn_ack return 0 ");
@@ -195,7 +195,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 		// case 't':
 		// 这里处理心跳包返回的时间戳，无需返回任何数据
 		str_get_time(&Now, my_tcp_cache->data);
-		tcp_link_data->send_time_old_ms = millis();
+		tcp_link_data->get_time_old_ms = millis();
 		break;
 	case '+': // 获取传感器和模式的信息
 	case 'G':
@@ -229,7 +229,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 			}
 			// 查找名字数据之间的分割符号
 			int value = str1_find_char_1(my_tcp_cache->data, len_old, tmp1, '['); // 获取 '[' 相对于 my_tcp_cache->data 的位置
-			if (value < 0)														 // 限制名字的长度,找不到 '[' 就去找 ':'
+			if (value < 0)														  // 限制名字的长度,找不到 '[' 就去找 ':'
 			{
 				// Serial.printf("get '[' error value= %d %d\n", value, len_old);
 				value = str1_find_char_1(my_tcp_cache->data, len_old, tmp1, ':'); // 获取':'相对于 my_tcp_cache->data 的位置
@@ -291,7 +291,12 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 
 int send_hart_back(struct TcpLinkData *tcp_link_data)
 {
-	return back_send_tcp_(tcp_link_data->client, tcp_send_data, set_databack(HEART_BEAT_FIG, tcp_send_data, MAX_TCP_DATA));
+	short end = back_send_tcp_(tcp_link_data->client, tcp_send_data, set_databack(HEART_BEAT_FIG, tcp_send_data, MAX_TCP_DATA));
+	if (end == 1)
+	{
+		tcp_link_data->send_time_old_ms = millis();
+	}
+	return end;
 }
 
 /*
@@ -303,7 +308,7 @@ callback 是在有 “extern struct MyType data_list[MAX_NAME];” 变量被修�
 1 成功处理数据
 101 连接断开
 */
-int wait_and_do_server_message(struct TcpLinkData *tcp_link_data,void (*callback)())
+int wait_and_do_server_message(struct TcpLinkData *tcp_link_data, void (*callback)())
 {
 	if (!tcp_link_data->client || !tcp_link_data->client->connected())
 	{
@@ -320,7 +325,7 @@ int wait_and_do_server_message(struct TcpLinkData *tcp_link_data,void (*callback
 			return 0; // 没有收到有效的数据，不用继续往后
 		}
 		// get_time_old_ms = millis(); // 更新最后一次接收到数据的时间戳
-		int error = do_tcp_data(tcp_link_data, &my_tcp_cache,callback);
+		int error = do_tcp_data(tcp_link_data, &my_tcp_cache, callback);
 		if (error != 0)
 		{
 			Serial.printf("error: file %s,line %d, code %d\r\n", __FILE__, __LINE__, error); // TCP 刚好失效的时候就触发了
