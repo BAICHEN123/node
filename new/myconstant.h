@@ -66,7 +66,7 @@ extern const char *MYHOST;            //服务器 ip 地址
 
 
 //str_data_names 的长度
-#define MAX_NAME 25
+#define MAX_NAME 40
 //extern const char *str_data_names[MAX_NAME];
 extern struct MyType data_list[MAX_NAME];
 //可选变量描述

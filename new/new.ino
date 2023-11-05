@@ -22,7 +22,6 @@ extern "C"
 
 uint32_t CHIP_ID = 0;
 
-
 // ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ 旧的usermain移过来的  ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
 
 const char *MODE_INFO = "@断电记忆[0-2]:关闭，仅本次，所有";
@@ -37,14 +36,17 @@ struct DHT11_data dht11_data = {666, 666};
 double yan_wu_A = 0;
 double yanwu_my = 0;
 uint8_t jidianqi_value = 0;
+uint8_t jidianqi_value1 = 0;
+uint8_t yu_men[4 * 2 + 3 * 2] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // 与门寄存器
 
 // 定义几个引脚的功能
-const uint8_t anjian1 = 0; // 按键1输入
-const uint8_t dht11 = 5;   // dht11
-const uint8_t jidianqi_pin = 12;   // 继电器
+const uint8_t anjian1 = 0;		  // 按键1输入
+const uint8_t dht11 = 5;		  // dht11
+const uint8_t jidianqi_pin = 12;  // 继电器
+const uint8_t jidianqi_pin1 = 14; // 继电器
 
 // 定义几个范围定义变量
-unsigned char CONST1[3] = {0, 1, 2};
+unsigned char CONST1[4] = {0, 1, 2, 6};
 int dht11_get();
 void read_dht11();
 
@@ -52,14 +54,33 @@ struct MyType data_list[MAX_NAME] = {
 	{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature), NULL, NULL},
 	{"湿度", "%", TYPE_FLOAT, sizeof(dht11_data.humidity), &(dht11_data.humidity), NULL, NULL},
 	{"烟雾模拟", "%", TYPE_DOUBLE, sizeof(yanwu_my), &yanwu_my, NULL, NULL},
-	{"@开关1", NULL, TYPE_u8, sizeof(jidianqi_value), &jidianqi_value,CONST1,CONST1+1},
+	{"@开关1", NULL, TYPE_u8, sizeof(jidianqi_value), &jidianqi_value, CONST1, CONST1 + 1},
+	{"@开关2", NULL, TYPE_u8, sizeof(jidianqi_value1), &jidianqi_value1, CONST1, CONST1 + 1},
 	{"@1号自定义警告", NULL, TYPE_u8, sizeof(user_error_1), &user_error_1, CONST1, CONST1 + 1}, // 用户自定义警告
 	{"@2号自定义警告", NULL, TYPE_u8, sizeof(user_error_2), &user_error_2, CONST1, CONST1 + 1}, // 用户自定义警告
 	{"时", NULL, TYPE_u8, sizeof(Now.hour), &(Now.hour), NULL, NULL},
 	{"分", NULL, TYPE_u8, sizeof(Now.minute), &(Now.minute), NULL, NULL},
 	{"秒", NULL, TYPE_u8, sizeof(Now.sec), &(Now.sec), NULL, NULL},
+	{"星期", NULL, TYPE_u8, sizeof(Now.week), &(Now.week), CONST1, CONST1 + 3},
+	{"日", NULL, TYPE_u8, sizeof(Now.day), &(Now.day), NULL, NULL},
+	{"月", NULL, TYPE_u8, sizeof(Now.month), &(Now.month), NULL, NULL},
+	{"年", NULL, TYPE_USHORT, sizeof(Now.year), &(Now.year), NULL, NULL},
 	{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save, CONST1, CONST1 + 2},
-	{NULL} // 到这里结束
+	{"@1与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men, CONST1, CONST1 + 1},		// 1号与门1号入口
+	{"@1与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 1, CONST1, CONST1 + 1},	// 1号与门2号入口
+	{"@1与3入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 2, CONST1, CONST1 + 1},	// 1号与门3号入口
+	{"1与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 3, CONST1, CONST1 + 1},	// 1号与门输出
+	{"@2与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 4, CONST1, CONST1 + 1},	// 2号与门1号入口
+	{"@2与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 5, CONST1, CONST1 + 1},	// 2号与门2号入口
+	{"@2与3入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 6, CONST1, CONST1 + 1},	// 2号与门3号入口
+	{"2与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 7, CONST1, CONST1 + 1},	// 2号与门输出
+	{"@3与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 8, CONST1, CONST1 + 1},	// 3号与门1号入口
+	{"@3与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 9, CONST1, CONST1 + 1},	// 3号与门2号入口
+	{"3与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 10, CONST1, CONST1 + 1},	// 3号与门输出
+	{"@4与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 11, CONST1, CONST1 + 1}, // 4号与门1号入口
+	{"@4与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 12, CONST1, CONST1 + 1}, // 4号与门2号入口
+	{"4与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 13, CONST1, CONST1 + 1},	// 4号与门输出
+	{NULL}																			// 到这里结束
 
 };
 
@@ -85,6 +106,7 @@ void my_init()
 	dht11_init(dht11);		 // 这个是DHT11.h/DHT11.c里的函数，初始化引脚
 	pinMode(anjian1, INPUT); // 按键1
 	pinMode(jidianqi_pin, OUTPUT);
+	pinMode(jidianqi_pin1, OUTPUT);
 	// pinMode(jd1, OUTPUT);
 	set_timer1_ms(timer1_worker, TIMER1_timeout_ms); // 强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
 	// （仅在程序复位的时候可以成功，原因：timer2_count 没有复位就不会被初始化，自然调用不到定时器的初始化函数），
@@ -95,11 +117,31 @@ void my_init()
 void add_values()
 {
 	// 记录舵机的状态
-	add_value(&jidianqi_value,sizeof(jidianqi_value));
+	add_value(&jidianqi_value, sizeof(jidianqi_value));
+	add_value(&jidianqi_value1, sizeof(jidianqi_value1));
 }
 void refresh_work()
 {
-	Serial.print("\r\nrefresh_work\r\n");
+	if (jidianqi_value == 1)
+	{
+		digitalWrite(jidianqi_pin, LOW);
+	}
+	else
+	{
+		digitalWrite(jidianqi_pin, HIGH);
+	}
+	if (jidianqi_value1 == 1)
+	{
+		digitalWrite(jidianqi_pin1, LOW);
+	}
+	else
+	{
+		digitalWrite(jidianqi_pin1, HIGH);
+	}
+	yu_men[3] = yu_men[0] & yu_men[1] & yu_men[2];
+	yu_men[7] = yu_men[4] & yu_men[5] & yu_men[6];
+	yu_men[10] = yu_men[8] & yu_men[9];
+	yu_men[13] = yu_men[11] & yu_men[12];
 }
 void user_loop_1()
 {
@@ -126,15 +168,7 @@ void user_loop_1()
 	{
 		user_error2.status = NOT_WARN;
 	}
-	if(jidianqi_value==1)
-	{
-		digitalWrite(jidianqi_pin, LOW);
-	}
-	else
-	{
-		digitalWrite(jidianqi_pin, HIGH);
-
-	}
+	refresh_work();
 }
 
 /*此函数在定时中断中调用，处理温湿度传感器的40bit读取*/
@@ -177,15 +211,7 @@ int dht11_get()
 	return 1;
 }
 
-
 // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ 旧的usermain移过来的   ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
-
-
-
-
-
-
-
 
 void setup()
 {
@@ -251,6 +277,36 @@ void setup()
 	}
 }
 
+/*
+0 超时
+1 建立失败
+
+*/
+int try_tcp_loop()
+{
+	struct TcpLinkData tcp_link_data = init_server_tcp_link(MYHOST, TCP_PORT, get_user_id(), ESP.getChipId());
+	if (!tcp_link_data.client)
+	{
+		Serial.printf("error: file %s,line %d,\r\n", __FILE__, __LINE__);
+		return 1;
+	}
+
+	// 用户初始化
+	my_init();
+
+	int stat;
+	stat = wait_and_do_server_message(&tcp_link_data, refresh_work);
+	while (stat != 101)
+	{
+		stat = wait_and_do_server_message(&tcp_link_data, refresh_work);
+		/* code */
+		user_loop_1();
+	}
+
+	Serial.printf("error: file %s,line %d,\r\n", __FILE__, __LINE__);
+	free_tcp_lick(&tcp_link_data);
+	return 0;
+}
 void loop()
 {
 	static short error_wifi_count = 0;
@@ -282,35 +338,20 @@ void loop()
 	}
 
 	// WiFi.mode(WIFI_OFF); // 重新连接wifi
-
-	struct TcpLinkData tcp_link_data = init_server_tcp_link(MYHOST,TCP_PORT,get_user_id(),ESP.getChipId());
-	if(!tcp_link_data.client)
+	do
 	{
-		Serial.printf("error: file %s,line %d, error_tcp_sum %d\r\n",__FILE__,__LINE__,error_tcp_sum++);
+		if (try_tcp_loop() == 1)
+		{
+			error_tcp_sum++;
+		}
+		else
+		{
+			error_tcp_sum = 0;
+		}
+		Serial.printf("error: file %s,line %d, error_tcp_sum %d\r\n", __FILE__, __LINE__, error_tcp_sum);
 		delay(1000);
-		return;
-	}
-
-
-	// 用户初始化
-	my_init();
-
-
-	int stat;
-	stat = wait_and_do_server_message(&tcp_link_data,refresh_work);
-	while (stat!=101)
-	{
-		stat = wait_and_do_server_message(&tcp_link_data,refresh_work);
-		/* code */
-		user_loop_1();
-	}
-
-	Serial.printf("error: file %s,line %d, error_tcp_sum %d\r\n",__FILE__,__LINE__,error_tcp_sum++);
-	free_tcp_lick(&tcp_link_data);
-	delay(1000);
-	return;
+	} while (error_tcp_sum > 3);
 
 	// Serial.printf(" never  error\r\n");//TCP 刚好失效的时候就触发了
 	// client.stop();
 }
-

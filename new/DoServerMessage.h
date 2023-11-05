@@ -16,6 +16,7 @@ extern "C"
 		unsigned long get_time_old_ms;		//= millis();
 		unsigned long send_time_old_ms;		// = millis();
 		unsigned long last_send_jiantin_ms; // = millis();
+		unsigned long time_flush_1s; // 
 		unsigned long ruan_time_old_ms;		// 每隔 RUAN_TIMEer_ms 刷新一次监听的数据用的，储存时间戳
 	};
 	struct TcpLinkData init_server_tcp_link(const char *host, uint16 port, uint64_t uid, uint32_t chipID);

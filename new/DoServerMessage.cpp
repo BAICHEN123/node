@@ -195,6 +195,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 		// case 't':
 		// 这里处理心跳包返回的时间戳，无需返回任何数据
 		str_get_time(&Now, my_tcp_cache->data);
+		tcp_link_data->send_time_old_ms = millis();
 		break;
 	case '+': // 获取传感器和模式的信息
 	case 'G':
@@ -339,9 +340,9 @@ int other_timer_loop(struct TcpLinkData *tcp_link_data)
 {
 	if (millis() - tcp_link_data->ruan_time_old_ms > RUAN_TIMEer_ms)
 	{
-		if (millis() - tcp_link_data->ruan_time_old_ms > 1000)
+		if (millis() - tcp_link_data->time_flush_1s > 1000)
 		{
-			tcp_link_data->ruan_time_old_ms = millis();
+			tcp_link_data->time_flush_1s = millis();
 			next_sec(&Now);
 
 			// 隔一段时间就发送一次本机数据，心跳包
@@ -463,5 +464,6 @@ struct TcpLinkData init_server_tcp_link(const char *host, uint16 port, uint64_t 
 	tcp_lick_data.get_time_old_ms = millis();
 	tcp_lick_data.send_time_old_ms = millis();
 	tcp_lick_data.last_send_jiantin_ms = millis();
+	tcp_lick_data.time_flush_1s = millis();
 	return tcp_lick_data;
 }
