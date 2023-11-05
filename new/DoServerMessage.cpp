@@ -92,7 +92,7 @@ int set_databack(const char fig, char *tcp_send_data, int max_len)
 返回值：0 成功
 		101 发送返回给服务器的tcp数据包失败
 */
-int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache my_tcp_cache,void (*callback)())
+int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cache,void (*callback)())
 {
 	const int kERROR_send_tcp = 101;
 	const int kERROR_no_error = 0;
@@ -101,27 +101,27 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache my_tcp_cache
 	int tcp_senddata_len = 0;
 	unsigned long long tmpuL = 0;
 	int tmp_status = 0;
-	short len_old;
+	short len_old = 0;
 	long long tmp;
 	int tmp1;
 	// Serial.printf("回复响应时间：%d \n", micros() - time_old);
 	// 如果需要对TCP链接返回的数据进行处理，请在这后面写，-----------------------------------------------------------------------
 	// 示例//将TCP返回的数据当作字符串输出
-	Serial.print(my_tcp_cache.data);
+	Serial.print(my_tcp_cache->data);
 
-	switch (*my_tcp_cache.data)
+	switch (*my_tcp_cache->data)
 	{
 	case 'A': // 新增一个联动监听
 		// 尝试使用 '\t' 作为分割符号，一次接收多个监听指令
 		tcp_senddata_len = 0;
-		tmp1 = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, '\t');
+		tmp1 = str1_find_char_1(my_tcp_cache->data, len_old, my_tcp_cache->len, '\t');
 		while (tmp1 > 0)
 		{
-			my_tcp_cache.data[tmp1] = '\0';
-			tmp_status = add_jiantin(my_tcp_cache.data + len_old, tmp1);
+			my_tcp_cache->data[tmp1] = '\0';
+			tmp_status = add_jiantin(my_tcp_cache->data + len_old, tmp1);
 			tcp_senddata_len = tcp_senddata_len + sprintf(tcp_send_data + tcp_senddata_len, "L%d", tmp_status);
 			len_old = tmp1 + 1;
-			tmp1 = str1_find_char_1(my_tcp_cache.data, len_old, my_tcp_cache.len, '\t');
+			tmp1 = str1_find_char_1(my_tcp_cache->data, len_old, my_tcp_cache->len, '\t');
 		}
 		jiantin_print();
 		if (back_send_tcp_(tcp_link_data->client, tcp_send_data, tcp_senddata_len) == -1)
@@ -136,8 +136,8 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache my_tcp_cache
 		tmp1 = 0;
 		do
 		{
-			tmpuL = str_to_u64(my_tcp_cache.data + len_old, my_tcp_cache.len - len_old, &stat);
-			len_old = str1_find_char_1(my_tcp_cache.data, len_old + 1, my_tcp_cache.len, 'C');
+			tmpuL = str_to_u64(my_tcp_cache->data + len_old, my_tcp_cache->len - len_old, &stat);
+			len_old = str1_find_char_1(my_tcp_cache->data, len_old + 1, my_tcp_cache->len, 'C');
 			if (stat != 1)
 			{
 				break;
@@ -153,14 +153,14 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache my_tcp_cache
 		tcp_link_data->send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
 		break;
 	case 'D': // 删除一个联动
-		tmpuL = str_to_u64(my_tcp_cache.data, my_tcp_cache.len, &stat);
+		tmpuL = str_to_u64(my_tcp_cache->data, my_tcp_cache->len, &stat);
 		if (stat != 1)
 		{
 			Serial.printf(" D   str_to_u64 error	%d", stat);
 			break;
 		}
 		jiantin_del(tmpuL);
-		tcp_senddata_len = sprintf(tcp_send_data, "%s", my_tcp_cache.data);
+		tcp_senddata_len = sprintf(tcp_send_data, "%s", my_tcp_cache->data);
 		if (back_send_tcp_(tcp_link_data->client, tcp_send_data, tcp_senddata_len) == -1)
 		{
 			return kERROR_send_tcp;
@@ -172,13 +172,13 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache my_tcp_cache
 	case 'w': // warning
 	case 'e': // error
 		// 这里是服务器收到udp消息之后的回复
-		tmpuL = str_to_u64(my_tcp_cache.data, my_tcp_cache.len, &stat);
+		tmpuL = str_to_u64(my_tcp_cache->data, my_tcp_cache->len, &stat);
 		if (stat < 0)
 		{
 			Serial.printf("  mwe  str_to_u64 error	%d", stat);
 			break;
 		}
-		tcp_senddata_len = warn_ack(tmpuL, (enum UdpMessageClass) * (my_tcp_cache.data + len_old), tcp_send_data); // tmp原来存错误id现在存长度
+		tcp_senddata_len = warn_ack(tmpuL, (enum UdpMessageClass) * (my_tcp_cache->data + len_old), tcp_send_data); // tmp原来存错误id现在存长度
 		if (tcp_senddata_len < 2)																				   // 基础长度两个#号
 		{
 			// 请求的错误已经消除
@@ -194,7 +194,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache my_tcp_cache
 	case 'T':
 		// case 't':
 		// 这里处理心跳包返回的时间戳，无需返回任何数据
-		str_get_time(&Now, my_tcp_cache.data);
+		str_get_time(&Now, my_tcp_cache->data);
 		break;
 	case '+': // 获取传感器和模式的信息
 	case 'G':
@@ -218,20 +218,20 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache my_tcp_cache
 		tcp_link_data->send_time_old_ms = millis(); // 这里发送了，就没有必要一直发心跳包了，更新一下心跳包的时间戳
 		break;										// 跳出 switch
 	case '@':										// set
-		while (len_old >= 0 && len_old < my_tcp_cache.len)
+		while (len_old >= 0 && len_old < my_tcp_cache->len)
 		{
 			// 计算查找名字数据分割线的范围，取最小值
 			tmp1 = len_old + 50;
-			if (my_tcp_cache.len < tmp1)
+			if (my_tcp_cache->len < tmp1)
 			{
-				tmp1 = my_tcp_cache.len;
+				tmp1 = my_tcp_cache->len;
 			}
 			// 查找名字数据之间的分割符号
-			int value = str1_find_char_1(my_tcp_cache.data, len_old, tmp1, '['); // 获取 '[' 相对于 my_tcp_cache.data 的位置
+			int value = str1_find_char_1(my_tcp_cache->data, len_old, tmp1, '['); // 获取 '[' 相对于 my_tcp_cache->data 的位置
 			if (value < 0)														 // 限制名字的长度,找不到 '[' 就去找 ':'
 			{
 				// Serial.printf("get '[' error value= %d %d\n", value, len_old);
-				value = str1_find_char_1(my_tcp_cache.data, len_old, tmp1, ':'); // 获取':'相对于 my_tcp_cache.data 的位置
+				value = str1_find_char_1(my_tcp_cache->data, len_old, tmp1, ':'); // 获取':'相对于 my_tcp_cache->data 的位置
 			}
 			if (value < 0) //
 			{
@@ -245,23 +245,23 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache my_tcp_cache
 				{
 					break;
 				}
-				if (1 == str1_eq_str2(my_tcp_cache.data, len_old, value, data_list[i].name))
+				if (1 == str1_eq_str2(my_tcp_cache->data, len_old, value, data_list[i].name))
 				{
-					value = str1_find_char_1(my_tcp_cache.data, value, my_tcp_cache.len, ':') + 1; // 找到的是 ':' 真正的数据从下一位开始
+					value = str1_find_char_1(my_tcp_cache->data, value, my_tcp_cache->len, ':') + 1; // 找到的是 ':' 真正的数据从下一位开始
 
-					if (set_value(data_list + i, my_tcp_cache.data + value, my_tcp_cache.len - value) == 1)
+					if (set_value(data_list + i, my_tcp_cache->data + value, my_tcp_cache->len - value) == 1)
 					{
 						Serial.printf("set_value ok %d	", i);
 					}
 					else
 					{
-						Serial.printf("set_value error %d %s\r\n", i, my_tcp_cache.data + value);
+						Serial.printf("set_value error %d %s\r\n", i, my_tcp_cache->data + value);
 					}
 					break;
 				}
 			}
-			my_tcp_cache.data[len_old] = 0; // 清楚标志位的数据
-			len_old = str1_find_char_1(my_tcp_cache.data, len_old + 1, my_tcp_cache.len, '@');
+			my_tcp_cache->data[len_old] = 0; // 清楚标志位的数据
+			len_old = str1_find_char_1(my_tcp_cache->data, len_old + 1, my_tcp_cache->len, '@');
 			// 只识别 @ 类型的数据，get类型的数据一般不会组合发送，舍弃此部分
 		}
 		// 所有的指令已经执行完毕
@@ -283,8 +283,8 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache my_tcp_cache
 		}
 		break; // 跳出 switch
 	}
-	my_tcp_cache.data[0] = 0;
-	my_tcp_cache.len = 0; // 因为我没有在其他位置调用数据接收函数，所以我处理完之后全部清除了
+	my_tcp_cache->data[0] = 0;
+	my_tcp_cache->len = 0; // 因为我没有在其他位置调用数据接收函数，所以我处理完之后全部清除了
 	return kERROR_no_error;
 }
 
@@ -319,7 +319,7 @@ int wait_and_do_server_message(struct TcpLinkData *tcp_link_data,void (*callback
 			return 0; // 没有收到有效的数据，不用继续往后
 		}
 		// get_time_old_ms = millis(); // 更新最后一次接收到数据的时间戳
-		int error = do_tcp_data(tcp_link_data, my_tcp_cache,callback);
+		int error = do_tcp_data(tcp_link_data, &my_tcp_cache,callback);
 		if (error != 0)
 		{
 			Serial.printf("error: file %s,line %d, code %d\r\n", __FILE__, __LINE__, error); // TCP 刚好失效的时候就触发了

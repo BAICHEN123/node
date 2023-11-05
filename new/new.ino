@@ -36,10 +36,12 @@ uint8_t user_error_2 = 0;
 struct DHT11_data dht11_data = {666, 666};
 double yan_wu_A = 0;
 double yanwu_my = 0;
+uint8_t jidianqi_value = 0;
 
 // 定义几个引脚的功能
 const uint8_t anjian1 = 0; // 按键1输入
 const uint8_t dht11 = 5;   // dht11
+const uint8_t jidianqi_pin = 12;   // 继电器
 
 // 定义几个范围定义变量
 unsigned char CONST1[3] = {0, 1, 2};
@@ -50,6 +52,7 @@ struct MyType data_list[MAX_NAME] = {
 	{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature), NULL, NULL},
 	{"湿度", "%", TYPE_FLOAT, sizeof(dht11_data.humidity), &(dht11_data.humidity), NULL, NULL},
 	{"烟雾模拟", "%", TYPE_DOUBLE, sizeof(yanwu_my), &yanwu_my, NULL, NULL},
+	{"@开关1", NULL, TYPE_u8, sizeof(jidianqi_value), &jidianqi_value,CONST1,CONST1+1},
 	{"@1号自定义警告", NULL, TYPE_u8, sizeof(user_error_1), &user_error_1, CONST1, CONST1 + 1}, // 用户自定义警告
 	{"@2号自定义警告", NULL, TYPE_u8, sizeof(user_error_2), &user_error_2, CONST1, CONST1 + 1}, // 用户自定义警告
 	{"时", NULL, TYPE_u8, sizeof(Now.hour), &(Now.hour), NULL, NULL},
@@ -81,6 +84,7 @@ void my_init()
 
 	dht11_init(dht11);		 // 这个是DHT11.h/DHT11.c里的函数，初始化引脚
 	pinMode(anjian1, INPUT); // 按键1
+	pinMode(jidianqi_pin, OUTPUT);
 	// pinMode(jd1, OUTPUT);
 	set_timer1_ms(timer1_worker, TIMER1_timeout_ms); // 强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
 	// （仅在程序复位的时候可以成功，原因：timer2_count 没有复位就不会被初始化，自然调用不到定时器的初始化函数），
@@ -91,11 +95,11 @@ void my_init()
 void add_values()
 {
 	// 记录舵机的状态
-	// add_value(&duoji_need,sizeof(duoji_need));
+	add_value(&jidianqi_value,sizeof(jidianqi_value));
 }
 void refresh_work()
 {
-
+	Serial.print("\r\nrefresh_work\r\n");
 }
 void user_loop_1()
 {
@@ -121,6 +125,15 @@ void user_loop_1()
 	else
 	{
 		user_error2.status = NOT_WARN;
+	}
+	if(jidianqi_value==1)
+	{
+		digitalWrite(jidianqi_pin, LOW);
+	}
+	else
+	{
+		digitalWrite(jidianqi_pin, HIGH);
+
 	}
 }
 
