@@ -28,6 +28,9 @@ const char *MODE_INFO = "@断电记忆[0-2]:关闭，仅本次，所有";
 static struct Udpwarn user_error1 = {WARN, NOT_WARN, 0, 5, "1 号自定义警告被触发"};
 static struct Udpwarn user_error2 = {WARN, NOT_WARN, 0, 6, "2 号自定义警告被触发"};
 
+const char *sec_timer2_name = "@1定时器";
+const char *min_timer1_name = "@2定时器";
+
 // 定义传感器储存变量
 uint8_t power_save = 0; // 断电记忆
 uint8_t user_error_1 = 0;
@@ -39,6 +42,13 @@ uint8_t jidianqi_value = 0;
 uint8_t jidianqi_value1 = 0;
 uint8_t yu_men[4 * 2 + 3 * 2] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // 与门寄存器
 
+int8_t start_sec_timer_1 = -1;	 // 秒
+int8_t next_minute_timer_1 = -1; // 分
+int32_t min_timer_1 = -1;
+
+unsigned long timer_2_last_ms;
+int32_t sec_timer_2 = -1;
+
 // 定义几个引脚的功能
 const uint8_t anjian1 = 0;		  // 按键1输入
 const uint8_t dht11 = 5;		  // dht11
@@ -47,8 +57,11 @@ const uint8_t jidianqi_pin1 = 14; // 继电器
 
 // 定义几个范围定义变量
 unsigned char CONST1[4] = {0, 1, 2, 6};
+int32_t CONST2[4] = {0, 180};
+// 函数声明
 int dht11_get();
 void read_dht11();
+void refresh_work();
 
 struct MyType data_list[MAX_NAME] = {
 	{"温度", "°C", TYPE_FLOAT, sizeof(dht11_data.temperature), &(dht11_data.temperature), NULL, NULL},
@@ -56,15 +69,11 @@ struct MyType data_list[MAX_NAME] = {
 	{"烟雾模拟", "%", TYPE_DOUBLE, sizeof(yanwu_my), &yanwu_my, NULL, NULL},
 	{"@开关1", NULL, TYPE_u8, sizeof(jidianqi_value), &jidianqi_value, CONST1, CONST1 + 1},
 	{"@开关2", NULL, TYPE_u8, sizeof(jidianqi_value1), &jidianqi_value1, CONST1, CONST1 + 1},
+	{sec_timer2_name, "秒", TYPE_INT, sizeof(sec_timer_2), &sec_timer_2, CONST2, CONST2 + 1},
+	{min_timer1_name, "分钟", TYPE_INT, sizeof(min_timer_1), &min_timer_1, CONST2, CONST2 + 1},
+
 	{"@1号自定义警告", NULL, TYPE_u8, sizeof(user_error_1), &user_error_1, CONST1, CONST1 + 1}, // 用户自定义警告
 	{"@2号自定义警告", NULL, TYPE_u8, sizeof(user_error_2), &user_error_2, CONST1, CONST1 + 1}, // 用户自定义警告
-	{"时", NULL, TYPE_u8, sizeof(Now.hour), &(Now.hour), NULL, NULL},
-	{"分", NULL, TYPE_u8, sizeof(Now.minute), &(Now.minute), NULL, NULL},
-	{"秒", NULL, TYPE_u8, sizeof(Now.sec), &(Now.sec), NULL, NULL},
-	{"星期", NULL, TYPE_u8, sizeof(Now.week), &(Now.week), CONST1, CONST1 + 3},
-	{"日", NULL, TYPE_u8, sizeof(Now.day), &(Now.day), NULL, NULL},
-	{"月", NULL, TYPE_u8, sizeof(Now.month), &(Now.month), NULL, NULL},
-	{"年", NULL, TYPE_USHORT, sizeof(Now.year), &(Now.year), NULL, NULL},
 	{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save, CONST1, CONST1 + 2},
 	{"@1与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men, CONST1, CONST1 + 1},		// 1号与门1号入口
 	{"@1与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 1, CONST1, CONST1 + 1},	// 1号与门2号入口
@@ -80,7 +89,14 @@ struct MyType data_list[MAX_NAME] = {
 	{"@4与1入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 11, CONST1, CONST1 + 1}, // 4号与门1号入口
 	{"@4与2入", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 12, CONST1, CONST1 + 1}, // 4号与门2号入口
 	{"4与出", NULL, TYPE_u8, sizeof(yu_men[0]), yu_men + 13, CONST1, CONST1 + 1},	// 4号与门输出
-	{NULL}																			// 到这里结束
+	{"时", NULL, TYPE_u8, sizeof(Now.hour), &(Now.hour), NULL, NULL},
+	{"分", NULL, TYPE_u8, sizeof(Now.minute), &(Now.minute), NULL, NULL},
+	{"秒", NULL, TYPE_u8, sizeof(Now.sec), &(Now.sec), NULL, NULL},
+	{"星期", NULL, TYPE_u8, sizeof(Now.week), &(Now.week), CONST1, CONST1 + 3},
+	{"日", NULL, TYPE_u8, sizeof(Now.day), &(Now.day), NULL, NULL},
+	{"月", NULL, TYPE_u8, sizeof(Now.month), &(Now.month), NULL, NULL},
+	{"年", NULL, TYPE_USHORT, sizeof(Now.year), &(Now.year), NULL, NULL},
+	{NULL} // 到这里结束
 
 };
 
@@ -101,7 +117,8 @@ void timer1_worker()
  */
 void my_init()
 {
-	// refresh_work(); // 初始化引脚之前，先调整高低电平，减少不必要的继电器响声
+	refresh_yu_men();
+	refresh_jidianqi(); // 初始化引脚之前，先调整高低电平，减少不必要的继电器响声
 
 	dht11_init(dht11);		 // 这个是DHT11.h/DHT11.c里的函数，初始化引脚
 	pinMode(anjian1, INPUT); // 按键1
@@ -120,7 +137,7 @@ void add_values()
 	add_value(&jidianqi_value, sizeof(jidianqi_value));
 	add_value(&jidianqi_value1, sizeof(jidianqi_value1));
 }
-void refresh_work()
+void refresh_jidianqi()
 {
 	if (jidianqi_value == 1)
 	{
@@ -138,11 +155,55 @@ void refresh_work()
 	{
 		digitalWrite(jidianqi_pin1, HIGH);
 	}
+}
+void refresh_yu_men()
+{
 	yu_men[3] = yu_men[0] & yu_men[1] & yu_men[2];
 	yu_men[7] = yu_men[4] & yu_men[5] & yu_men[6];
 	yu_men[10] = yu_men[8] & yu_men[9];
 	yu_men[13] = yu_men[11] & yu_men[12];
 }
+
+/*
+
+*/
+void refresh_min_timer_1()
+{
+	if (min_timer_1 == 0)
+	{
+		if (Now.sec >= start_sec_timer_1)
+		{
+			min_timer_1 = -1;
+			start_sec_timer_1 = -1;
+			next_minute_timer_1 = -1;
+		}
+	}
+	else if (min_timer_1 > 0)
+	{
+		if (Now.minute >= next_minute_timer_1)
+		{
+			min_timer_1--;
+			next_minute_timer_1 = Now.minute + 1;
+			if (next_minute_timer_1 == 60)
+			{
+				next_minute_timer_1 = 0;
+			}
+		}
+	}
+}
+void refresh_sec_timer_2()
+{
+	if (sec_timer_2 < 0)
+	{
+		return;
+	}
+	if (millis() - timer_2_last_ms >= 1000)
+	{
+		sec_timer_2--;
+		timer_2_last_ms = millis();
+	}
+}
+
 void user_loop_1()
 {
 
@@ -168,7 +229,11 @@ void user_loop_1()
 	{
 		user_error2.status = NOT_WARN;
 	}
-	refresh_work();
+
+	refresh_yu_men();
+	refresh_jidianqi();
+	refresh_min_timer_1();
+	refresh_sec_timer_2();
 }
 
 /*此函数在定时中断中调用，处理温湿度传感器的40bit读取*/
@@ -209,6 +274,30 @@ int dht11_get()
 		return 0;
 	}
 	return 1;
+}
+
+void set_value_of_data_list(int index)
+{
+	if (data_list[index].name == min_timer1_name)
+	{
+		// 记录分钟级别的定时器开始的秒，和刷新一下下次减一的位置
+		next_minute_timer_1 = Now.minute + 1;
+		if (next_minute_timer_1 == 60)
+		{
+			next_minute_timer_1 = 0;
+		}
+		start_sec_timer_1 = Now.sec;
+	}
+	else if (data_list[index].name == sec_timer2_name)
+	{
+		timer_2_last_ms = millis();
+	}
+}
+
+void net_set_value_callback()
+{
+	refresh_yu_men();
+	refresh_jidianqi();
 }
 
 // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ 旧的usermain移过来的   ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
@@ -295,10 +384,10 @@ int try_tcp_loop()
 	my_init();
 
 	int stat;
-	stat = wait_and_do_server_message(&tcp_link_data, refresh_work);
+	stat = wait_and_do_server_message(&tcp_link_data, net_set_value_callback, set_value_of_data_list);
 	while (stat != 101)
 	{
-		stat = wait_and_do_server_message(&tcp_link_data, refresh_work);
+		stat = wait_and_do_server_message(&tcp_link_data, net_set_value_callback, set_value_of_data_list);
 		/* code */
 		user_loop_1();
 	}

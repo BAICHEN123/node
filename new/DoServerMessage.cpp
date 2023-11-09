@@ -92,7 +92,7 @@ int set_databack(const char fig, char *tcp_send_data, int max_len)
 返回值：0 成功
 		101 发送返回给服务器的tcp数据包失败
 */
-int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cache, void (*callback)())
+int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cache, void (*callback)(), void (*set_value_of)(int index_of_data_list))
 {
 	const int kERROR_send_tcp = 101;
 	const int kERROR_no_error = 0;
@@ -252,6 +252,10 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 
 					if (set_value(data_list + i, my_tcp_cache->data + value, my_tcp_cache->len - value) == 1)
 					{
+						if (set_value_of)
+						{
+							set_value_of(i);
+						}
 						Serial.printf("set_value ok %d	", i);
 					}
 					else
@@ -266,7 +270,10 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 			// 只识别 @ 类型的数据，get类型的数据一般不会组合发送，舍弃此部分
 		}
 		// 所有的指令已经执行完毕
-		callback();
+		if (callback)
+		{
+			callback();
+		}
 		// TCP 打包返还自己的状态
 		if (back_send_tcp_(tcp_link_data->client, tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
 		{
@@ -308,7 +315,7 @@ callback 是在有 “extern struct MyType data_list[MAX_NAME];” 变量被修�
 1 成功处理数据
 101 连接断开
 */
-int wait_and_do_server_message(struct TcpLinkData *tcp_link_data, void (*callback)())
+int wait_and_do_server_message(struct TcpLinkData *tcp_link_data, void (*callback)(), void (*set_value_of)(int index_of_data_list))
 {
 	if (!tcp_link_data->client || !tcp_link_data->client->connected())
 	{
@@ -325,7 +332,7 @@ int wait_and_do_server_message(struct TcpLinkData *tcp_link_data, void (*callbac
 			return 0; // 没有收到有效的数据，不用继续往后
 		}
 		// get_time_old_ms = millis(); // 更新最后一次接收到数据的时间戳
-		int error = do_tcp_data(tcp_link_data, &my_tcp_cache, callback);
+		int error = do_tcp_data(tcp_link_data, &my_tcp_cache, callback, set_value_of);
 		if (error != 0)
 		{
 			Serial.printf("error: file %s,line %d, code %d\r\n", __FILE__, __LINE__, error); // TCP 刚好失效的时候就触发了
