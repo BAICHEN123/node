@@ -49,6 +49,8 @@ int32_t min_timer_1 = -1;
 unsigned long timer_2_last_ms;
 int32_t sec_timer_2 = -1;
 
+unsigned long key_down_start_time = 0;
+
 // 定义几个引脚的功能
 const uint8_t anjian1 = 0;		  // 按键1输入
 const uint8_t dht11 = 5;		  // dht11
@@ -204,6 +206,23 @@ void refresh_sec_timer_2()
 	}
 }
 
+void refresh_key_down()
+{
+	if (digitalRead(anjian1) == HIGH)
+	{
+		key_down_start_time = millis();
+	}
+	else if (digitalRead(anjian1) == LOW && millis() - key_down_start_time > 50)
+	{
+		if (jidianqi_value1 == 1 || jidianqi_value == 1)
+		{
+			jidianqi_value1 = 0;
+			jidianqi_value = 0;
+			refresh_jidianqi();
+		}
+	}
+}
+
 void user_loop_1()
 {
 
@@ -229,7 +248,7 @@ void user_loop_1()
 	{
 		user_error2.status = NOT_WARN;
 	}
-
+	refresh_key_down();
 	refresh_yu_men();
 	refresh_jidianqi();
 	refresh_min_timer_1();
