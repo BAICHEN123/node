@@ -50,9 +50,20 @@ unsigned long timer_2_last_ms;
 int32_t sec_timer_2 = -1;
 
 unsigned long key_down_start_time = 0;
+unsigned long key_up_start_time = 0;
+
+unsigned long key_left_down_start_time = 0;
+unsigned long key_right_down_start_time = 0;
+
+int8_t key_left_in_last_down = 0;
+int8_t key_right_in_last_down = 0;
 
 // 定义几个引脚的功能
-const uint8_t anjian1 = 0;		  // 按键1输入
+const uint8_t anjian1 = 0; // 按键1输入
+
+const uint8_t anjian_pin_left = 13; //
+const uint8_t anjian_pin_right = 2; //
+
 const uint8_t dht11 = 5;		  // dht11
 const uint8_t jidianqi_pin = 12;  // 继电器
 const uint8_t jidianqi_pin1 = 14; // 继电器
@@ -126,6 +137,7 @@ void my_init()
 	pinMode(anjian1, INPUT); // 按键1
 	pinMode(jidianqi_pin, OUTPUT);
 	pinMode(jidianqi_pin1, OUTPUT);
+	pinMode(anjian_pin_left, INPUT);
 	// pinMode(jd1, OUTPUT);
 	set_timer1_ms(timer1_worker, TIMER1_timeout_ms); // 强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
 	// （仅在程序复位的时候可以成功，原因：timer2_count 没有复位就不会被初始化，自然调用不到定时器的初始化函数），
@@ -208,6 +220,7 @@ void refresh_sec_timer_2()
 
 void refresh_key_down()
 {
+
 	if (digitalRead(anjian1) == HIGH)
 	{
 		key_down_start_time = millis();
@@ -220,7 +233,54 @@ void refresh_key_down()
 			jidianqi_value = 0;
 			refresh_jidianqi();
 		}
+		key_up_start_time = millis();
+		return;
 	}
+	if (millis() - key_up_start_time < TIMER1_timeout_ms * 2)
+	{
+		return;
+	}
+
+	pinMode(anjian_pin_left, INPUT);
+	if (digitalRead(anjian_pin_left) == HIGH)
+	{
+		key_left_down_start_time = millis();
+		key_left_in_last_down = 0;
+	}
+	else if (key_left_in_last_down == 0 && millis() - key_left_down_start_time > 50)
+	{
+		if (jidianqi_value1 == 1)
+		{
+			jidianqi_value1 = 0;
+		}
+		else
+		{
+			jidianqi_value1 = 1;
+		}
+		refresh_jidianqi();
+		key_left_in_last_down = 1;
+	}
+
+	pinMode(anjian_pin_right, INPUT);
+	if (digitalRead(anjian_pin_right) == HIGH)
+	{
+		key_right_down_start_time = millis();
+		key_right_in_last_down = 0;
+	}
+	else if (key_right_in_last_down == 0 && millis() - key_right_down_start_time > 50)
+	{
+		if (jidianqi_value == 1)
+		{
+			jidianqi_value = 0;
+		}
+		else
+		{
+			jidianqi_value = 1;
+		}
+		refresh_jidianqi();
+		key_right_in_last_down = 1;
+	}
+	pinMode(anjian_pin_right, OUTPUT);
 }
 
 void user_loop_1()
