@@ -72,6 +72,9 @@ int get_name_id(char *name, int data_len)
 		// 	Serial.printf("get ':' error value= %d \n", value);
 		// 	break;
 		// }
+		if(data_list[i].name == NULL){
+			return -1;
+		}
 		if (1 == str1_eq_str2(name, 0, data_len, data_list[i].name))
 		{
 			return i;
@@ -163,7 +166,7 @@ int add_jiantin(char *tcp_data, int data_len)
 	jt.name_id = get_name_id(tcp_data + name, jt.name_len);
 	if (jt.name_id < 0)
 	{
-		Serial.printf("tmp  %s  %d\r\n", tcp_data + name, jt.name_len);
+		Serial.printf("not find  %s  %d\r\n", tcp_data + name, jt.name_len);
 		return -5;
 	}
 
