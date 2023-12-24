@@ -14,17 +14,15 @@ const char *MODE_INFO = "@断电记忆[0-2]:关闭，仅本次，所有";
 static struct Udpwarn user_error1 = {WARN, NOT_WARN, 0, 5, "1 号自定义警告被触发"};
 static struct Udpwarn user_error2 = {WARN, NOT_WARN, 0, 6, "2 号自定义警告被触发"};
 
-
 // 定义传感器储存变量
 uint8_t power_save = 0; // 断电记忆
 uint8_t user_error_1 = 0;
 uint8_t user_error_2 = 0;
 float temperature = 0;
-struct myds18b20 dsdata; 
+struct myds18b20 dsdata;
 // 定义几个引脚的功能
-const uint8_t anjian1 = 0; // 按键1输入
+const uint8_t anjian1 = 0;	// 按键1输入
 const uint8_t ds18b20 = 12; // 按键1输入
-
 
 // 定义几个范围定义变量
 unsigned char CONST1[4] = {0, 1, 2, 6};
@@ -62,7 +60,7 @@ void my_init()
 	dsdata = init_ds18b20(12);
 	// pinMode(jd1, OUTPUT);
 	set_timer1_ms(timer1_worker, TIMER1_timeout_ms); // 强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
-	// （仅在程序复位的时候可以成功，原因：timer2_count 没有复位就不会被初始化，自然调用不到定时器的初始化函数），
+													 // （仅在程序复位的时候可以成功，原因：timer2_count 没有复位就不会被初始化，自然调用不到定时器的初始化函数），
 }
 
 // 需要断电记忆的变量在这里添加
@@ -94,17 +92,17 @@ void user_loop_1()
 	else
 	{
 		user_error2.status = NOT_WARN;
-	} 
+	}
 	static unsigned long last_get_temperature = millis();
-	if(millis() - last_get_temperature >800){
+	if (millis() - last_get_temperature > 800)
+	{
 		temperature = read_temperature(dsdata);
 		last_get_temperature = millis();
 	}
-
 }
 
 void set_value_of_data_list(int index)
-{ 
+{
 }
 
 void net_set_value_callback()

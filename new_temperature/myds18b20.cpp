@@ -112,6 +112,10 @@ float read_temperature(struct myds18b20 dsdata)
             raw = raw & ~1; // 11 bit res, 375 ms
                             //// default is 12 bit resolution, 750 ms conversion time
     }
+
+    ds->reset();
+    ds->select(dsdata.addr);
+    ds->write(0x44, 1); // start conversion, with parasite power on at the end
     celsius = (float)raw / 16.0;
     return celsius;
 }
