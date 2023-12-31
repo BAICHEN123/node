@@ -3,11 +3,11 @@
 [Thanks Chat-GPT for the translation.](./README.en.md)
 ### 其他端
 #### gitee
-[app](https://gitee.com/he_chen_chuan/Mytabs)  
+[app](https://gitee.com/he_chen_chuan/BC-app)  
 [BC-server](https://gitee.com/he_chen_chuan/BC-server)  
 
 #### github
-[app](https://github.com/BAICHEN123/Mytabs)  
+[app](https://github.com/BAICHEN123/BC-app)  
 [BC-server](https://github.com/BAICHEN123/BC-server)  
 
 目前只差app端代码了，文档慢慢完善吧。
