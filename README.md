@@ -9,9 +9,7 @@
 #### github
 [app](https://github.com/BAICHEN123/BC-app)  
 [BC-server](https://github.com/BAICHEN123/BC-server)  
-
-目前只差app端代码了，文档慢慢完善吧。
-
+ 
 ### 简述
 使用arduino方式开发esp8266.  
 #### 目前实现的功能：
