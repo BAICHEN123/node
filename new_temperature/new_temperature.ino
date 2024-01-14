@@ -31,7 +31,7 @@ int32_t CONST2[4] = {0, 180};
 void refresh_work();
 
 struct MyType data_list[MAX_NAME] = {
-	{"温度", "%", TYPE_FLOAT, sizeof(temperature), &temperature, NULL, NULL},
+	{"温度", "°C", TYPE_FLOAT, sizeof(temperature), &temperature, NULL, NULL},
 	{"@1号自定义警告", NULL, TYPE_u8, sizeof(user_error_1), &user_error_1, CONST1, CONST1 + 1}, // 用户自定义警告
 	{"@2号自定义警告", NULL, TYPE_u8, sizeof(user_error_2), &user_error_2, CONST1, CONST1 + 1}, // 用户自定义警告
 	{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save, CONST1, CONST1 + 2},
@@ -248,7 +248,7 @@ void loop()
 		}
 		Serial.printf("error: file %s,line %d, error_tcp_sum %d\r\n", __FILE__, __LINE__, error_tcp_sum);
 		delay(1000);
-	} while (error_tcp_sum > 3);
+	} while (error_tcp_sum < 3);
 
 	// Serial.printf(" never  error\r\n");//TCP 刚好失效的时候就触发了
 	// client.stop();
