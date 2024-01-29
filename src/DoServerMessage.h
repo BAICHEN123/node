@@ -1,6 +1,6 @@
 #ifndef __DoServerMessage_H
 #define __DoServerMessage_H
-
+#include <Arduino.h>
 #include "mytcp.h"
 
 /*

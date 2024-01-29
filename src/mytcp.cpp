@@ -1,5 +1,5 @@
 #include "mytcp.h"
-struct Tcp_cache my_tcp_cache;	  // TCP缓存数组
+struct Tcp_cache my_tcp_cache; // TCP缓存数组
 /*
 TCP阻塞，等待 timeout_ms_max ms
 看看有没有TCP包返回回来，不会自动断开链接
@@ -86,7 +86,7 @@ short back_send_tcp_(WiFiClient *client, char *tcp_send_data, int len)
 	{
 		// 在这里合成需要发送出去的传感器数据？
 		client->write(tcp_send_data, len);
-		client->flush(3000); // 限制等待时间
+		client->flush(1); // 限制等待时间
 		return 1;
 	}
 	else
@@ -104,7 +104,7 @@ short back_send_tcp(WiFiClient *client, const char *str1)
 	{
 		// 在这里合成需要发送出去的传感器数据？
 		client->write(str1);
-		client->flush();
+		client->flush(1); // 限制等待时间
 		return 1;
 	}
 	else

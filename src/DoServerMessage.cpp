@@ -323,7 +323,7 @@ int wait_and_do_server_message(struct TcpLinkData *tcp_link_data, void (*callbac
 	}
 
 	short stat = timeout_back_us(tcp_link_data->client, RUAN_TIMEer_us); // 等待100us tcp是否有数据返回
-
+	int end = 0;
 	if (stat == 1) // 有收到TCP数据
 	{
 		stat = get_tcp_data(tcp_link_data->client, &my_tcp_cache);
@@ -331,6 +331,7 @@ int wait_and_do_server_message(struct TcpLinkData *tcp_link_data, void (*callbac
 		{
 			return 0; // 没有收到有效的数据，不用继续往后
 		}
+		end = 1;
 		// get_time_old_ms = millis(); // 更新最后一次接收到数据的时间戳
 		int error = do_tcp_data(tcp_link_data, &my_tcp_cache, callback, set_value_of);
 		if (error != 0)
@@ -344,8 +345,12 @@ int wait_and_do_server_message(struct TcpLinkData *tcp_link_data, void (*callbac
 	{
 		return 101;
 	}
-
-	return other_timer_loop(tcp_link_data);
+	int status_loop = other_timer_loop(tcp_link_data);
+	if (status_loop == 101)
+	{
+		return status_loop;
+	} 
+	return end;
 }
 
 int other_timer_loop(struct TcpLinkData *tcp_link_data)
