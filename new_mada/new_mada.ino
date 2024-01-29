@@ -21,7 +21,7 @@ static struct Udpwarn user_error2 = {WARN, NOT_WARN, 0, 6, "2 号自定义警告
 unsigned char mada1 = 0;
 unsigned char mada2 = 0;
 unsigned char mada_time = 1;
-unsigned char mada_pwm = 1;
+unsigned char mada_pwm = 5;
 
 // 定义传感器储存变量
 uint8_t power_save = 0; // 断电记忆
@@ -30,8 +30,10 @@ uint8_t user_error_2 = 0;
 float temperature = 0;
 struct myds18b20 dsdata;
 // 定义几个引脚的功能
-const uint8_t anjian1 = 0;	// 按键1输入
-const uint8_t ds18b20 = 12; // 按键1输入
+const uint8_t anjian1 = 0;	  // 按键1输入
+const uint8_t ds18b20 = 12;	  //
+const uint8_t pin_key_1 = 13; // 按键1输入
+const uint8_t pin_key_2 = 14; // 按键1输入
 
 struct MyMada mada = {4, 5, TYPE_MADA_WAIT, 0};
 
@@ -71,7 +73,11 @@ void timer1_worker()
  */
 void my_init()
 {
-	pinMode(anjian1, INPUT); // 按键1
+	pinMode(anjian1, INPUT);   // 按键1
+	pinMode(pin_key_1, INPUT_PULLUP); // 按键1
+	pinMode(pin_key_2, INPUT_PULLUP); // 按键1
+	digitalWrite(pin_key_1,HIGH);
+	digitalWrite(pin_key_2,HIGH);
 	mada_wait(&mada);
 
 	dsdata = init_ds18b20(12);
@@ -83,6 +89,8 @@ void my_init()
 // 需要断电记忆的变量在这里添加
 void add_values()
 {
+	add_value(&mada_time, sizeof(mada_time));
+	add_value(&mada_pwm, sizeof(mada_pwm));
 }
 
 void user_loop_1()
@@ -145,6 +153,19 @@ void user_loop_1()
 			mada2 = 0;
 			mada_stop(&mada);
 		}
+	}
+
+	if (digitalRead(pin_key_1) == LOW)
+	{
+		mada_start(&mada, pwm1);
+	}
+	else if (digitalRead(pin_key_2) == LOW)
+	{
+		mada_start(&mada, -pwm1);
+	}
+	else
+	{
+		mada_stop(&mada);
 	}
 }
 
