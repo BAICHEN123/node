@@ -34,7 +34,7 @@ const uint8_t pin_key_2 = 14; // 按键1输入
 struct MyMada mada = {4, 5, TYPE_MADA_WAIT, 0};
 
 // 定义几个范围定义变量
-unsigned char CONST1[5] = {0, 1, 2, 6, 9};
+unsigned char CONST1[6] = {0, 1, 2, 6, 9,20};
 int32_t CONST2[4] = {0, 180};
 // 函数声明
 void refresh_work();
@@ -44,7 +44,7 @@ struct MyType data_list[MAX_NAME] = {
 	{"温度", "°C", TYPE_FLOAT, sizeof(temperature), &temperature, NULL, NULL},
 	{"@正", NULL, TYPE_u8, sizeof(mada1), &mada1, CONST1, CONST1 + 1},
 	{"@反", NULL, TYPE_u8, sizeof(mada2), &mada2, CONST1, CONST1 + 1},
-	{"@time", NULL, TYPE_u8, sizeof(mada_time), &mada_time, CONST1 + 1, CONST1 + 4},
+	{"@time", NULL, TYPE_u8, sizeof(mada_time), &mada_time, CONST1 + 1, CONST1 + 5},
 	{"@pwm", NULL, TYPE_u8, sizeof(mada_pwm), &mada_pwm, CONST1 + 1, CONST1 + 4},
 	{"@1号自定义警告", NULL, TYPE_u8, sizeof(user_error_1), &user_error_1, CONST1, CONST1 + 1}, // 用户自定义警告
 	{"@2号自定义警告", NULL, TYPE_u8, sizeof(user_error_2), &user_error_2, CONST1, CONST1 + 1}, // 用户自定义警告
@@ -282,7 +282,7 @@ int try_tcp_loop()
 		time111 = millis() - time111;
 		if (stat == 1)
 		{
-			Serial.printf("message: file %s,line %d, wait_and_do_server_message time %lu\r\n", __FILE__, __LINE__, time111);
+			// Serial.printf("message: file %s,line %d, wait_and_do_server_message time %lu\r\n", __FILE__, __LINE__, time111);
 		}
 		/* code */
 		user_loop_1();
