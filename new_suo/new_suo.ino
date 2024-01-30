@@ -28,17 +28,18 @@ struct myds18b20 dsdata;
 // 定义几个引脚的功能
 const uint8_t anjian1 = 0;	  // 按键1输入
 const uint8_t ds18b20 = 12;	  //
-const uint8_t pin_key_1 = 13; // 按键1输入
-const uint8_t pin_key_2 = 14; // 按键1输入
+const uint8_t pin_key_1 = 13; // 按键1输入 离马达近的一侧，按“反”驱动的极端
+const uint8_t pin_key_2 = 14; // 按键1输入 离马达远的一侧，按“正”驱动的极端
 
 struct MyMada mada = {4, 5, TYPE_MADA_WAIT, 0};
 
 // 定义几个范围定义变量
-unsigned char CONST1[6] = {0, 1, 2, 6, 9,20};
+unsigned char CONST1[6] = {0, 1, 2, 6, 10, 20};
 int32_t CONST2[4] = {0, 180};
 // 函数声明
 void refresh_work();
 ICACHE_RAM_ATTR void key_down_Interrupt();
+void stop_mada_do();
 
 struct MyType data_list[MAX_NAME] = {
 	{"温度", "°C", TYPE_FLOAT, sizeof(temperature), &temperature, NULL, NULL},
@@ -66,14 +67,27 @@ void timer1_worker()
 	clear_wifi_data(wifi_ssid_pw_file);
 }
 // 控制电机优先级最高,触碰到按键的时候就停止电机。
-void init_key_down_Interrupt()
+void init_key_down_Interrupt(struct MyMada *mada, int type)
 {
-	if (digitalRead(pin_key_2) == LOW || digitalRead(pin_key_1) == LOW)
+	if (type > 0)
 	{
-		delay(10);
+		if (digitalRead(pin_key_2) == LOW)
+		{
+			stop_mada_do();
+			return;
+		}
+		attachInterrupt(digitalPinToInterrupt(pin_key_2), key_down_Interrupt, FALLING); // 设置触发中断的端口，中断后运行的程序和触发模式
 	}
-	attachInterrupt(digitalPinToInterrupt(pin_key_1), key_down_Interrupt, FALLING); // 设置触发中断的端口，中断后运行的程序和触发模式
-	attachInterrupt(digitalPinToInterrupt(pin_key_2), key_down_Interrupt, FALLING); // 设置触发中断的端口，中断后运行的程序和触发模式
+	else if (type < 0)
+	{
+		if (digitalRead(pin_key_1) == LOW)
+		{
+			stop_mada_do();
+			return;
+		}
+		attachInterrupt(digitalPinToInterrupt(pin_key_1), key_down_Interrupt, FALLING); // 设置触发中断的端口，中断后运行的程序和触发模式
+	}
+	mada_start(mada, type);
 }
 void clean_key_down_Interrupt()
 {
@@ -115,12 +129,26 @@ void my_init()
 // 需要断电记忆的变量在这里添加
 void add_values()
 {
-	add_value(&mada_time, sizeof(mada_time));
-	add_value(&mada_pwm, sizeof(mada_pwm));
+	// add_value(&mada_time, sizeof(mada_time));
+	// add_value(&mada_pwm, sizeof(mada_pwm));
 }
 
 void user_loop_1()
 {
+	/*
+	按键分不清了就取消注释
+	if (digitalRead(pin_key_1) == LOW)
+	{
+		Serial.printf("digitalRead stat %d ", pin_key_1);
+		delay(1000);
+	}
+
+	if (digitalRead(pin_key_2) == LOW)
+	{
+		Serial.printf("digitalRead stat %d ", pin_key_2);
+		delay(1000);
+	}
+	*/
 
 	int time1 = mada_time * 100;
 	int pwm1 = mada_pwm * 100;
@@ -129,8 +157,7 @@ void user_loop_1()
 	{
 		if (mada.value != pwm1)
 		{
-			mada_start(&mada, pwm1);
-			init_key_down_Interrupt();
+			init_key_down_Interrupt(&mada, pwm1);
 		}
 		if (mada.type != TYPE_MADA_WAIT && mada.type != TYPE_MADA_STOP && millis() - mada.last_set_type_time > time1)
 		{
@@ -141,8 +168,7 @@ void user_loop_1()
 	{
 		if (mada.value != -pwm1)
 		{
-			mada_start(&mada, -pwm1);
-			init_key_down_Interrupt();
+			init_key_down_Interrupt(&mada, -pwm1);
 		}
 		if (mada.type != TYPE_MADA_WAIT && mada.type != TYPE_MADA_STOP && millis() - mada.last_set_type_time > time1)
 		{
