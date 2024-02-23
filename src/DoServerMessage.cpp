@@ -124,7 +124,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 			tmp1 = str1_find_char_1(my_tcp_cache->data, len_old, my_tcp_cache->len, '\t');
 		}
 		jiantin_print();
-		if (back_send_tcp_(tcp_link_data->client, tcp_send_data, tcp_senddata_len) == -1)
+		if (back_send_tcp_of_type(tcp_link_data->client,'L', tcp_send_data, tcp_senddata_len) == -1)
 		{
 			return kERROR_send_tcp;
 		}
@@ -143,10 +143,23 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 				break;
 			}
 			set_not_warn(tmpuL);
-			tmp1 = tmp1 + 1;
+			tmp1 = tmp1 + 1; 
 		} while (len_old > 0);
 		tcp_senddata_len = sprintf(tcp_send_data, "#%d", tmp1);
-		if (back_send_tcp_(tcp_link_data->client, tcp_send_data, tcp_senddata_len) == -1)
+		/*
+
+		这里的"#%d"可能会被误判成数据包被记录在数据库里，协议写的太糙了，以后重构了改这个问题吧？
+		或许可以通过添加一个帧头和帧长度的数据位来改善这个问题，
+		帧头用来替代旧的开头符号问题，帧长度解决粘包。
+		节点端：在旧的 back_send_tcp_ 的基础上，增加 种类参数可能就可以了，
+		服务器端：
+				A: 逐段接受，先拿类型长度，后接收数据。（选这个吧）
+				//B: 一次性阻塞完，然后逐段分析。 
+		app端应该不用动，服务器转发数据的时候把 帧头和帧长度的数据位 裁掉就可以了。
+		1字节类型，2字节长度。
+
+		*/
+		if (back_send_tcp_of_type(tcp_link_data->client,'C', tcp_send_data, tcp_senddata_len) == -1)
 		{
 			return kERROR_send_tcp;
 		}
@@ -161,7 +174,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 		}
 		jiantin_del(tmpuL);
 		tcp_senddata_len = sprintf(tcp_send_data, "%s", my_tcp_cache->data);
-		if (back_send_tcp_(tcp_link_data->client, tcp_send_data, tcp_senddata_len) == -1)
+		if (back_send_tcp_of_type(tcp_link_data->client,'D', tcp_send_data, tcp_senddata_len) == -1)
 		{
 			return kERROR_send_tcp;
 		}
@@ -185,7 +198,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 			Serial.printf("   loop warn_ack return 0 ");
 			break;
 		}
-		if (back_send_tcp_(tcp_link_data->client, tcp_send_data, tcp_senddata_len) == -1)
+		if (back_send_tcp_of_type(tcp_link_data->client,'m', tcp_send_data, tcp_senddata_len) == -1)
 		{
 			return kERROR_send_tcp;
 		}
@@ -200,7 +213,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 	case '+': // 获取传感器和模式的信息
 	case 'G':
 	case 'g':
-		if (back_send_tcp_(tcp_link_data->client, tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
+		if (back_send_tcp_of_type(tcp_link_data->client,'#', tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
 		{
 			return kERROR_send_tcp;
 		}
@@ -212,7 +225,8 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 		{
 			break;
 		}
-		if (back_send_tcp(tcp_link_data->client, MODE_INFO) == -1)
+		const static int MODE_INFO_len = strlen(MODE_INFO);
+		if (back_send_tcp_of_type(tcp_link_data->client,'I', MODE_INFO,MODE_INFO_len) == -1)
 		{
 			return kERROR_send_tcp;
 		}
@@ -275,7 +289,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 			callback();
 		}
 		// TCP 打包返还自己的状态
-		if (back_send_tcp_(tcp_link_data->client, tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
+		if (back_send_tcp_of_type(tcp_link_data->client,'#', tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
 		{
 			return kERROR_send_tcp;
 		}
@@ -298,7 +312,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 
 int send_hart_back(struct TcpLinkData *tcp_link_data)
 {
-	short end = back_send_tcp_(tcp_link_data->client, tcp_send_data, set_databack(HEART_BEAT_FIG, tcp_send_data, MAX_TCP_DATA));
+	short end = back_send_tcp_of_type(tcp_link_data->client,'\t', tcp_send_data, set_databack(HEART_BEAT_FIG, tcp_send_data, MAX_TCP_DATA));
 	if (end == 1)
 	{
 		tcp_link_data->send_time_old_ms = millis();

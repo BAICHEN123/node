@@ -80,6 +80,25 @@ short get_tcp_data(WiFiClient *client, struct Tcp_cache *tcp_data)
 }
 
 /*将打包好的数据，用TCP发送出去*/
+short back_send_tcp_of_type(WiFiClient *client,unsigned char type, const char *tcp_send_data, int len)
+{
+	if (client->connected()) // 函数第一次执行loop循环的时候这里可能会出错，因为 client 第一次赋值为局部变量，在setup 中修改他的初始化就可以了
+	{
+		// 在这里合成需要发送出去的传感器数据？
+		unsigned char head[3] = {type,len/256%256,len%256};
+		client->write(head,3);
+		client->write(tcp_send_data, len);
+		client->flush(1); // 限制等待时间
+		return 1;
+	}
+	else
+	{
+		// 结束此次 loop ，到开始位置，重新连接TCP
+		client->stop();
+		return -1;
+	}
+}
+/*将打包好的数据，用TCP发送出去*/
 short back_send_tcp_(WiFiClient *client, char *tcp_send_data, int len)
 {
 	if (client->connected()) // 函数第一次执行loop循环的时候这里可能会出错，因为 client 第一次赋值为局部变量，在setup 中修改他的初始化就可以了
