@@ -484,3 +484,10 @@ struct TcpLinkData init_server_tcp_link(const char *host, uint16 port, uint64_t 
 	tcp_lick_data.time_flush_1s = millis();
 	return tcp_lick_data;
 }
+
+
+// void enable_OTA_UpData()
+// {
+// 	const char * OTA_SERVER_FIND_TAG = "__DATE__" __DATE__ "__TIME__" __TIME__ "__FILE__" __FILE__ "__END__"; 
+// 	Serial.printf(OTA_SERVER_FIND_TAG);
+// }

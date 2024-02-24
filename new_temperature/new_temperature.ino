@@ -3,10 +3,12 @@
 #include <WiFiUdp.h>
 #include <Wire.h>
 #include <LittleFS.h>
+#include <Updater.h>
 #include "src/myinclude.h"
 #include "myds18b20.h"
 
 uint32_t CHIP_ID = 0;
+
 
 // ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ 旧的usermain移过来的  ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
 
@@ -128,7 +130,7 @@ void setup()
 	CHIP_ID = ESP.getChipId();
 	Serial.printf("getFlashChipId %d \r\n", ESP.getFlashChipId()); // 这个id是假的，不知道为啥，两个esp的一样
 	Serial.printf("getChipId %d  \r\n", ESP.getChipId());
-
+	enable_OTA_UpData(__FILE__);
 	pinMode(LED_BUILTIN, OUTPUT);
 	digitalWrite(LED_BUILTIN, HIGH);
 	short stat = file_read_wifidata(WIFI_ssid, WIFI_password, wifi_ssid_pw_file);
