@@ -1,4 +1,6 @@
 #include "mywifi.h"
+#include "savevalues.h"
+#include <LittleFS.h>
 uint8_t anjian1 = 0; // 按键1输入
 
 char WIFI_ssid[WIFI_SSID_LEN] = {'\0'};
@@ -110,33 +112,6 @@ short file_save_wifidata(char *WIFI_ssid, char *WIFI_password, const char *wifi_
     dataFile.print(WIFI_password);
     dataFile.print('\n');
     dataFile.close(); // 完成文件写入后关闭文件
-    return 1;
-}
-
-// 删除文件
-short file_delete(const char *file_name)
-{
-    if (LittleFS.begin())
-    { // 启动SPIFFS
-        Serial.println("SPIFFS Started.");
-    }
-    else
-    {
-        Serial.println("SPIFFS Failed to Start.");
-        return -2; // 文件系统启动失败
-    }
-
-    // 确认闪存中file_name文件是否被清楚
-    if (LittleFS.exists(file_name) && LittleFS.remove(file_name))
-    {
-        Serial.print(file_name);
-        Serial.println(" found && delete");
-    }
-    else
-    {
-        Serial.print(file_name);
-        Serial.print("NOT FOUND");
-    }
     return 1;
 }
 

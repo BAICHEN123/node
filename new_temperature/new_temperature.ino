@@ -130,6 +130,7 @@ void setup()
 	Serial.printf("getFlashChipId %d \r\n", ESP.getFlashChipId()); // 这个id是假的，不知道为啥，两个esp的一样
 	Serial.printf("getChipId %d  \r\n", ESP.getChipId());
 	enable_OTA_UpData(__FILE__);
+	Serial.println(OTA_SERVER_FIND_TAG);
 	pinMode(LED_BUILTIN, OUTPUT);
 	digitalWrite(LED_BUILTIN, HIGH);
 	short stat = file_read_wifidata(WIFI_ssid, WIFI_password, wifi_ssid_pw_file);

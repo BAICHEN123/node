@@ -13,6 +13,7 @@ extern "C"
     int save_values(const char *file_name);
     /*从文件中读出数据*/
     int read_values(const char *file_name);
+    short file_delete(const char *file_name);
     
 
 }

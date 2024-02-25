@@ -97,3 +97,29 @@ int read_values(const char *file_name)
 	Serial.printf("read count = %d \n", cou);
 	return cou;
 }
+// 删除文件
+short file_delete(const char *file_name)
+{
+    if (LittleFS.begin())
+    { // 启动SPIFFS
+        Serial.println("SPIFFS Started.");
+    }
+    else
+    {
+        Serial.println("SPIFFS Failed to Start.");
+        return -2; // 文件系统启动失败
+    }
+
+    // 确认闪存中file_name文件是否被清楚
+    if (LittleFS.exists(file_name) && LittleFS.remove(file_name))
+    {
+        Serial.print(file_name);
+        Serial.println(" found && delete");
+    }
+    else
+    {
+        Serial.print(file_name);
+        Serial.print("NOT FOUND");
+    }
+    return 1;
+}

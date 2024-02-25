@@ -3,7 +3,6 @@
 #define _MYWIFI_h
 
 #include <Arduino.h>
-#include <LittleFS.h>
 #include <ESP8266WiFi.h>
 extern "C"
 {
@@ -33,7 +32,6 @@ extern "C"
     void set_anjian1(const uint8_t pin);
     short file_read_wifidata(char *WIFI_ssid, char *WIFI_password, const char *wifi_ssid_pw_file);
     short file_save_wifidata(char *WIFI_ssid, char *WIFI_password, const char *wifi_ssid_pw_file);
-    short file_delete(const char *file_name);
     short get_wifi(char *WIFI_ssid, char *WIFI_password, const char *wifi_ssid_pw_file);
     short tcp_server_get_wifi_data(char *WIFI_ssid, char *WIFI_password, uint32_t CHIP_ID, const char *wifi_ssid_pw_file);
     void clear_wifi_data(const char *file_name);

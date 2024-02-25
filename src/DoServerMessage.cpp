@@ -16,7 +16,7 @@ extern "C"
 const char *OTA_SERVER_FIND_TAG;
 const char *OTA_FILE_NAME = "OTA.bin";
 
-bool write_OTA(u32 file_len);
+bool write_OTA(WiFiClient *client, u32 file_len);
 #endif
 
 /*
@@ -439,6 +439,10 @@ struct TcpLinkData init_server_tcp_link(const char *host, uint16 port, uint64_t 
 	struct TcpLinkData tcp_lick_data;
 	tcp_lick_data.client = client;
 
+#ifdef enable_OTA_UpData
+	file_delete(OTA_FILE_NAME);
+#endif
+
 	short stat;
 	if (client->connect(MYHOST, TCP_PORT))
 	{
@@ -501,6 +505,7 @@ struct TcpLinkData init_server_tcp_link(const char *host, uint16 port, uint64_t 
 		free_tcp_lick(&tcp_lick_data);
 		return tcp_lick_data;
 	}
+	file_len = (u32)tmp_u64;
 	if (file_len)
 	{
 		need_updata = 1;
@@ -533,16 +538,16 @@ struct TcpLinkData init_server_tcp_link(const char *host, uint16 port, uint64_t 
 	tcp_lick_data.time_flush_1s = millis();
 
 #ifdef enable_OTA_UpData
-
-	u32 save_file_len = 0;
-	save_file_len = save_tcp_data_in_file(client, OTA_FILE_NAME, file_len);
-	if (save_file_len == file_len)
+	if (need_updata)
 	{
+		back_send_tcp_of_type(client, 'u', "start", 5);
+		Serial.printf("OK: file %s,line %d, start\r\n", __FILE__, __LINE__);
 		if (Update.begin(file_len))
 		{
-			if (write_OTA(file_len))
+			if (write_OTA(client, file_len))
 			{
 				Serial.printf("OK: file %s,line %d, OTA YES!!!\r\n", __FILE__, __LINE__);
+				ESP.restart();
 			}
 			else
 			{
@@ -554,10 +559,6 @@ struct TcpLinkData init_server_tcp_link(const char *host, uint16 port, uint64_t 
 			Serial.printf("error: file %s,line %d, begin fied\r\n", __FILE__, __LINE__);
 		}
 	}
-	else
-	{
-		Serial.printf("error: file %s,line %d, save_file_len %u\r\n", __FILE__, __LINE__, save_file_len);
-	}
 #endif
 
 	return tcp_lick_data;
@@ -565,27 +566,38 @@ struct TcpLinkData init_server_tcp_link(const char *host, uint16 port, uint64_t 
 
 #ifdef enable_OTA_UpData
 
-bool write_OTA(u32 file_len)
+bool write_OTA(WiFiClient *client, u32 file_len)
 {
-	char data[100];
 	u32 len = 0;
 	size_t i = 0;
-	size_t write_ = 0;
-	File dataFile = LittleFS.open(OTA_FILE_NAME, "w");
-	while (len < file_len)
+	int write_ = 0;
+	Serial.printf(">>> file open file_len %u\r\n", file_len);
+	while (client->connected() && len < file_len)
 	{
-		// i = dataFile.readBytes(data, 100);
-		write_ = Update.write(dataFile);
+		i = client->read(my_tcp_cache.data, MAX_TCP_DATA);
+		if (i <= 0)
+		{
+			delay(5);
+			continue;
+		}
+		write_ = Update.write((uint8_t *)(my_tcp_cache.data), i);
 		if (write_ != i)
 		{
-			Serial.printf(">>> Update write error ! len=%d write_=%d\r\n", len + i, len + write_);
-			dataFile.close();
+			Serial.printf(">>> file write error ! len=%d write_=%d\r\n", len + i, len + write_);
+
+			back_send_tcp_of_type(client, 'u', my_tcp_cache.data, sprintf(my_tcp_cache.data, "%u", len + write_));
 			return len + write_;
 		}
 		len = len + i;
+		Serial.printf("len %u \r", i, write_, len);
 		i = 0;
 	}
-	dataFile.close();
-	return Update.end();
+	Serial.printf(">>> file write ok ! len=%d\r\n", len);
+	back_send_tcp_of_type(client, 'u', my_tcp_cache.data, sprintf(my_tcp_cache.data, "%u", len));
+	if (len == file_len)
+	{
+		return Update.end();
+	}
+	return false;
 }
 #endif

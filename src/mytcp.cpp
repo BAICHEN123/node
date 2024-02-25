@@ -79,13 +79,17 @@ short get_tcp_data(WiFiClient *client, struct Tcp_cache *tcp_data)
 /*将打包好的数据，用TCP发送出去*/
 short back_send_tcp_of_type(WiFiClient *client, unsigned char type, const char *tcp_send_data, int len)
 {
+	if (len < 0)
+	{
+		return 1;
+	}
 	if (client->connected()) // 函数第一次执行loop循环的时候这里可能会出错，因为 client 第一次赋值为局部变量，在setup 中修改他的初始化就可以了
 	{
 		// 在这里合成需要发送出去的传感器数据？
 		unsigned char head[3] = {type, len / 256 % 256, len % 256};
 		client->write(head, 3);
 		client->write(tcp_send_data, len);
-		client->flush(1); // 限制等待时间
+		client->flush(0); // 限制等待时间
 		return 1;
 	}
 	else
@@ -133,30 +137,35 @@ short back_send_tcp(WiFiClient *client, const char *str1)
 
 u32 save_tcp_data_in_file(WiFiClient *client, const char *file_name, u32 file_len)
 {
-	char data[100];
 	u32 len = 0;
 	int i = 0;
 	int write_ = 0;
 	File dataFile = LittleFS.open(file_name, "w");
+	Serial.printf(">>> file open file_len %u\r\n", file_len);
 	while (client->connected() && len < file_len)
 	{
-		while (client->available() && len < 100)
+		i = client->read(my_tcp_cache.data, MAX_TCP_DATA);
+		if (i <= 0)
 		{
-			data[i] = static_cast<char>(client->read());
-			i++;
+			delay(5);
+			continue;
 		}
-		write_ = dataFile.write(data, i);
+		write_ = dataFile.write(my_tcp_cache.data, i);
+		dataFile.flush();
 		if (write_ != i)
 		{
 			Serial.printf(">>> file write error ! len=%d write_=%d\r\n", len + i, len + write_);
 			dataFile.close();
+
+			back_send_tcp_of_type(client, 'u', my_tcp_cache.data, sprintf(my_tcp_cache.data, "%u", len + write_));
 			return len + write_;
 		}
 		len = len + i;
+		Serial.printf("i %d  w %d  len%u ", i, write_, len);
 		i = 0;
 	}
 	dataFile.close();
-	Serial.printf(">>> file write ok ! len=%d\r\n", len + i);
-
+	Serial.printf(">>> file write ok ! len=%d\r\n", len);
+	back_send_tcp_of_type(client, 'u', my_tcp_cache.data, sprintf(my_tcp_cache.data, "%u", len));
 	return len;
 }
