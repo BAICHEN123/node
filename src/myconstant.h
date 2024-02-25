@@ -24,7 +24,7 @@
 
 #define list_values_len_max 10 //需要存储多少个变量的值
 
-#define MAX_TCP_DATA 1024      //TCP缓存的最大值
+#define MAX_TCP_DATA 1025      //TCP缓存的最大值
 #define MAX_UDP_SEND_DATA 1024 //UDP缓存的最大值
 
 //wifi 的名称密码长度限制

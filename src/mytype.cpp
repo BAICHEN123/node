@@ -194,7 +194,7 @@ int set_value(struct MyType *mytype, char *data, int len_data)
 		return 0;
 	case TYPE_UINT:
 		value2 = str_to_u64(data, len_data, &status);
-		if (status != 1)
+		if (status < 0)
 		{
 			return 0;
 		}
@@ -218,7 +218,7 @@ int set_value(struct MyType *mytype, char *data, int len_data)
 		return 0;
 	case TYPE_U64:
 		value2 = str_to_u64(data, len_data, &status);
-		if (status != 1)
+		if (status < 0)
 		{
 			return 0;
 		}
@@ -362,7 +362,7 @@ void *get_value(char *data, int len_data, const enum type_id ID, unsigned char *
 
 	case TYPE_UINT:
 		value2 = str_to_u64(data, len_data, &status);
-		if (status != 1)
+		if (status < 0)
 		{
 			return NULL;
 		}
@@ -390,7 +390,7 @@ void *get_value(char *data, int len_data, const enum type_id ID, unsigned char *
 		return end_data;
 	case TYPE_U64:
 		value2 = str_to_u64(data, len_data, &status);
-		if (status != 1)
+		if (status < 0)
 		{
 			return NULL;
 		}

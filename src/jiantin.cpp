@@ -72,7 +72,8 @@ int get_name_id(char *name, int data_len)
 		// 	Serial.printf("get ':' error value= %d \n", value);
 		// 	break;
 		// }
-		if(data_list[i].name == NULL){
+		if (data_list[i].name == NULL)
+		{
 			return -1;
 		}
 		if (1 == str1_eq_str2(name, 0, data_len, data_list[i].name))
@@ -128,7 +129,7 @@ int add_jiantin(char *tcp_data, int data_len)
 	// 分析出来id之后在已经有的监听里查找一下，防止重复添加
 	// id相同就不用新建监听了，把数据内容修改了就可以了，字符串内容需要修改
 	Serial.printf("sql_id %llu  %d\r\n", jt.sql_id, statu);
-	if (statu != 1)
+	if (statu < 0)
 	{
 		return -10;
 	}
@@ -317,7 +318,7 @@ int jiantin_loop()
 			}
 		}
 	}
-	return end;//<0 malloc error
+	return end; //<0 malloc error
 }
 
 void set_not_warn(unsigned long long sql_id)

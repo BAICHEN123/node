@@ -283,7 +283,7 @@ short tcp_server_get_wifi_data(char *WIFI_ssid, char *WIFI_password, uint32_t CH
                     // len("+UID:")=4
                     short status = 0;
                     UID = str_to_u64(data + 4, index - 4, &status);
-                    if (status != 1)
+                    if (status < 0)
                     {
                         client.printf("error UID not found!", UID); // 在client端回复
                         Serial.print(data);

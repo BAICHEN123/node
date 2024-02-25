@@ -1,4 +1,5 @@
 #include "mytcp.h"
+#include <LittleFS.h>
 struct Tcp_cache my_tcp_cache; // TCP缓存数组
 /*
 TCP阻塞，等待 timeout_ms_max ms
@@ -67,12 +68,8 @@ short timeout_back_us(WiFiClient *client, unsigned short timeout_us_max)
 short get_tcp_data(WiFiClient *client, struct Tcp_cache *tcp_data)
 {
 	short start_id = tcp_data->len;
-	while (client->available() && tcp_data->len < MAX_TCP_DATA)
+	while (client->available() && tcp_data->len < MAX_TCP_DATA - 1)
 	{
-		// if (tcp_data->len >= MAX_TCP_DATA)
-		// {
-		// 	return -1;
-		// }
 		tcp_data->data[tcp_data->len++] = static_cast<char>(client->read());
 	}
 	tcp_data->data[tcp_data->len] = '\0';
@@ -80,13 +77,13 @@ short get_tcp_data(WiFiClient *client, struct Tcp_cache *tcp_data)
 }
 
 /*将打包好的数据，用TCP发送出去*/
-short back_send_tcp_of_type(WiFiClient *client,unsigned char type, const char *tcp_send_data, int len)
+short back_send_tcp_of_type(WiFiClient *client, unsigned char type, const char *tcp_send_data, int len)
 {
 	if (client->connected()) // 函数第一次执行loop循环的时候这里可能会出错，因为 client 第一次赋值为局部变量，在setup 中修改他的初始化就可以了
 	{
 		// 在这里合成需要发送出去的传感器数据？
-		unsigned char head[3] = {type,len/256%256,len%256};
-		client->write(head,3);
+		unsigned char head[3] = {type, len / 256 % 256, len % 256};
+		client->write(head, 3);
 		client->write(tcp_send_data, len);
 		client->flush(1); // 限制等待时间
 		return 1;
@@ -132,4 +129,34 @@ short back_send_tcp(WiFiClient *client, const char *str1)
 		client->stop();
 		return -1;
 	}
+}
+
+u32 save_tcp_data_in_file(WiFiClient *client, const char *file_name, u32 file_len)
+{
+	char data[100];
+	u32 len = 0;
+	int i = 0;
+	int write_ = 0;
+	File dataFile = LittleFS.open(file_name, "w");
+	while (client->connected() && len < file_len)
+	{
+		while (client->available() && len < 100)
+		{
+			data[i] = static_cast<char>(client->read());
+			i++;
+		}
+		write_ = dataFile.write(data, i);
+		if (write_ != i)
+		{
+			Serial.printf(">>> file write error ! len=%d write_=%d\r\n", len + i, len + write_);
+			dataFile.close();
+			return len + write_;
+		}
+		len = len + i;
+		i = 0;
+	}
+	dataFile.close();
+	Serial.printf(">>> file write ok ! len=%d\r\n", len + i);
+
+	return len;
 }

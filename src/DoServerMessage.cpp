@@ -1,4 +1,5 @@
 #include "DoServerMessage.h"
+#include <Updater.h>
 #include "myconstant.h"
 #include "myudp.h"
 #include "mywarn.h"
@@ -10,6 +11,13 @@ extern "C"
 #include "mystr.h"
 #include "mytimer.h"
 }
+
+#ifdef enable_OTA_UpData
+const char *OTA_SERVER_FIND_TAG;
+const char *OTA_FILE_NAME = "OTA.bin";
+
+bool write_OTA(u32 file_len);
+#endif
 
 /*
 目前问题/想法
@@ -124,7 +132,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 			tmp1 = str1_find_char_1(my_tcp_cache->data, len_old, my_tcp_cache->len, '\t');
 		}
 		jiantin_print();
-		if (back_send_tcp_of_type(tcp_link_data->client,'L', tcp_send_data, tcp_senddata_len) == -1)
+		if (back_send_tcp_of_type(tcp_link_data->client, 'L', tcp_send_data, tcp_senddata_len) == -1)
 		{
 			return kERROR_send_tcp;
 		}
@@ -138,12 +146,12 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 		{
 			tmpuL = str_to_u64(my_tcp_cache->data + len_old, my_tcp_cache->len - len_old, &stat);
 			len_old = str1_find_char_1(my_tcp_cache->data, len_old + 1, my_tcp_cache->len, 'C');
-			if (stat != 1)
+			if (stat < 0)
 			{
 				break;
 			}
 			set_not_warn(tmpuL);
-			tmp1 = tmp1 + 1; 
+			tmp1 = tmp1 + 1;
 		} while (len_old > 0);
 		tcp_senddata_len = sprintf(tcp_send_data, "#%d", tmp1);
 		/*
@@ -154,12 +162,12 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 		节点端：在旧的 back_send_tcp_ 的基础上，增加 种类参数可能就可以了，
 		服务器端：
 				A: 逐段接受，先拿类型长度，后接收数据。（选这个吧）
-				//B: 一次性阻塞完，然后逐段分析。 
+				//B: 一次性阻塞完，然后逐段分析。
 		app端应该不用动，服务器转发数据的时候把 帧头和帧长度的数据位 裁掉就可以了。
 		1字节类型，2字节长度。
 
 		*/
-		if (back_send_tcp_of_type(tcp_link_data->client,'C', tcp_send_data, tcp_senddata_len) == -1)
+		if (back_send_tcp_of_type(tcp_link_data->client, 'C', tcp_send_data, tcp_senddata_len) == -1)
 		{
 			return kERROR_send_tcp;
 		}
@@ -167,14 +175,14 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 		break;
 	case 'D': // 删除一个联动
 		tmpuL = str_to_u64(my_tcp_cache->data, my_tcp_cache->len, &stat);
-		if (stat != 1)
+		if (stat < 0)
 		{
 			Serial.printf(" D   str_to_u64 error	%d", stat);
 			break;
 		}
 		jiantin_del(tmpuL);
 		tcp_senddata_len = sprintf(tcp_send_data, "%s", my_tcp_cache->data);
-		if (back_send_tcp_of_type(tcp_link_data->client,'D', tcp_send_data, tcp_senddata_len) == -1)
+		if (back_send_tcp_of_type(tcp_link_data->client, 'D', tcp_send_data, tcp_senddata_len) == -1)
 		{
 			return kERROR_send_tcp;
 		}
@@ -198,7 +206,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 			Serial.printf("   loop warn_ack return 0 ");
 			break;
 		}
-		if (back_send_tcp_of_type(tcp_link_data->client,'m', tcp_send_data, tcp_senddata_len) == -1)
+		if (back_send_tcp_of_type(tcp_link_data->client, 'm', tcp_send_data, tcp_senddata_len) == -1)
 		{
 			return kERROR_send_tcp;
 		}
@@ -213,7 +221,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 	case '+': // 获取传感器和模式的信息
 	case 'G':
 	case 'g':
-		if (back_send_tcp_of_type(tcp_link_data->client,'#', tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
+		if (back_send_tcp_of_type(tcp_link_data->client, '#', tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
 		{
 			return kERROR_send_tcp;
 		}
@@ -226,7 +234,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 			break;
 		}
 		const static int MODE_INFO_len = strlen(MODE_INFO);
-		if (back_send_tcp_of_type(tcp_link_data->client,'I', MODE_INFO,MODE_INFO_len) == -1)
+		if (back_send_tcp_of_type(tcp_link_data->client, 'I', MODE_INFO, MODE_INFO_len) == -1)
 		{
 			return kERROR_send_tcp;
 		}
@@ -289,7 +297,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 			callback();
 		}
 		// TCP 打包返还自己的状态
-		if (back_send_tcp_of_type(tcp_link_data->client,'#', tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
+		if (back_send_tcp_of_type(tcp_link_data->client, '#', tcp_send_data, set_databack(COMMAND_FIG, tcp_send_data, MAX_TCP_DATA)) == -1)
 		{
 			return kERROR_send_tcp;
 		}
@@ -312,7 +320,7 @@ int do_tcp_data(struct TcpLinkData *tcp_link_data, struct Tcp_cache *my_tcp_cach
 
 int send_hart_back(struct TcpLinkData *tcp_link_data)
 {
-	short end = back_send_tcp_of_type(tcp_link_data->client,'\t', tcp_send_data, set_databack(HEART_BEAT_FIG, tcp_send_data, MAX_TCP_DATA));
+	short end = back_send_tcp_of_type(tcp_link_data->client, '\t', tcp_send_data, set_databack(HEART_BEAT_FIG, tcp_send_data, MAX_TCP_DATA));
 	if (end == 1)
 	{
 		tcp_link_data->send_time_old_ms = millis();
@@ -363,7 +371,7 @@ int wait_and_do_server_message(struct TcpLinkData *tcp_link_data, void (*callbac
 	if (status_loop == 101)
 	{
 		return status_loop;
-	} 
+	}
 	return end;
 }
 
@@ -439,7 +447,11 @@ struct TcpLinkData init_server_tcp_link(const char *host, uint16 port, uint64_t 
 			client->printf("+UID:%llu", uid);
 		}
 
-		String str1 = "class_id=1,chip_id=" + String(chipID) + ",ip=" + WiFi.localIP().toString() + ",mac=" + WiFi.macAddress();
+		String str1 = "class_id=1,chip_id=" + String(chipID) + ",ip=" + WiFi.localIP().toString() + ",mac=" + WiFi.macAddress()
+#ifdef enable_OTA_UpData
+					  + ",updata=" + String(OTA_SERVER_FIND_TAG)
+#endif
+			;
 		client->print(str1);
 	}
 	else
@@ -448,60 +460,132 @@ struct TcpLinkData init_server_tcp_link(const char *host, uint16 port, uint64_t 
 		return tcp_lick_data;
 	}
 	Serial.print("tcp ok");
-
+	int need_updata = 0;
 	stat = timeout_back_ms(client, 3000);
-	if (stat == 1)
+	if (stat != 1)
 	{
-		// 这里收到的信息可能是服务器返回的第一条信息
-		Serial.println(my_tcp_cache.data + get_tcp_data(client, &my_tcp_cache));
-		// tmp1 临时储存一下+EID的开始位置
-		int tmp1 = str1_find_str2_(my_tcp_cache.data, my_tcp_cache.len, "+EID");
-		if (tmp1 >= 0)
-		{
-			EID = str_to_u64(my_tcp_cache.data + tmp1, my_tcp_cache.len, &stat);
-			if (stat != 1)
-			{
-				// 值转换出错，溢出或未找到有效值//这种可能是服务器数据错误，休眠一会儿等服务器修复
-				Serial.printf("error: file %s,line %d, get eid error stat %d\r\n", __FILE__, __LINE__, stat);
-				// ESP.deepSleep(20000000, WAKE_RFCAL);
-				free_tcp_lick(&tcp_lick_data);
-				return tcp_lick_data;
-			}
-
-			// 从 my_tcp_cache.data 剩下的数据里提取出时间，校准单片机的时间
-			tmp1 = str1_find_char_(my_tcp_cache.data, my_tcp_cache.len, 'T');
-			// Serial.println(my_tcp_cache.data + tmp1);
-			str_get_time(&Now, my_tcp_cache.data + tmp1);
-
-			char str_EID[22] = {0};
-			sprintf(str_EID, "%llu", EID); // 垃圾string(),居然不能装换long long类型的数据，还要我自己动手
-			UDP_head_data = "+EID=" + String(str_EID) + ",chip_id=" + String(chipID);
-			Serial.print(UDP_head_data);
-		}
-		my_tcp_cache.len = 0;
-	}
-	else //  if (stat == 0)
-	{
-		// 这种可能是服务器数据错误，休眠一会儿等服务器修复
 		Serial.printf("error: file %s,line %d, tcp read data timeout\r\n", __FILE__, __LINE__);
-		// Serial.print("\r\nservier error,deepSleep\r\n");
-		// ESP.deepSleep(20000000, WAKE_RFCAL);
 		free_tcp_lick(&tcp_lick_data);
 		return tcp_lick_data;
-		// return;
 	}
+	// 这里收到的信息是服务器返回的第一条信息
+	Serial.println(my_tcp_cache.data + get_tcp_data(client, &my_tcp_cache));
+
+	EID = find_key_u64(my_tcp_cache.data, 0, my_tcp_cache.len, "+EID", &stat);
+	if (stat < 0)
+	{
+		Serial.printf("error: file %s,line %d, get EID error stat %d\r\n", __FILE__, __LINE__, stat);
+		free_tcp_lick(&tcp_lick_data);
+		return tcp_lick_data;
+	}
+
+#ifdef enable_OTA_UpData
+	Serial.printf("message: file %s,line %d, getFreeSketchSpace %d\r\n", __FILE__, __LINE__, ESP.getFreeSketchSpace());
+	u64 tmp_u64;
+	tmp_u64 = find_key_u64(my_tcp_cache.data, stat, my_tcp_cache.len, "updata", &stat);
+	if (stat < 0)
+	{
+		Serial.printf("error: file %s,line %d, get updata error stat %d\r\n", __FILE__, __LINE__, stat);
+		free_tcp_lick(&tcp_lick_data);
+		return tcp_lick_data;
+	}
+	if (tmp_u64)
+	{
+		need_updata = 1;
+	}
+	u32 file_len = 0;
+	tmp_u64 = find_key_u64(my_tcp_cache.data, stat, my_tcp_cache.len, "size", &stat);
+	if (stat < 0)
+	{
+		Serial.printf("error: file %s,line %d, get size error stat %d\r\n", __FILE__, __LINE__, stat);
+		free_tcp_lick(&tcp_lick_data);
+		return tcp_lick_data;
+	}
+	if (file_len)
+	{
+		need_updata = 1;
+	}
+	else if (need_updata == 1)
+	{
+		Serial.printf("error: file %s,line %d, get size error stat %d\r\n", __FILE__, __LINE__, stat);
+		need_updata = 0;
+	}
+
+#endif
+
+	// 从 my_tcp_cache.data 剩下的数据里提取出时间，校准单片机的时间
+	int tmp1 = str1_find_str2_(my_tcp_cache.data + stat, my_tcp_cache.len - stat, "Time");
+	if (tmp1 >= 0)
+	{
+		str_get_time(&Now, my_tcp_cache.data + tmp1);
+	}
+
+	char str_EID[22] = {0};
+	sprintf(str_EID, "%llu", EID); // 垃圾string(),居然不能装换long long类型的数据，还要我自己动手
+	UDP_head_data = "+EID=" + String(str_EID) + ",chip_id=" + String(chipID);
+	Serial.print(UDP_head_data);
+	my_tcp_cache.len = 0;
 
 	// tcp_lick_data.client = client;
 	tcp_lick_data.get_time_old_ms = millis();
 	tcp_lick_data.send_time_old_ms = millis();
 	tcp_lick_data.last_send_jiantin_ms = millis();
 	tcp_lick_data.time_flush_1s = millis();
+
+#ifdef enable_OTA_UpData
+
+	u32 save_file_len = 0;
+	save_file_len = save_tcp_data_in_file(client, OTA_FILE_NAME, file_len);
+	if (save_file_len == file_len)
+	{
+		if (Update.begin(file_len))
+		{
+			if (write_OTA(file_len))
+			{
+				Serial.printf("OK: file %s,line %d, OTA YES!!!\r\n", __FILE__, __LINE__);
+			}
+			else
+			{
+				Serial.printf("error: file %s,line %d, write_OTA fied\r\n", __FILE__, __LINE__);
+			}
+		}
+		else
+		{
+			Serial.printf("error: file %s,line %d, begin fied\r\n", __FILE__, __LINE__);
+		}
+	}
+	else
+	{
+		Serial.printf("error: file %s,line %d, save_file_len %u\r\n", __FILE__, __LINE__, save_file_len);
+	}
+#endif
+
 	return tcp_lick_data;
 }
 
+#ifdef enable_OTA_UpData
 
-// void enable_OTA_UpData()
-// {
-// 	const char * OTA_SERVER_FIND_TAG = "__DATE__" __DATE__ "__TIME__" __TIME__ "__FILE__" __FILE__ "__END__"; 
-// 	Serial.printf(OTA_SERVER_FIND_TAG);
-// }
+bool write_OTA(u32 file_len)
+{
+	char data[100];
+	u32 len = 0;
+	size_t i = 0;
+	size_t write_ = 0;
+	File dataFile = LittleFS.open(OTA_FILE_NAME, "w");
+	while (len < file_len)
+	{
+		// i = dataFile.readBytes(data, 100);
+		write_ = Update.write(dataFile);
+		if (write_ != i)
+		{
+			Serial.printf(">>> Update write error ! len=%d write_=%d\r\n", len + i, len + write_);
+			dataFile.close();
+			return len + write_;
+		}
+		len = len + i;
+		i = 0;
+	}
+	dataFile.close();
+	return Update.end();
+}
+#endif

@@ -93,4 +93,7 @@ char1:需要找到的字符
 查找失败：返回-1
 */
 int str1_find_char_1(char *str1, int start_x, int str_length, char char1);
+
+
+u64 find_key_u64(const char *str1, int start_x, unsigned int str_length, const char *key, short *status);
 #endif
