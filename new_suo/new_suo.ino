@@ -226,13 +226,13 @@ void setup()
 	set_anjian1(0);			// 配置wifi的清除数据按键
 
 	// LittleFS.format();//第一次使用flash需要将flash格式化,可以不显式调用，会自己初始化
-
 	Serial.begin(115200);
+	enable_OTA_UpData(__FILE__);
+	Serial.println(OTA_SERVER_FIND_TAG);
 	// CHIP_ID = ESP.getFlashChipId();
 	// Serial.printf("unsigned long %d \n", sizeof(unsigned long)); //这个id是假的，不知道为啥，两个esp的一样
 	// Serial.printf("long long %d  \n", sizeof(long long));
 	CHIP_ID = ESP.getChipId();
-	Serial.printf("getFlashChipId %d \r\n", ESP.getFlashChipId()); // 这个id是假的，不知道为啥，两个esp的一样
 	Serial.printf("getChipId %d  \r\n", ESP.getChipId());
 
 	pinMode(LED_BUILTIN, OUTPUT);

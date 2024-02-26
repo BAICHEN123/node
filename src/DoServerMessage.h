@@ -11,13 +11,12 @@ extern "C"
 {
 /*
 enable_OTA_UpData 这个宏是定义之后给服务器从二进制文件读取信息用的。
+如果不调用的话，会被编译器优化掉。不用手动注释
 */
-
 extern const char *OTA_SERVER_FIND_TAG;
 #define enable_OTA_UpData(name) {OTA_SERVER_FIND_TAG = "__DATE__" __DATE__ "__TIME__" __TIME__ "__FILE__" name "__END__";}
 // #define enable_OTA_UpData(name) {OTA_SERVER_FIND_TAG = "__DATE__" __DATE__ "__TIME__" "25:43:08" "__FILE__" name "__END__";}
 
-//Serial.printf(OTA_SERVER_FIND_TAG);
 	struct TcpLinkData
 	{
 		WiFiClient *client;

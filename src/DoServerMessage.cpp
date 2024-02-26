@@ -13,9 +13,7 @@ extern "C"
 }
 
 #ifdef enable_OTA_UpData
-const char *OTA_SERVER_FIND_TAG;
-const char *OTA_FILE_NAME = "OTA.bin";
-
+const char *OTA_SERVER_FIND_TAG;  
 bool write_OTA(WiFiClient *client, u32 file_len);
 #endif
 
@@ -437,12 +435,7 @@ struct TcpLinkData init_server_tcp_link(const char *host, uint16 port, uint64_t 
 	WiFiClient *client;
 	client = new WiFiClient();
 	struct TcpLinkData tcp_lick_data;
-	tcp_lick_data.client = client;
-
-#ifdef enable_OTA_UpData
-	file_delete(OTA_FILE_NAME);
-#endif
-
+	tcp_lick_data.client = client; 
 	short stat;
 	if (client->connect(MYHOST, TCP_PORT))
 	{
@@ -540,7 +533,7 @@ struct TcpLinkData init_server_tcp_link(const char *host, uint16 port, uint64_t 
 #ifdef enable_OTA_UpData
 	if (need_updata)
 	{
-		back_send_tcp_of_type(client, 'u', "start", 5);
+		back_send_tcp_of_type(client, 'u', "start", 5);//允许服务器开始发送bin文件的信号
 		Serial.printf("OK: file %s,line %d, start\r\n", __FILE__, __LINE__);
 		if (Update.begin(file_len))
 		{
