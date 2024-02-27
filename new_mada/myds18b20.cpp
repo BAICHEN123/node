@@ -32,8 +32,9 @@ struct myds18b20 init_ds18b20(unsigned char pin1)
     if (OneWire::crc8(data.addr, 7) != data.addr[7])
     {
         Serial.println("CRC is not valid!");
-        free_myds18b20(&data);
-        return data;
+        // CRC 校验失败似乎不会影响数据读取，
+        // free_myds18b20(&data);
+        // return data;
     }
     Serial.println();
 

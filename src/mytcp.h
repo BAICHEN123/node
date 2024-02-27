@@ -5,7 +5,6 @@
 #include "myconstant.h"
 extern "C"
 {
-#define TCP_PORT 9999
     struct Tcp_cache
     {
         char data[MAX_TCP_DATA];

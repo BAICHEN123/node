@@ -106,7 +106,7 @@ short back_send_tcp_(WiFiClient *client, char *tcp_send_data, int len)
 	{
 		// 在这里合成需要发送出去的传感器数据？
 		client->write(tcp_send_data, len);
-		client->flush(1); // 限制等待时间
+		client->flush(0); // 限制等待时间
 		return 1;
 	}
 	else
@@ -124,7 +124,7 @@ short back_send_tcp(WiFiClient *client, const char *str1)
 	{
 		// 在这里合成需要发送出去的传感器数据？
 		client->write(str1);
-		client->flush(1); // 限制等待时间
+		client->flush(0); // 限制等待时间
 		return 1;
 	}
 	else

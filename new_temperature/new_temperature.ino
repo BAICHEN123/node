@@ -8,7 +8,6 @@
 
 uint32_t CHIP_ID = 0;
 
-
 // ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ 旧的usermain移过来的  ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
 
 const char *MODE_INFO = "@断电记忆[0-2]:关闭，仅本次，所有";
@@ -17,6 +16,7 @@ static struct Udpwarn user_error2 = {WARN, NOT_WARN, 0, 6, "2 号自定义警告
 
 // 定义传感器储存变量
 uint8_t power_save = 0; // 断电记忆
+uint8_t esp_reset = 0;	// 复位
 uint8_t user_error_1 = 0;
 uint8_t user_error_2 = 0;
 float temperature = 0;
@@ -36,6 +36,7 @@ struct MyType data_list[MAX_NAME] = {
 	{"@1号自定义警告", NULL, TYPE_u8, sizeof(user_error_1), &user_error_1, CONST1, CONST1 + 1}, // 用户自定义警告
 	{"@2号自定义警告", NULL, TYPE_u8, sizeof(user_error_2), &user_error_2, CONST1, CONST1 + 1}, // 用户自定义警告
 	{"@断电记忆", NULL, TYPE_u8, sizeof(power_save), &power_save, CONST1, CONST1 + 2},
+	{"@重启", NULL, TYPE_u8, sizeof(esp_reset), &esp_reset, CONST1, CONST1 + 1},
 	{"时", NULL, TYPE_u8, sizeof(Now.hour), &(Now.hour), NULL, NULL},
 	{"分", NULL, TYPE_u8, sizeof(Now.minute), &(Now.minute), NULL, NULL},
 	{"秒", NULL, TYPE_u8, sizeof(Now.sec), &(Now.sec), NULL, NULL},
@@ -58,7 +59,13 @@ void timer1_worker()
 void my_init()
 {
 	pinMode(anjian1, INPUT); // 按键1
-	dsdata = init_ds18b20(12);
+	dsdata = init_ds18b20(ds18b20);
+	if (!dsdata.obj)
+	{
+		Serial.printf("error: file %s,line %d, init_ds18b20 error\r\n", __FILE__, __LINE__);
+		ESP.deepSleep(20000000, WAKE_RFCAL);
+	}
+
 	// pinMode(jd1, OUTPUT);
 	set_timer1_ms(timer1_worker, TIMER1_timeout_ms); // 强制重新初始化定时中断，如果单纯的使用 dht11_get 里的过程初始化，有概率初始化失败
 													 // （仅在程序复位的时候可以成功，原因：timer2_count 没有复位就不会被初始化，自然调用不到定时器的初始化函数），
@@ -100,6 +107,11 @@ void user_loop_1()
 		temperature = read_temperature(dsdata);
 		last_get_temperature = millis();
 	}
+	if (esp_reset)
+	{
+		Serial.printf("message: file %s,line %d, esp_reset\r\n", __FILE__, __LINE__);
+		ESP.reset();
+	}
 }
 
 void set_value_of_data_list(int index)
@@ -127,10 +139,12 @@ void setup()
 	// Serial.printf("unsigned long %d \n", sizeof(unsigned long)); //这个id是假的，不知道为啥，两个esp的一样
 	// Serial.printf("long long %d  \n", sizeof(long long));
 	CHIP_ID = ESP.getChipId();
-	Serial.printf("getFlashChipId %d \r\n", ESP.getFlashChipId()); // 这个id是假的，不知道为啥，两个esp的一样
 	Serial.printf("getChipId %d  \r\n", ESP.getChipId());
+	Serial.printf("tcp %d udp %d \r\n", TCP_PORT, UDP_PORT);
+
 	enable_OTA_UpData(__FILE__);
 	Serial.println(OTA_SERVER_FIND_TAG);
+
 	pinMode(LED_BUILTIN, OUTPUT);
 	digitalWrite(LED_BUILTIN, HIGH);
 	short stat = file_read_wifidata(WIFI_ssid, WIFI_password, wifi_ssid_pw_file);

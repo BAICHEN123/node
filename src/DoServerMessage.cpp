@@ -13,7 +13,7 @@ extern "C"
 }
 
 #ifdef enable_OTA_UpData
-const char *OTA_SERVER_FIND_TAG;  
+const char *OTA_SERVER_FIND_TAG;
 bool write_OTA(WiFiClient *client, u32 file_len);
 #endif
 
@@ -435,7 +435,7 @@ struct TcpLinkData init_server_tcp_link(const char *host, uint16 port, uint64_t 
 	WiFiClient *client;
 	client = new WiFiClient();
 	struct TcpLinkData tcp_lick_data;
-	tcp_lick_data.client = client; 
+	tcp_lick_data.client = client;
 	short stat;
 	if (client->connect(MYHOST, TCP_PORT))
 	{
@@ -533,24 +533,21 @@ struct TcpLinkData init_server_tcp_link(const char *host, uint16 port, uint64_t 
 #ifdef enable_OTA_UpData
 	if (need_updata)
 	{
-		back_send_tcp_of_type(client, 'u', "start", 5);//允许服务器开始发送bin文件的信号
-		Serial.printf("OK: file %s,line %d, start\r\n", __FILE__, __LINE__);
-		if (Update.begin(file_len))
-		{
-			if (write_OTA(client, file_len))
-			{
-				Serial.printf("OK: file %s,line %d, OTA YES!!!\r\n", __FILE__, __LINE__);
-				ESP.restart();
-			}
-			else
-			{
-				Serial.printf("error: file %s,line %d, write_OTA fied\r\n", __FILE__, __LINE__);
-			}
-		}
-		else
-		{
+		unsigned long start = millis();
+		back_send_tcp_of_type(client, 'u', "start", 5); // 允许服务器开始发送bin文件的信号
+		Serial.printf("OK: file %s,line %d, start len %u\r\n", __FILE__, __LINE__,file_len);
+		if(!Update.begin(file_len)){ 
 			Serial.printf("error: file %s,line %d, begin fied\r\n", __FILE__, __LINE__);
-		}
+			free_tcp_lick(&tcp_lick_data);
+			return tcp_lick_data;
+		} 
+		if(!write_OTA(client, file_len)){
+			Serial.printf("error: file %s,line %d, write_OTA fied\r\n", __FILE__, __LINE__);
+			free_tcp_lick(&tcp_lick_data);
+			return tcp_lick_data;
+		} 
+		Serial.printf("OK: file %s,line %d, OTA YES !!!!\r\n", __FILE__, __LINE__);
+		ESP.reset();
 	}
 #endif
 
@@ -563,29 +560,30 @@ bool write_OTA(WiFiClient *client, u32 file_len)
 {
 	u32 len = 0;
 	size_t i = 0;
-	int write_ = 0;
-	Serial.printf(">>> file open file_len %u\r\n", file_len);
+	int write_ = 0; 
 	while (client->connected() && len < file_len)
 	{
+		digitalWrite(LED_BUILTIN, LOW);
 		i = client->read(my_tcp_cache.data, MAX_TCP_DATA);
 		if (i <= 0)
 		{
 			delay(5);
 			continue;
 		}
+		digitalWrite(LED_BUILTIN, HIGH);
 		write_ = Update.write((uint8_t *)(my_tcp_cache.data), i);
 		if (write_ != i)
 		{
 			Serial.printf(">>> file write error ! len=%d write_=%d\r\n", len + i, len + write_);
 
 			back_send_tcp_of_type(client, 'u', my_tcp_cache.data, sprintf(my_tcp_cache.data, "%u", len + write_));
-			return len + write_;
+			return false;
 		}
 		len = len + i;
-		Serial.printf("len %u \r", i, write_, len);
+		// Serial.printf("len %u \r", i, write_, len);
 		i = 0;
 	}
-	Serial.printf(">>> file write ok ! len=%d\r\n", len);
+	Serial.printf(">>> file write ok ! len=%d time\r\n", len);
 	back_send_tcp_of_type(client, 'u', my_tcp_cache.data, sprintf(my_tcp_cache.data, "%u", len));
 	if (len == file_len)
 	{

@@ -2,9 +2,9 @@
 #define _MYCONSTANT_h
 
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
-//复位函数
-//ESP.restart();
+#include <ESP8266WiFi.h> 
+
+// #define BAI_CHEN_DEBUG 1
 
 //定时器1 的单次中断时长
 #define TIMER1_timeout_ms 200
@@ -34,6 +34,13 @@
 //wifi 相关
 //做服务器时监听的端口
 #define SERVER_CLIENT_PROT 9997
+#ifndef BAI_CHEN_DEBUG
+#define TCP_PORT 9999
+#define UDP_PORT 9998
+#else
+#define TCP_PORT 9997
+#define UDP_PORT 9996
+#endif
 
 //以下两个定时可以同时调用，间隔时间不是很准确，当发生网络请求的时候，RUAN_TIMEer_us 可能会变大
 //软定时，主函数循环调用的间隔时间
