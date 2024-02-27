@@ -1,6 +1,14 @@
 ## Repository for "esp8266" End Code of an IoT Project
 
 Thanks Chat-GPT for the translation.
+
+
+### New Content
+1. Support for OTA (Over-the-Air updates) has been added.  
+After compiling, copy the generated bin file to the corresponding location under MyConfig.OTA_DIR_NAME directory. The files will be classified based on the compilation date and character information contained in the bin file. Update decisions for corresponding nodes will be made based on the OTA_SERVER_FIND_TAG information sent by the nodes.  
+Firmware of approximately 344400 bytes is transmitted and written in approximately 6109ms, much faster than burning programs via serial port.  
+~~After I finish implementing the node logging feature, I will attempt to debug the program using OTA. After all, breakpoints debugging is not feasible, and OTA burning is faster.~~
+
 ### Other Ends
 #### Gitee
 [app](https://gitee.com/he_chen_chuan/Mytabs)  

@@ -1,6 +1,15 @@
 ## 一个物联网项目的"esp8266"端代码仓库
 
 [Thanks Chat-GPT for the translation.](./README.en.md)
+
+### 新内容
+1. 支持云端升级 OTA。
+将编译完成的 bin 文件拷贝至 MyConfig.OTA_DIR_NAME 目录下对应的位置，就会根据 bin 中包含的编译日期、编译文件字符信息进行分类，根据节点发送的 OTA_SERVER_FIND_TAG 信息判断对应的节点是否需要更新。  
+344400字节的固件大约6109ms发完并写入，比我串口烧程序快多了。  
+~~等我搞完节点日志功能之后会尝试用OTA的方式调试程序，反正都不能用断点调试，OTA烧程序还快~~
+
+
+
 ### 其他端
 #### gitee
 [app](https://gitee.com/he_chen_chuan/BC-app)  
